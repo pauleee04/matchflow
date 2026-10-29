@@ -21,13 +21,16 @@ export const metadata: Metadata = {
     "Turniere online erstellen, verwalten und live verfolgen.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="de"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      style={{ colorScheme: "dark" }}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100">
+        {children}
+      </body>
     </html>
   );
 }
