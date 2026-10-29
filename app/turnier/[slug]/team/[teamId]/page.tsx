@@ -7,12 +7,14 @@ import { publicSupabase as supabase } from '@/lib/supabase'
 
 type Team = {
   id: number | string
+  tournament_id?: number | string
   name: string
   player1: string
   player2: string
   payment_method: string
   payment_status: string
   checkin_status: boolean
+  access_token?: string
 }
 
 type Group = {
@@ -235,6 +237,15 @@ export default function CleanPublicTeamPage() {
   const params = useParams()
   const router = useRouter()
   const rawSlug = (params?.slug as string) || ''
+  const rawTeamId = (params?.teamId as string) || ''
+
+  const slug = useMemo(() => {
+    try {
+      return decodeURIComponent(rawSlug)
+    } catch {
+      return rawSlug
+    }
+  }, [rawSlug])
 
   const [team, setTeam] = useState<Team | null>(null)
   const [tournament, setTournament] = useState<TournamentInfo | null>(null)
@@ -259,72 +270,128 @@ export default function CleanPublicTeamPage() {
   const loadData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
     const queryParams = new URLSearchParams(window.location.search)
-    const token = queryParams.get('t')
+    const tokenFromQuery = queryParams.get('t')
+    const teamIdOrToken = tokenFromQuery || rawTeamId
 
-    if (!token) {
-      setError('Kein gültiger Team-Token angegeben.')
+    if (!teamIdOrToken) {
+      setError('Keine gültige Team-ID oder Token angegeben.')
       setLoading(false)
       setRefreshing(false)
       return
     }
 
     try {
-      const { data, error: rpcErr } = await supabase.rpc('get_public_team_page', {
-        p_token: token,
-      })
+      let loadedTeam: Team | null = null
+      let loadedTournament: TournamentInfo | null = null
+      let loadedGroup: Group | null = null
+      let loadedTeams: Team[] = []
+      let loadedMatches: TournamentMatch[] = []
 
-      if (rpcErr || !data) {
-        setError('Team konnte nicht geladen werden.')
+      // 1. Versuche das Laden via Supabase RPC Function get_public_team_page
+      try {
+        const { data: rpcData } = await supabase.rpc('get_public_team_page', {
+          p_token: teamIdOrToken,
+        })
+
+        if (rpcData && (rpcData as PublicTeamPage).team) {
+          const pageData = rpcData as PublicTeamPage
+          loadedTeam = pageData.team ?? null
+          loadedTournament = pageData.tournament ?? null
+          loadedGroup = pageData.group ?? null
+          loadedTeams = pageData.teams ?? []
+          if (pageData.matches) {
+            loadedMatches = pageData.matches.map((m) => normalizeMatch(m as Record<string, unknown>))
+          }
+        }
+      } catch (err) {
+        console.warn('RPC Fallback get_public_team_page:', err)
+      }
+
+      // 2. Fallback: Direktes Laden aus den Supabase Tabellen
+      if (!loadedTeam) {
+        // A) Turnier anhand des Slugs laden
+        let { data: tourneyData } = await supabase
+          .from('tournaments')
+          .select('*')
+          .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
+          .maybeSingle()
+
+        if (tourneyData) {
+          loadedTournament = tourneyData as TournamentInfo
+        }
+
+        // B) Team anhand von ID oder Token suchen
+        const isNumericId = !isNaN(Number(teamIdOrToken)) && Number(teamIdOrToken) > 0
+        let teamRes
+
+        if (isNumericId) {
+          teamRes = await supabase.from('teams').select('*').eq('id', Number(teamIdOrToken)).maybeSingle()
+        } else {
+          teamRes = await supabase
+            .from('teams')
+            .select('*')
+            .or(`access_token.eq."${teamIdOrToken}",id.eq."${teamIdOrToken}"`)
+            .maybeSingle()
+        }
+
+        if (teamRes?.data) {
+          loadedTeam = teamRes.data as Team
+        }
+
+        // C) Wenn Team gefunden wurde, fehlende Turnier-, Gruppen- & Spieldaten nachladen
+        if (loadedTeam) {
+          const tournamentId = loadedTeam.tournament_id || loadedTournament?.id
+
+          if (tournamentId) {
+            if (!loadedTournament) {
+              const { data: tData } = await supabase.from('tournaments').select('*').eq('id', tournamentId).maybeSingle()
+              if (tData) loadedTournament = tData as TournamentInfo
+            }
+
+            // Alle Teams des Turniers laden
+            const { data: allTeams } = await supabase.from('teams').select('*').eq('tournament_id', tournamentId)
+            loadedTeams = (allTeams || []) as Team[]
+
+            // Gruppe des Teams bestimmen
+            const { data: groupMember } = await supabase
+              .from('group_members')
+              .select('group_id')
+              .eq('team_id', loadedTeam.id)
+              .maybeSingle()
+
+            const groupId = groupMember?.group_id || (loadedTeam as Record<string, unknown>).group_id
+            if (groupId) {
+              const { data: gData } = await supabase.from('groups').select('*').eq('id', groupId).maybeSingle()
+              if (gData) loadedGroup = gData as Group
+            }
+
+            // Alle Matches des Turniers laden
+            const { data: matchesData } = await supabase.from('matches').select('*').eq('tournament_id', tournamentId)
+            if (matchesData) {
+              loadedMatches = matchesData.map((m) => normalizeMatch(m as Record<string, unknown>))
+            }
+          }
+        }
+      }
+
+      if (!loadedTeam) {
+        setError('Team konnte nicht gefunden werden.')
         return
       }
 
-      const pageData = data as PublicTeamPage
-      if (!pageData.team) {
-        setError('Team nicht gefunden.')
-        return
-      }
-
-      const currentTeam = pageData.team
-      setTournament(pageData.tournament ?? null)
-      setTeam(currentTeam)
-      setTeams(pageData.teams ?? [])
-      setGroup(pageData.group ?? null)
+      setTeam(loadedTeam)
+      setTournament(loadedTournament)
+      setGroup(loadedGroup)
+      setTeams(loadedTeams)
+      setMatches(loadedMatches)
       setError('')
 
-      const matchMap = new Map<string, TournamentMatch>()
-
-      if (pageData.matches) {
-        pageData.matches.forEach((m) => {
-          const norm = normalizeMatch(m as Record<string, unknown>)
-          matchMap.set(String(norm.id), norm)
-        })
-      }
-
-      if (pageData.tournament?.id) {
-        const tId = pageData.tournament.id
-        const tablesToTry = ['tournament_matches', 'ko_matches', 'bracket_matches', 'tournament_ko', 'ko_games']
-
-        const settled = await Promise.allSettled(
-          tablesToTry.map((tbl) => supabase.from(tbl).select('*').eq('tournament_id', tId))
-        )
-
-        settled.forEach((res) => {
-          if (res.status === 'fulfilled' && res.value.data) {
-            ;(res.value.data as Record<string, unknown>[]).forEach((row) => {
-              const norm = normalizeMatch(row)
-              matchMap.set(String(norm.id), norm)
-            })
-          }
-        })
-      }
-
-      setMatches(Array.from(matchMap.values()))
-
-      if (pageData.tournament?.id) {
+      // 3. Turnier-Regeln Vorschau laden
+      if (loadedTournament?.id) {
         const { data: rules } = await supabase
           .from('tournament_rules')
           .select('show_on_team_page, team_summary')
-          .eq('tournament_id', pageData.tournament.id)
+          .eq('tournament_id', loadedTournament.id)
           .maybeSingle()
 
         if (rules?.show_on_team_page === true) {
@@ -336,12 +403,12 @@ export default function CleanPublicTeamPage() {
       }
     } catch (err) {
       console.error(err)
-      setError('Ein Fehler ist aufgetreten.')
+      setError('Ein Fehler beim Laden der Daten ist aufgetreten.')
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [])
+  }, [slug, rawSlug, rawTeamId])
 
   useEffect(() => {
     void loadData()
@@ -363,7 +430,7 @@ export default function CleanPublicTeamPage() {
     setPaymentMessage('')
 
     try {
-      const token = new URLSearchParams(window.location.search).get('t')
+      const token = new URLSearchParams(window.location.search).get('t') || rawTeamId
       const res = await fetch('/api/team-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -388,7 +455,7 @@ export default function CleanPublicTeamPage() {
 
   async function createPayPalOrder() {
     if (!team) throw new Error('Team fehlt')
-    const token = new URLSearchParams(window.location.search).get('t')
+    const token = new URLSearchParams(window.location.search).get('t') || rawTeamId
     setPayingWithPayPal(true)
 
     const res = await fetch('/api/paypal/create-order', {
@@ -402,7 +469,7 @@ export default function CleanPublicTeamPage() {
   }
 
   async function capturePayPalOrder(orderId: string) {
-    const token = new URLSearchParams(window.location.search).get('t')
+    const token = new URLSearchParams(window.location.search).get('t') || rawTeamId
     const res = await fetch('/api/paypal/capture-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1017,7 +1084,7 @@ export default function CleanPublicTeamPage() {
           </div>
         </div>
 
-        {/* 4. REGELN VORSCHAU (DIREKT UNTER ERGEBNISSE & KOMMENDE SPIELE) */}
+        {/* 4. REGELN VORSCHAU */}
         <section className="rounded-[24px] border p-6 shadow-xl" style={cardStyle}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
@@ -1031,7 +1098,7 @@ export default function CleanPublicTeamPage() {
               <div className="mt-3 rounded-[16px] border p-4 space-y-2" style={innerBoxStyle}>
                 <ul className="space-y-1.5 text-sm text-slate-300">
                   {teamRulesPreview?.team_summary ? (
-                    teamRulesPreview.team_summary.split('\n').map((l, i) => <li key={i}>• {l}</li>)
+                    teamRulesPreview.team_summary.split('\n').map((l, i) => <li key={i}>{l}</li>)
                   ) : (
                     <>
                       <li>• Bitte seid mindestens 10 Minuten vor eurem Anpfiff am zugewiesenen Tisch.</li>

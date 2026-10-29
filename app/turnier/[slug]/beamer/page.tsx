@@ -29,6 +29,7 @@ type TournamentTheme = {
   slug: string
   logo_url: string | null
   primary_color: string | null
+  secondary_color: string | null
   background_style: string | null
   has_third_place_match?: boolean | null
 }
@@ -105,29 +106,18 @@ function getPreviousPhaseName(phase: string) {
   }
 }
 
-function getBackgroundStyle(style: string | null | undefined, primaryColor: string) {
-  const s = (style || '').toLowerCase().trim()
-  switch (s) {
-    case 'festival':
-      return '#4c0519'
-    case 'biergarten':
-      return '#14532d'
-    case 'light':
-    case 'hell':
-      return '#f8fafc'
-    case 'blue':
-      return '#0f172a'
-    case 'dark':
-    case 'dunkel':
-      return '#020617'
-    default:
-      return primaryColor || '#14532d'
-  }
+// BERECHNET DEN DESIGN-HINTERGRUND AUS ADMIN-FARBEN
+function getBeamerBackgroundStyle(primary?: string | null, secondary?: string | null) {
+  const p = primary || '#22c55e'
+  const s = secondary || '#10b981'
+  return `radial-gradient(circle at 50% 20%, ${p}25 0%, ${s}10 45%, #030712 90%)`
 }
 
+// ADAPTIVES AUTO-SCROLLING MIT DYNAMISCHER GESCHWINDIGKEIT
 function useSmoothAutoScroll(
   containerRef: React.RefObject<HTMLDivElement | null>,
-  active: boolean
+  active: boolean,
+  matchCount: number = 0
 ) {
   const directionRef = useRef<number>(1)
   const posRef = useRef<number>(0)
@@ -146,8 +136,6 @@ function useSmoothAutoScroll(
     let lastTimestamp: number | null = null
     let pauseTimer: NodeJS.Timeout | null = null
 
-    const speedPixelsPerSecond = 28
-
     const step = (timestamp: number) => {
       const currentEl = containerRef.current
       if (!currentEl) return
@@ -158,8 +146,11 @@ function useSmoothAutoScroll(
 
       const maxScroll = currentEl.scrollHeight - currentEl.clientHeight
 
+      // Geschwindigkeitsberechnung basierend auf Scroll-Distanz
+      const baseSpeed = maxScroll > 0 ? Math.max(25, Math.min(85, maxScroll / 5)) : 30
+
       if (maxScroll > 15 && !isPausedRef.current) {
-        posRef.current += directionRef.current * speedPixelsPerSecond * deltaTime
+        posRef.current += directionRef.current * baseSpeed * deltaTime
 
         if (directionRef.current === 1 && posRef.current >= maxScroll) {
           posRef.current = maxScroll
@@ -197,13 +188,13 @@ function useSmoothAutoScroll(
 
     pauseTimer = setTimeout(() => {
       animationId = requestAnimationFrame(step)
-    }, 1200)
+    }, 1000)
 
     return () => {
       if (animationId) cancelAnimationFrame(animationId)
       if (pauseTimer) clearTimeout(pauseTimer)
     }
-  }, [active, containerRef])
+  }, [active, containerRef, matchCount])
 }
 
 export default function BeamerPage() {
@@ -265,7 +256,7 @@ export default function BeamerPage() {
     try {
       const { data: tourneyData } = await supabase
         .from('tournaments')
-        .select('id, name, slug, logo_url, primary_color, background_style, has_third_place_match')
+        .select('id, name, slug, logo_url, primary_color, secondary_color, background_style, has_third_place_match')
         .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
         .maybeSingle()
 
@@ -320,7 +311,7 @@ export default function BeamerPage() {
           return prev === 'matches' ? 'standings' : 'matches'
         }
       })
-    }, 15000)
+    }, 18000)
     return () => clearInterval(interval)
   }, [hasKOStarted])
 
@@ -376,8 +367,8 @@ export default function BeamerPage() {
   const activeRound = timeSlots[activeSlotIndex] || null
   const nextRound = timeSlots[activeSlotIndex + 1] || null
 
-  useSmoothAutoScroll(matchesContainerRef, activeSlide === 'matches')
-  useSmoothAutoScroll(standingsContainerRef, activeSlide === 'standings')
+  useSmoothAutoScroll(matchesContainerRef, activeSlide === 'matches', activeRound?.matches.length || 0)
+  useSmoothAutoScroll(standingsContainerRef, activeSlide === 'standings', groups.length)
 
   const groupStandings = useMemo(() => {
     return groups.map((group) => {
@@ -443,8 +434,9 @@ export default function BeamerPage() {
     })
   }, [groups, members, matches, teamsById])
 
-  const primaryColor = tournament?.primary_color || '#2563eb'
-  const pageBackground = getBackgroundStyle(tournament?.background_style, primaryColor)
+  const primaryColor = tournament?.primary_color || '#22c55e'
+  const secondaryColor = tournament?.secondary_color || '#10b981'
+  const pageBackground = getBeamerBackgroundStyle(primaryColor, secondaryColor)
 
   function getTeamName(teamId: number | null) {
     if (!teamId) return null
@@ -812,7 +804,7 @@ export default function BeamerPage() {
               )}
             </div>
 
-            {/* MITTELSPALTE (FINALE PERFEKT AUF DER ABSOLUTEN HALBFINAL-HÖHE) */}
+            {/* MITTELSPALTE (FINALE) */}
             <div
               className="relative min-w-[190px] max-w-[240px] flex-1"
               style={{ height: bracketHeight }}
@@ -824,7 +816,6 @@ export default function BeamerPage() {
                 ENTSCHEIDUNG
               </div>
 
-              {/* FINALE: Mitte des Matchcards liegt EXAKT auf der Halbfinal-Linie */}
               <div
                 className="absolute left-1 right-1"
                 style={{
@@ -835,7 +826,7 @@ export default function BeamerPage() {
                   <div className="absolute -top-6 left-0 right-0 flex justify-center">
                     <span
                       className="rounded-lg px-3 py-0.5 text-[9px] font-black uppercase tracking-widest text-slate-950 shadow-md"
-                      style={{ backgroundColor: tournament?.primary_color || '#f59e0b' }}
+                      style={{ backgroundColor: primaryColor }}
                     >
                       🏆 FINALE
                     </span>
@@ -844,7 +835,6 @@ export default function BeamerPage() {
                 </div>
               </div>
 
-              {/* SPIEL UM PLATZ 3: Direkt und übersichtlich unter dem Finale */}
               {showThirdPlace && (
                 <div
                   className="absolute left-1 right-1"
@@ -896,6 +886,24 @@ export default function BeamerPage() {
     return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4'
   }
 
+  // DYNAMISCHES RASTER FÜR SPIELE JE NACH ANZAHL
+  const getMatchesGridClass = (matchCount: number) => {
+    if (matchCount <= 4 || hasKOStarted) {
+      return 'flex flex-wrap items-center justify-center gap-6 max-w-5xl mx-auto w-full py-2'
+    }
+    if (matchCount <= 8) {
+      return 'grid grid-cols-2 md:grid-cols-4 gap-3.5 w-full'
+    }
+    if (matchCount <= 12) {
+      return 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 w-full'
+    }
+    if (matchCount <= 18) {
+      return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 gap-2.5 w-full'
+    }
+    // Für 24+ Spiele: 6 bis 8 Spalten für maximale Übersicht ohne Abschneiden
+    return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 w-full'
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center text-white">
@@ -912,7 +920,7 @@ export default function BeamerPage() {
           ? 'fixed inset-0 z-[99999] h-screen w-screen p-8 shadow-2xl'
           : 'h-[calc(100vh-140px)] rounded-3xl p-6 border border-white/10 shadow-2xl'
       }`}
-      style={{ backgroundColor: pageBackground }}
+      style={{ background: pageBackground }}
     >
       {/* WASSERZEICHEN */}
       <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden opacity-10">
@@ -933,7 +941,7 @@ export default function BeamerPage() {
               <img src={tournament.logo_url} alt="Logo" className="h-12 w-12 rounded-2xl bg-white/10 p-1.5 object-contain" />
             ) : (
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-black text-slate-950"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-black text-slate-950 shadow-md"
                 style={{ backgroundColor: primaryColor }}
               >
                 🏆
@@ -955,6 +963,7 @@ export default function BeamerPage() {
               <p className="font-mono text-2xl font-black text-emerald-300 tracking-wider">{currentTime}</p>
             </div>
             <button
+              type="button"
               onClick={toggleFullscreen}
               className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-black text-white hover:bg-white/20 transition backdrop-blur-md"
             >
@@ -989,13 +998,7 @@ export default function BeamerPage() {
                 ref={matchesContainerRef}
                 className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none] pr-1 flex flex-col justify-center"
               >
-                <div
-                  className={
-                    activeRound.matches.length <= 4 || hasKOStarted
-                      ? 'flex flex-wrap items-center justify-center gap-6 max-w-5xl mx-auto w-full py-2'
-                      : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full'
-                  }
-                >
+                <div className={getMatchesGridClass(activeRound.matches.length)}>
                   {activeRound.matches.map((m) => {
                     const finished = isFinished(m)
                     const live = isLive(m)
@@ -1004,14 +1007,15 @@ export default function BeamerPage() {
                     const t1Win = finished && m.team1_score != null && m.team2_score != null && m.team1_score > m.team2_score
                     const t2Win = finished && m.team1_score != null && m.team2_score != null && m.team2_score > m.team1_score
                     const isKOMatch = KO_PHASES.includes(m.phase)
+                    const isLargeMatchCount = activeRound.matches.length > 12
 
                     return (
                       <div
                         key={m.id}
-                        className={`rounded-2xl border p-4 shadow-xl backdrop-blur-md flex flex-col justify-between transition ${
-                          activeRound.matches.length <= 4 || hasKOStarted
-                            ? 'w-full max-w-[320px] min-h-[140px]'
-                            : ''
+                        className={`rounded-2xl border shadow-xl backdrop-blur-md flex flex-col justify-between transition ${
+                          isLargeMatchCount ? 'p-2.5 min-h-[110px]' : 'p-4 min-h-[130px]'
+                        } ${
+                          activeRound.matches.length <= 4 || hasKOStarted ? 'w-full max-w-[320px]' : ''
                         } ${
                           live
                             ? 'border-red-400/80 bg-red-500/20 animate-pulse'
@@ -1020,13 +1024,13 @@ export default function BeamerPage() {
                             : 'border-white/20 bg-slate-900/80'
                         }`}
                       >
-                        <div className="flex items-center justify-between border-b border-white/10 pb-2 text-xs font-black uppercase">
-                          <span className="text-amber-300 font-mono text-sm">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-1.5 text-[10px] font-black uppercase">
+                          <span className="text-amber-300 font-mono text-xs">
                             {m.table_number ? `Tisch ${m.table_number}` : 'Tisch —'}
                           </span>
                           {live ? (
                             <span className="text-red-300 font-extrabold animate-pulse flex items-center gap-1">
-                              <span className="h-2 w-2 rounded-full bg-red-400 animate-ping" /> LIVE
+                              <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-ping" /> LIVE
                             </span>
                           ) : finished ? (
                             <span className="text-emerald-300 font-extrabold">✓ Fertig</span>
@@ -1035,31 +1039,31 @@ export default function BeamerPage() {
                           )}
                         </div>
 
-                        <div className="my-3 space-y-1.5 text-sm font-black">
+                        <div className="my-2 space-y-1 text-xs font-black">
                           <div
-                            className={`flex justify-between items-center rounded-xl px-3 py-1.5 ${
+                            className={`flex justify-between items-center rounded-lg px-2.5 py-1 ${
                               t1Win ? 'bg-emerald-500/30 text-emerald-200' : 'bg-white/5 text-white'
                             }`}
                           >
-                            <span className="truncate max-w-[170px]">{t1Name}</span>
-                            <span className="font-mono text-base ml-2">
+                            <span className="truncate max-w-[120px]">{t1Name}</span>
+                            <span className="font-mono text-sm ml-1.5">
                               {m.team1_score !== null ? m.team1_score : '-'}
                             </span>
                           </div>
                           <div
-                            className={`flex justify-between items-center rounded-xl px-3 py-1.5 ${
+                            className={`flex justify-between items-center rounded-lg px-2.5 py-1 ${
                               t2Win ? 'bg-emerald-500/30 text-emerald-200' : 'bg-white/5 text-white'
                             }`}
                           >
-                            <span className="truncate max-w-[170px]">{t2Name}</span>
-                            <span className="font-mono text-base ml-2">
+                            <span className="truncate max-w-[120px]">{t2Name}</span>
+                            <span className="font-mono text-sm ml-1.5">
                               {m.team2_score !== null ? m.team2_score : '-'}
                             </span>
                           </div>
                         </div>
 
-                        <div className="text-right text-[10px] font-mono font-bold text-white/50 border-t border-white/5 pt-1.5">
-                          Ansetzung: {formatTime(m.scheduled_time)}
+                        <div className="text-right text-[9px] font-mono font-bold text-white/50 border-t border-white/5 pt-1">
+                          {formatTime(m.scheduled_time)}
                         </div>
                       </div>
                     )
@@ -1187,7 +1191,7 @@ export default function BeamerPage() {
           <span>{tournament?.name || 'Bierpong Tournament'} Beamer Live Screen</span>
           <span className="flex items-center gap-1.5">
             <span>
-              Ansicht: {activeSlide === 'matches' ? 'Spiele & Ergebnisse' : activeSlide === 'standings' ? 'Gruppentabellen' : 'K.-o.-Baum'} (Auto 15s)
+              Ansicht: {activeSlide === 'matches' ? 'Spiele & Ergebnisse' : activeSlide === 'standings' ? 'Gruppentabellen' : 'K.-o.-Baum'} (Auto-Wechsel)
             </span>
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
           </span>

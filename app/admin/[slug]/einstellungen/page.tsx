@@ -37,6 +37,46 @@ type TournamentSettings = {
   additional_qualifier_table_enabled: boolean | null
 }
 
+// VOREINGESTELLTE DESIGN-SETUPS (PRESETS)
+const DESIGN_PRESETS = [
+  {
+    name: '🍺 Biergartengrün',
+    primary: '#16a34a',
+    secondary: '#15803d',
+    description: 'Klassisches Zelt- & Biergarten-Grün',
+  },
+  {
+    name: '🟢 Smaragd Grün (Standard)',
+    primary: '#22c55e',
+    secondary: '#10b981',
+    description: 'Frisches, moderneres Turniermuster',
+  },
+  {
+    name: '🌊 Oktopus Blau',
+    primary: '#0284c7',
+    secondary: '#0369a1',
+    description: 'Sportliches Tiefblau',
+  },
+  {
+    name: '🎉 Party Pink & Violett',
+    primary: '#ec4899',
+    secondary: '#8b5cf6',
+    description: 'Knallige Event-Atmosphäre',
+  },
+  {
+    name: '🔥 Feuerrot',
+    primary: '#ef4444',
+    secondary: '#b91c1c',
+    description: 'Dynamisches Wettkampf-Rot',
+  },
+  {
+    name: '🏆 Gold & Dunkel',
+    primary: '#eab308',
+    secondary: '#ca8a04',
+    description: 'Edler Champions-Look',
+  },
+]
+
 export default function AdminEinstellungenPage() {
   const params = useParams()
   const rawSlug = (params?.slug as string) || ''
@@ -52,6 +92,7 @@ export default function AdminEinstellungenPage() {
   const [tournament, setTournament] = useState<TournamentData | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
   const [statusMessage, setStatusMessage] = useState<{
     type: 'success' | 'error'
     text: string
@@ -63,6 +104,8 @@ export default function AdminEinstellungenPage() {
   const [registrationOpen, setRegistrationOpen] = useState(true)
 
   // 2. Design & Branding
+  const [designMode, setDesignMode] = useState<'preset' | 'custom'>('preset')
+  const [selectedPresetName, setSelectedPresetName] = useState('🟢 Smaragd Grün (Standard)')
   const [primaryColor, setPrimaryColor] = useState('#22c55e')
   const [secondaryColor, setSecondaryColor] = useState('#10b981')
   const [logoUrl, setLogoUrl] = useState('')
@@ -73,11 +116,7 @@ export default function AdminEinstellungenPage() {
   const [matchDuration, setMatchDuration] = useState<number>(10)
   const [startTime, setStartTime] = useState<string>('14:00')
 
-  // 4. Qualifikations- & Tabellen-Settings + Spiel um Platz 3
-  const [directQualifiers, setDirectQualifiers] = useState<number>(2)
-  const [additionalQualifiers, setAdditionalQualifiers] = useState<number>(0)
-  const [additionalQualifierPosition, setAdditionalQualifierPosition] = useState<number>(3)
-  const [additionalTableEnabled, setAdditionalTableEnabled] = useState<boolean>(false)
+  // 4. K.-o.-Phase & Platz 3
   const [hasThirdPlaceMatch, setHasThirdPlaceMatch] = useState<boolean>(false)
 
   // 5. Startgeld & Zahlungsoptionen
@@ -149,6 +188,17 @@ export default function AdminEinstellungenPage() {
       setSecondaryColor(t.secondary_color || '#10b981')
       setLogoUrl(t.logo_url || '')
 
+      // Prüfen, ob die geladenen Farben einem Preset entsprechen
+      const matchedPreset = DESIGN_PRESETS.find(
+        (p) => p.primary === t.primary_color && p.secondary === t.secondary_color
+      )
+      if (matchedPreset) {
+        setDesignMode('preset')
+        setSelectedPresetName(matchedPreset.name)
+      } else {
+        setDesignMode('custom')
+      }
+
       // Zahlungsdaten
       setEntryFee(t.entry_fee ?? 0)
       setCashEnabled(t.cash_enabled ?? true)
@@ -174,16 +224,66 @@ export default function AdminEinstellungenPage() {
         setTableCount(st.table_count ?? 8)
         setMatchDuration(st.match_duration_minutes ?? 10)
         setStartTime(st.start_time || '14:00')
-        setDirectQualifiers(st.direct_qualifiers ?? 2)
-        setAdditionalQualifiers(st.additional_qualifiers ?? 0)
-        setAdditionalQualifierPosition(st.additional_qualifier_position ?? 3)
-        setAdditionalTableEnabled(Boolean(st.additional_qualifier_table_enabled))
       }
     } catch (err: any) {
       const msg = err?.message || err?.details || 'Fehler beim Laden der Einstellungen.'
       setStatusMessage({ type: 'error', text: msg })
     } finally {
       setLoading(false)
+    }
+  }
+
+  // LOGO UPLOAD HANDLER FÜR SUPABASE STORAGE
+  async function handleLogoFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !tournament?.id) return
+
+    setUploadingLogo(true)
+    setStatusMessage(null)
+
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${tournament.id}_${Date.now()}.${fileExt}`
+      const filePath = `logos/${fileName}`
+
+      // Versuche das Bild in den Supabase Bucket 'tournament-logos' hochzuladen
+      const { error: uploadError } = await supabase.storage
+        .from('tournament-logos')
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) {
+        throw new Error(
+          `Storage Fehler: ${uploadError.message}. Stelle sicher, dass der Bucket 'tournament-logos' in Supabase existiert.`
+        )
+      }
+
+      // Öffentliche URL abrufen
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('tournament-logos').getPublicUrl(filePath)
+
+      setLogoUrl(publicUrl)
+      setStatusMessage({
+        type: 'success',
+        text: 'Turnierlogo erfolgreich hochgeladen! Klicke unten auf Speichern.',
+      })
+    } catch (err: any) {
+      console.error('Logo upload error:', err)
+      setStatusMessage({
+        type: 'error',
+        text: err.message || 'Fehler beim Hochladen des Logos.',
+      })
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  function handlePresetSelect(presetName: string) {
+    const preset = DESIGN_PRESETS.find((p) => p.name === presetName)
+    if (preset) {
+      setSelectedPresetName(preset.name)
+      setPrimaryColor(preset.primary)
+      setSecondaryColor(preset.secondary)
     }
   }
 
@@ -226,10 +326,6 @@ export default function AdminEinstellungenPage() {
         table_count: tableCount,
         match_duration_minutes: matchDuration,
         start_time: startTime,
-        direct_qualifiers: directQualifiers,
-        additional_qualifiers: additionalQualifiers,
-        additional_qualifier_position: additionalQualifierPosition,
-        additional_qualifier_table_enabled: additionalTableEnabled || additionalQualifiers > 0,
       }
 
       const { data: existingSettings } = await supabase
@@ -291,7 +387,7 @@ export default function AdminEinstellungenPage() {
           </span>
           <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">Turnier-Einstellungen</h1>
           <p className="mt-1 text-xs text-slate-400">
-            Verwalte Grunddaten, Branding, Spielplan, Qualifikations-Regeln und Zahlungswege.
+            Verwalte Grunddaten, Branding, Spielplan und Zahlungswege.
           </p>
         </div>
 
@@ -365,7 +461,7 @@ export default function AdminEinstellungenPage() {
           <div>
             <div className="text-xs font-black text-white">Team-Anmeldungen erlauben</div>
             <div className="text-[10px] text-slate-400">
-              Steuert, ob sich neue Teams öffentlich anmelden dürfen (blendet den Anmelde-Button auf öffentlichen Seiten live aus).
+              Steuert, ob sich neue Teams öffentlich anmelden dürfen.
             </div>
           </div>
 
@@ -383,73 +479,185 @@ export default function AdminEinstellungenPage() {
         </div>
       </section>
 
-      {/* 2. DESIGN & BRANDING */}
-      <section className="w-full rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-4">
+      {/* 2. DESIGN & BRANDING (MIT PRESETS UND BILD-UPLOAD) */}
+      <section className="w-full rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-6">
         <h2 className="text-lg font-black text-white border-b border-white/10 pb-3">
           2. Design &amp; Branding
         </h2>
 
-        <div className="grid gap-4 sm:grid-cols-3 items-end">
-          <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
-              Primärfarbe (Hauptakzent)
-            </label>
-            <div className="flex items-center gap-3">
+        {/* TURNIERLOGO (BILD-UPLOAD & URL) */}
+        <div className="space-y-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+          <label className="block text-xs font-black text-white">
+            🖼️ Turnier-Logo
+          </label>
+          <p className="text-[10px] text-slate-400">
+            Lade ein Bild von deinem Gerät hoch (JPG, PNG, WebP) oder trage direkt eine Bild-URL ein.
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2 items-start pt-2">
+            {/* Datei Upload */}
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black uppercase text-slate-400">
+                1. Bild-Datei hochladen
+              </label>
               <input
-                type="color"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                className="h-10 w-12 cursor-pointer rounded-xl border-0 bg-transparent"
+                type="file"
+                accept="image/*"
+                onChange={handleLogoFileUpload}
+                disabled={uploadingLogo}
+                className="w-full cursor-pointer rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-xs file:font-black file:text-white hover:file:bg-white/20"
               />
+              {uploadingLogo && (
+                <p className="text-[10px] font-bold text-emerald-400 animate-pulse">
+                  Upload läuft …
+                </p>
+              )}
+            </div>
+
+            {/* URL EINGABE */}
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black uppercase text-slate-400">
+                2. Oder Bild-URL eingeben
+              </label>
               <input
-                type="text"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-mono font-bold text-white outline-none focus:border-emerald-500"
+                type="url"
+                placeholder="https://beispiel.de/logo.png"
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs font-bold text-white outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
-              Sekundärfarbe (Gradients)
-            </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={secondaryColor}
-                onChange={(e) => setSecondaryColor(e.target.value)}
-                className="h-10 w-12 cursor-pointer rounded-xl border-0 bg-transparent"
-              />
-              <input
-                type="text"
-                value={secondaryColor}
-                onChange={(e) => setSecondaryColor(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-mono font-bold text-white outline-none focus:border-emerald-500"
-              />
+          {/* VORSCHAU */}
+          {logoUrl && (
+            <div className="mt-3 rounded-xl border border-white/10 bg-slate-900 p-3 text-center">
+              <span className="text-[10px] text-slate-500 uppercase font-black block mb-2">Logo Vorschau</span>
+              <img src={logoUrl} alt="Logo Preview" className="mx-auto h-16 w-auto object-contain" />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
-              Turnier-Logo (Bild-URL)
-            </label>
-            <input
-              type="url"
-              placeholder="https://beispiel.de/logo.png"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
-            />
-          </div>
+          )}
         </div>
 
-        {logoUrl && (
-          <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-3 text-center">
-            <span className="text-[10px] text-slate-500 uppercase font-black block mb-2">Vorschau Logo</span>
-            <img src={logoUrl} alt="Logo Preview" className="mx-auto h-16 w-auto object-contain" />
+        {/* DESIGN FARBSCHEMA - TOGGLE PRESET VS CUSTOM */}
+        <div className="space-y-4 pt-2">
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-black text-white">
+              🎨 Farb-Design des Turniers
+            </label>
+            <div className="flex rounded-xl bg-slate-950 p-1 border border-white/10">
+              <button
+                type="button"
+                onClick={() => setDesignMode('preset')}
+                className={`rounded-lg px-3 py-1 text-xs font-black transition ${
+                  designMode === 'preset'
+                    ? 'bg-white/15 text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Voreingestellte Themes
+              </button>
+              <button
+                type="button"
+                onClick={() => setDesignMode('custom')}
+                className={`rounded-lg px-3 py-1 text-xs font-black transition ${
+                  designMode === 'custom'
+                    ? 'bg-white/15 text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Eigene Farben
+              </button>
+            </div>
           </div>
-        )}
+
+          {/* OPTION A: PRESETS */}
+          {designMode === 'preset' && (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {DESIGN_PRESETS.map((preset) => {
+                const isSelected = selectedPresetName === preset.name && primaryColor === preset.primary
+
+                return (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() => handlePresetSelect(preset.name)}
+                    className={`flex flex-col justify-between rounded-2xl border p-4 text-left transition ${
+                      isSelected
+                        ? 'border-emerald-500 bg-emerald-500/15 ring-2 ring-emerald-500/30'
+                        : 'border-white/10 bg-slate-950/60 hover:border-white/20'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-xs text-white">{preset.name}</span>
+                        {isSelected && <span className="text-xs font-black text-emerald-400">✓ Aktiv</span>}
+                      </div>
+                      <p className="mt-1 text-[10px] text-slate-400">{preset.description}</p>
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-2">
+                      <div
+                        className="h-4 w-8 rounded-full border border-white/20"
+                        style={{ backgroundColor: preset.primary }}
+                        title="Primärfarbe"
+                      />
+                      <div
+                        className="h-4 w-8 rounded-full border border-white/20"
+                        style={{ backgroundColor: preset.secondary }}
+                        title="Sekundärfarbe"
+                      />
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {/* OPTION B: CUSTOM FARBWAHL */}
+          {designMode === 'custom' && (
+            <div className="grid gap-4 sm:grid-cols-2 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                  Primärfarbe (Hauptakzent)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="h-10 w-12 cursor-pointer rounded-xl border-0 bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-xs font-mono font-bold text-white outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                  Sekundärfarbe (Gradients / Badges)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={secondaryColor}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    className="h-10 w-12 cursor-pointer rounded-xl border-0 bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    value={secondaryColor}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-xs font-mono font-bold text-white outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* 3. SPIELFELD & ZEITPLANUNG */}
@@ -515,70 +723,22 @@ export default function AdminEinstellungenPage() {
         </div>
       </section>
 
-      {/* 4. QUALIFIKATION & TABELLEN-SETTINGS */}
+      {/* 4. K.-O.-PHASE & PLATZ 3 */}
       <section className="w-full rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-4">
         <h2 className="text-lg font-black text-white border-b border-white/10 pb-3">
-          4. Qualifikation &amp; K.-o.-Aufstieg
+          4. K.-o.-Phase
         </h2>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
-              Direkt-Qualifikanten pro Gruppe (z. B. Top 2)
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="8"
-              value={directQualifiers}
-              onChange={(e) => setDirectQualifiers(Number(e.target.value) || 1)}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
-              Anzahl Wildcard-Qualifikanten (z. B. 2 beste 3. Plätze)
-            </label>
-            <input
-              type="number"
-              min="0"
-              max="16"
-              value={additionalQualifiers}
-              onChange={(e) => setAdditionalQualifiers(Number(e.target.value) || 0)}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
-            />
-          </div>
-        </div>
-
-        {/* WILDCARD TABELLE */}
-        <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4">
-          <div>
-            <div className="text-xs font-black text-white">Wildcard-Vergleichstabelle erzwingen</div>
-            <div className="text-[10px] text-slate-400">
-              Aktiviert die Vergleichstabelle der Drittplatzierten auch ohne manuelle Wildcards.
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setAdditionalTableEnabled(!additionalTableEnabled)}
-            className={`rounded-xl px-4 py-2 text-xs font-black transition border ${
-              additionalTableEnabled || additionalQualifiers > 0
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                : 'bg-slate-800 text-slate-400 border-white/10'
-            }`}
-          >
-            {additionalTableEnabled || additionalQualifiers > 0 ? '✓ Aktiv' : 'Inaktiv'}
-          </button>
-        </div>
+        <p className="text-xs text-slate-400">
+          💡 <strong>Hinweis:</strong> Die genaue Gruppenanzahl und Qualifikationsregeln stellst du direkt im Bereich <strong>&quot;Gruppen&quot;</strong> ein.
+        </p>
 
         {/* SPIEL UM PLATZ 3 TOGGLE */}
         <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4">
           <div>
             <div className="text-xs font-black text-white">Spiel um Platz 3 austragen</div>
             <div className="text-[10px] text-slate-400">
-              Erstellt in der KO-Phase automatisch ein Match zwischen den Verlierern beider Halbfinals für ein vollständiges Treppchen.
+              Erstellt in der K.-o.-Phase ein zusätzliches Match zwischen den Verlierern der Halbfinals.
             </div>
           </div>
 
@@ -681,7 +841,7 @@ export default function AdminEinstellungenPage() {
                 <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Verwendungszweck</label>
                 <input
                   type="text"
-                  placeholder="z.B. Turnier 2026 + Teamname"
+                  placeholder="z.B. Turnier + Teamname"
                   value={bankReference}
                   onChange={(e) => setBankReference(e.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs font-bold text-white outline-none"
@@ -696,7 +856,7 @@ export default function AdminEinstellungenPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs font-black text-white">💳 PayPal-Zahlung</div>
-              <div className="text-[10px] text-slate-400">Ermöglicht direkte Zahlungen per PayPal-Link oder Checkout.</div>
+              <div className="text-[10px] text-slate-400">Ermöglicht direkte Zahlungen per PayPal-Link.</div>
             </div>
             <button
               type="button"

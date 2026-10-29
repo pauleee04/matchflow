@@ -323,8 +323,56 @@ export default function AdminSpielePage() {
     }
   }
 
+  // SPIELE / SPIELPLAN MANUELL ZURÜCKSETZEN
+  async function handleResetMatches() {
+    if (!tournament?.id) return
+
+    const confirmStep1 = confirm(
+      'Möchtest du wirklich alle erstellten Spiele und den gesamten Spielplan zurücksetzen?'
+    )
+    if (!confirmStep1) return
+
+    const confirmStep2 = confirm(
+      '⚠️ ACHTUNG / SYSTEM-ABFRAGE:\n\nAlle Ansetzungen und bereits eingetragenen Spielergebnisse für dieses Turnier werden unwiderruflich gelöscht!\n\nDie bestehenden Gruppen und zugewiesenen Teams BLEIBEN ERHALTEN.\n\nBist du dir ganz sicher, dass du den Spielplan zurücksetzen willst?'
+    )
+    if (!confirmStep2) return
+
+    setSaving(true)
+    setStatusMessage(null)
+
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .delete()
+        .eq('tournament_id', tournament.id)
+
+      if (error) throw error
+
+      await triggerBroadcast()
+      await loadData()
+
+      setStatusMessage({
+        type: 'success',
+        text: 'Der Spielplan und alle eingetragenen Spiele wurden erfolgreich gelöscht. Die Gruppen bleiben bestehen.',
+      })
+    } catch (err: any) {
+      console.error('Reset matches error:', err)
+      setStatusMessage({
+        type: 'error',
+        text: `Fehler beim Zurücksetzen der Spiele: ${err.message || err}`,
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // ERGEBNIS SPEICHERN / STATUS ÄNDERN
-  async function handleUpdateMatch(matchId: number, team1Score: number | null, team2Score: number | null, newStatus: 'scheduled' | 'live' | 'finished') {
+  async function handleUpdateMatch(
+    matchId: number,
+    team1Score: number | null,
+    team2Score: number | null,
+    newStatus: 'scheduled' | 'live' | 'finished'
+  ) {
     if (!tournament?.id) return
 
     try {
@@ -547,12 +595,22 @@ export default function AdminSpielePage() {
           </div>
         )}
 
-        <div className="flex justify-end pt-2 border-t border-white/10">
+        {/* AKTIONEN: GENERIEREN UND ZURÜCKSETZEN */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-white/10">
+          <button
+            type="button"
+            onClick={handleResetMatches}
+            disabled={saving || matches.length === 0}
+            className="w-full sm:w-auto rounded-xl border border-red-500/30 bg-red-500/15 px-4 py-3 text-xs font-black text-red-300 hover:bg-red-500/25 transition disabled:opacity-40"
+          >
+            🗑️ Spielplan &amp; Spiele zurücksetzen
+          </button>
+
           <button
             type="button"
             onClick={handleGenerateGroupSchedule}
             disabled={saving || groups.length === 0}
-            className="rounded-xl px-5 py-3 text-xs font-black text-slate-950 shadow-md transition hover:opacity-90 disabled:opacity-40"
+            className="w-full sm:w-auto rounded-xl px-5 py-3 text-xs font-black text-slate-950 shadow-md transition hover:opacity-90 disabled:opacity-40"
             style={{ backgroundColor: primaryColor }}
           >
             {saving ? 'Generiere Spielplan …' : '⚡ Gruppen-Spielplan automatisch erstellen'}
