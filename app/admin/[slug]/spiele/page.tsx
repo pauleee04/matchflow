@@ -465,7 +465,7 @@ export default function AdminSpielePage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 w-full max-w-full overflow-hidden">
       {statusMessage && (
         <div
           className={`rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
@@ -478,22 +478,22 @@ export default function AdminSpielePage() {
         </div>
       )}
 
-      {/* METRIK CARDS */}
-      <section className="grid gap-4 sm:grid-cols-4">
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Spiele Gesamt</p>
+      {/* METRIK CARDS - FREI UND FLEXIBEL AUF MOBIL & DESKTOP */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-400">Spiele Gesamt</p>
           <p className="mt-2 text-3xl font-black text-white">{totalMatches}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">🔴 Live / Aktiv</p>
+        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-400">🔴 Live / Aktiv</p>
           <p className="mt-2 text-3xl font-black text-red-400">{liveMatches}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Offen</p>
+        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-400">Offen</p>
           <p className="mt-2 text-3xl font-black text-amber-400">{openMatches}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Beendet</p>
+        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-400">Beendet</p>
           <p className="mt-2 text-3xl font-black text-emerald-400">{finishedMatches}</p>
         </div>
       </section>
@@ -715,7 +715,7 @@ export default function AdminSpielePage() {
                 {/* TISCH SPIELE GRID */}
                 {!isCollapsed && (
                   <div className="border-t border-white/10 p-5 bg-slate-950/30">
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {tableMatches.map((match) => (
                         <MatchCard
                           key={match.id}

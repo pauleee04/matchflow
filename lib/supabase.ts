@@ -29,3 +29,14 @@ export function getAdminSupabase() {
     },
   });
 }
+
+
+export async function fetchWithTimeout<T>(
+  fetchPromise: Promise<T>,
+  ms = 4000
+): Promise<T> {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Netzwerk-Timeout')), ms)
+  )
+  return Promise.race([fetchPromise, timeout])
+}

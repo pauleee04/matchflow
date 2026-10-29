@@ -260,6 +260,13 @@ export default function CleanPublicTeamPage() {
   const [paymentMessage, setPaymentMessage] = useState('')
   const [teamRulesPreview, setTeamRulesPreview] = useState<TeamRulesPreview | null>(null)
 
+  // STATI FÜR EDIT-MODE (NUR SPIELER-NAMEN BEARBEITEN)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editPlayer1, setEditPlayer1] = useState('')
+  const [editPlayer2, setEditPlayer2] = useState('')
+  const [savingDetails, setSavingDetails] = useState(false)
+  const [detailsMessage, setDetailsMessage] = useState('')
+
   useEffect(() => {
     document.body.classList.add('hide-nav')
     return () => {
@@ -309,7 +316,6 @@ export default function CleanPublicTeamPage() {
 
       // 2. Fallback: Direktes Laden aus den Supabase Tabellen
       if (!loadedTeam) {
-        // A) Turnier anhand des Slugs laden
         let { data: tourneyData } = await supabase
           .from('tournaments')
           .select('*')
@@ -320,7 +326,6 @@ export default function CleanPublicTeamPage() {
           loadedTournament = tourneyData as TournamentInfo
         }
 
-        // B) Team anhand von ID oder Token suchen
         const isNumericId = !isNaN(Number(teamIdOrToken)) && Number(teamIdOrToken) > 0
         let teamRes
 
@@ -338,7 +343,6 @@ export default function CleanPublicTeamPage() {
           loadedTeam = teamRes.data as Team
         }
 
-        // C) Wenn Team gefunden wurde, fehlende Turnier-, Gruppen- & Spieldaten nachladen
         if (loadedTeam) {
           const tournamentId = loadedTeam.tournament_id || loadedTournament?.id
 
@@ -348,11 +352,9 @@ export default function CleanPublicTeamPage() {
               if (tData) loadedTournament = tData as TournamentInfo
             }
 
-            // Alle Teams des Turniers laden
             const { data: allTeams } = await supabase.from('teams').select('*').eq('tournament_id', tournamentId)
             loadedTeams = (allTeams || []) as Team[]
 
-            // Gruppe des Teams bestimmen
             const { data: groupMember } = await supabase
               .from('group_members')
               .select('group_id')
@@ -365,7 +367,6 @@ export default function CleanPublicTeamPage() {
               if (gData) loadedGroup = gData as Group
             }
 
-            // Alle Matches des Turniers laden
             const { data: matchesData } = await supabase.from('matches').select('*').eq('tournament_id', tournamentId)
             if (matchesData) {
               loadedMatches = matchesData.map((m) => normalizeMatch(m as Record<string, unknown>))
@@ -385,6 +386,12 @@ export default function CleanPublicTeamPage() {
       setTeams(loadedTeams)
       setMatches(loadedMatches)
       setError('')
+
+      // Formular-Felder initialisieren (nur falls nicht gerade editiert wird)
+      if (!isEditing) {
+        setEditPlayer1(loadedTeam.player1 || '')
+        setEditPlayer2(loadedTeam.player2 || '')
+      }
 
       // 3. Turnier-Regeln Vorschau laden
       if (loadedTournament?.id) {
@@ -408,7 +415,7 @@ export default function CleanPublicTeamPage() {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [slug, rawSlug, rawTeamId])
+  }, [slug, rawSlug, rawTeamId, isEditing])
 
   useEffect(() => {
     void loadData()
@@ -423,6 +430,48 @@ export default function CleanPublicTeamPage() {
       void supabase.removeChannel(channel)
     }
   }, [loadData])
+
+  // SPIELER-NAMEN SPEICHERN FUNCTION
+  async function handleSaveDetails(e: React.FormEvent) {
+    e.preventDefault()
+    if (!team) return
+    setSavingDetails(true)
+    setDetailsMessage('')
+
+    try {
+      const finalP1 = editPlayer1.trim()
+      const finalP2 = editPlayer2.trim()
+
+      const { error: updateErr } = await supabase
+        .from('teams')
+        .update({
+          player1: finalP1,
+          player2: finalP2,
+        })
+        .eq('id', team.id)
+
+      if (updateErr) {
+        setDetailsMessage('Fehler beim Speichern: ' + updateErr.message)
+      } else {
+        setTeam((prev) =>
+          prev
+            ? {
+                ...prev,
+                player1: finalP1,
+                player2: finalP2,
+              }
+            : prev
+        )
+        setDetailsMessage('✓ Spieler-Namen erfolgreich aktualisiert!')
+        setIsEditing(false)
+        await loadData(true)
+      }
+    } catch {
+      setDetailsMessage('Netzwerkfehler beim Speichern.')
+    } finally {
+      setSavingDetails(false)
+    }
+  }
 
   async function changePaymentMethod(method: 'bar' | 'paypal' | 'ueberweisung') {
     if (!team || team.payment_status === 'bezahlt') return
@@ -678,7 +727,6 @@ export default function CleanPublicTeamPage() {
   const primaryRgba40 = hexToRgba(primaryColor, 0.40)
   const tournamentSlugParam = tournament?.slug || tournament?.id || rawSlug || '1'
 
-  // EINMALIGE WEITERLEITUNG FÜR DEN TURNIERSIEGER
   useEffect(() => {
     if (isWinnerTeam && team?.id && tournament?.id) {
       const storageKey = `winner_redirect_${tournament.id}_${team.id}`
@@ -799,7 +847,7 @@ export default function CleanPublicTeamPage() {
         {/* 1. KONTROLLZENTRUM BLOCK */}
         <section className="rounded-[24px] border p-6 sm:p-8 shadow-xl" style={cardStyle}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-center gap-5">
+            <div className="flex items-center gap-5 min-w-0 flex-1">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border flex items-center justify-center text-3xl shadow-inner overflow-hidden shrink-0" style={innerBoxStyle}>
                 {tournament?.logo_url ? (
                   <img src={tournament.logo_url} alt={tournament.name || 'Logo'} className="w-full h-full object-contain p-1.5" />
@@ -807,14 +855,87 @@ export default function CleanPublicTeamPage() {
                   '🏆'
                 )}
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-[11px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
                   Kontrollzentrum
                 </span>
-                <h1 className="text-2xl sm:text-4xl font-black tracking-tight mt-1 text-white">{team.name}</h1>
-                <p className="text-sm font-semibold text-slate-300 mt-1">
-                  👤 Spieler: {team.player1} &amp; {team.player2}
-                </p>
+
+                {!isEditing ? (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <h1 className="text-2xl sm:text-4xl font-black tracking-tight mt-1 text-white truncate">{team.name}</h1>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditPlayer1(team.player1 || '')
+                          setEditPlayer2(team.player2 || '')
+                          setIsEditing(true)
+                          setDetailsMessage('')
+                        }}
+                        className="mt-1 px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-300 transition shrink-0"
+                      >
+                        ✏️ Spieler bearbeiten
+                      </button>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-300 mt-1">
+                      👤 Spieler: {team.player1 || 'Name offen'} &amp; {team.player2 || 'Name offen'}
+                    </p>
+                  </>
+                ) : (
+                  <form onSubmit={handleSaveDetails} className="mt-2 space-y-3 max-w-lg">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                          Spieler 1 Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editPlayer1}
+                          onChange={(e) => setEditPlayer1(e.target.value)}
+                          placeholder="Name Spieler 1"
+                          className="w-full px-3 py-2 rounded-xl border bg-black/60 text-white text-sm font-bold focus:outline-none focus:ring-2"
+                          style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                          Spieler 2 Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editPlayer2}
+                          onChange={(e) => setEditPlayer2(e.target.value)}
+                          placeholder="Name Spieler 2"
+                          className="w-full px-3 py-2 rounded-xl border bg-black/60 text-white text-sm font-bold focus:outline-none focus:ring-2"
+                          style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        type="submit"
+                        disabled={savingDetails}
+                        className="px-4 py-2 rounded-xl text-xs font-black text-black transition shadow"
+                        style={{ backgroundColor: primaryColor }}
+                      >
+                        {savingDetails ? 'Speichere...' : '💾 Speichern'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditing(false)}
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 border border-white/10 bg-white/5 hover:bg-white/10 transition"
+                      >
+                        Abbrechen
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {detailsMessage && (
+                  <p className="text-xs font-bold mt-2 text-emerald-300">
+                    {detailsMessage}
+                  </p>
+                )}
               </div>
             </div>
 

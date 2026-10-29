@@ -1359,7 +1359,7 @@ export default function AdminGruppenPage() {
         </div>
       </section>
 
-      {/* AKTUELLE GRUPPEN MIT SCHÖNEREM DESIGN, SUCHFUNKTION & AUFLÖSEN-BUTTON */}
+      {/* AKTUELLE GRUPPEN MIT VOLLER HÖHE UND KOMPAKTER TEAM-DARSTELLUNG */}
       {groups.length > 0 && (
         <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-xl backdrop-blur-xl space-y-6 w-full">
           {/* HEADER MIT SUCHLEISTE & AUFLÖSEN-BUTTON */}
@@ -1368,7 +1368,7 @@ export default function AdminGruppenPage() {
               <div className="flex items-center gap-3">
                 <h2 className="text-xl font-black text-white">Aktuelle Gruppen</h2>
                 <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-0.5 text-xs font-extrabold text-emerald-400">
-                  {groups.length} Gruppen active
+                  {groups.length} Gruppen aktiv
                 </span>
               </div>
               <p className="mt-1 text-xs text-slate-400">
@@ -1408,15 +1408,15 @@ export default function AdminGruppenPage() {
             </div>
           </div>
 
-          {/* SUCKERGEBNISSE WARNUNG / HINWEIS */}
+          {/* SUCHGERGEBNISSE WARNUNG / HINWEIS */}
           {filteredGroups.length === 0 && (
             <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-8 text-center text-xs font-bold text-slate-400">
               Keine Gruppen oder Teams gefunden für &quot;{groupSearchQuery}&quot;.
             </div>
           )}
 
-          {/* GRUPPEN GRID */}
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full">
+          {/* GRUPPEN GRID - NACHHALTIGES RASTER OHNE INNERES SCROLLEN */}
+          <div className="grid gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full">
             {filteredGroups.map((group) => {
               const groupItems = groupTeamMap[group.id] ?? []
               const isOdd = groupItems.length % 2 !== 0
@@ -1469,8 +1469,8 @@ export default function AdminGruppenPage() {
                       </div>
                     )}
 
-                    {/* TEAM LISTE */}
-                    <div className="space-y-2 max-h-80 overflow-y-auto pr-1 pt-0.5">
+                    {/* TEAM LISTE OHNE INNERES SCROLLEN */}
+                    <div className="space-y-2 pt-0.5">
                       {groupItems.length === 0 ? (
                         <p className="text-xs text-slate-500 py-4 text-center">Keine Teams in dieser Gruppe</p>
                       ) : (
@@ -1487,8 +1487,8 @@ export default function AdminGruppenPage() {
                                   : 'border-white/5 bg-slate-900/90 hover:bg-slate-900'
                               }`}
                             >
-                              <div className="flex items-center justify-between">
-                                <span className="font-extrabold text-xs text-white truncate max-w-[140px]" title={team.name}>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-extrabold text-xs text-white truncate max-w-[150px]" title={team.name}>
                                   <span className="mr-1.5 font-mono text-[10px] text-slate-500">#{idx + 1}</span>
                                   {team.name}
                                 </span>
@@ -1499,7 +1499,7 @@ export default function AdminGruppenPage() {
                                 )}
                               </div>
 
-                              {/* TAUSCHEN UND VERSCHIEBEN AKTIONEN */}
+                              {/* TAUSCHEN UND VERSCHIEBEN AKTIONEN IN EINER KOMPAKTEN ZEILE */}
                               <div className="flex items-center gap-1.5 pt-1.5 border-t border-white/5">
                                 {/* Direct Group Move */}
                                 <select
@@ -1511,7 +1511,7 @@ export default function AdminGruppenPage() {
                                     }
                                   }}
                                   disabled={saving}
-                                  className="w-1/2 rounded-lg border border-white/10 bg-slate-950 px-1.5 py-1 text-[9px] font-bold text-slate-300 outline-none hover:border-emerald-500/50"
+                                  className="w-1/2 rounded-lg border border-white/10 bg-slate-950 px-1.5 py-1 text-[9px] font-bold text-slate-300 outline-none hover:border-emerald-500/50 truncate"
                                 >
                                   <option value="" disabled>In Gruppe ...</option>
                                   {groups

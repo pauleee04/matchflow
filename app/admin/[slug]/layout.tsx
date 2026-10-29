@@ -23,6 +23,7 @@ type TournamentData = {
   logo_url: string | null
   primary_color: string | null
   secondary_color: string | null
+  background_style: string | null
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -39,12 +40,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     async function loadTournament() {
       const { data } = await publicSupabase
         .from('tournaments')
-        .select('id, name, slug, logo_url, primary_color, secondary_color')
+        .select('id, name, slug, logo_url, primary_color, secondary_color, background_style')
         .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
         .maybeSingle()
 
       if (data) {
-        setTournament(data)
+        setTournament(data as TournamentData)
       }
     }
     void loadTournament()
@@ -90,7 +91,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div
       className="relative min-h-screen p-4 sm:p-6 lg:p-8 space-y-8 text-slate-100 transition-colors duration-500 bg-[#04120c]"
       style={{
-        backgroundImage: `radial-gradient(circle at 50% 0%, ${primaryColor}25 0%, transparent 70%), radial-gradient(circle at 100% 100%, ${secondaryColor}18 0%, transparent 60%)`,
+        background: tournament?.background_style || `radial-gradient(circle at 50% 0%, ${primaryColor}25 0%, transparent 70%), radial-gradient(circle at 100% 100%, ${secondaryColor}18 0%, transparent 60%)`,
       }}
     >
       {/* GLOBAL OVERRIDE FÜR DIE TRANSPARENZ ALLER UNTERSEITEN-KARTEN */}
@@ -106,15 +107,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       `}</style>
 
       {/* 1. GROSSES ZENTRALES WASSERZEICHEN IM SEITENHINTERGRUND */}
-      {tournament?.logo_url && (
-        <div className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden select-none">
+      <div className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden select-none">
+        {tournament?.logo_url ? (
           <img
             src={tournament.logo_url}
             alt=""
-            className="h-[700px] w-[700px] object-contain opacity-25 blur-[0.5px]"
+            draggable={false}
+            className="h-[650px] w-[650px] max-w-[80vw] max-h-[80vh] object-contain opacity-20 filter grayscale blur-[0.5px]"
           />
-        </div>
-      )}
+        ) : (
+          <span
+            className="select-none text-center font-black uppercase tracking-[0.12em] text-7xl sm:text-9xl opacity-10"
+            style={{ color: primaryColor, lineHeight: 1 }}
+          >
+            {tournament?.name || 'ADMIN'}
+          </span>
+        )}
+      </div>
 
       {/* 2. ADMIN CONTROL PANEL HEADER */}
       <header className="relative z-10 overflow-hidden rounded-3xl border border-emerald-500/20 bg-[#061710]/45 p-6 shadow-2xl backdrop-blur-md space-y-5">

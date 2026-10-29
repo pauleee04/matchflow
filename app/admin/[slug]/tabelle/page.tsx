@@ -203,7 +203,7 @@ export default function AdminTabellePage() {
         })
       })
 
-      // Nur beendeteGruppenspiele berücksichtigten
+      // Nur beendete Gruppenspiele berücksichtigen
       const groupMatches = matches.filter(
         (m) =>
           m.group_id === group.id &&
@@ -282,27 +282,27 @@ export default function AdminTabellePage() {
   }
 
   return (
-    <div className="space-y-8 w-full">
+    <div className="space-y-8 w-full max-w-full overflow-hidden">
       {error && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/20 p-4 text-xs font-extrabold text-red-300 backdrop-blur-md">
           {error}
         </div>
       )}
 
-      {/* HEADER CARDS */}
-      <section className="grid gap-4 sm:grid-cols-3 w-full">
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Gruppen Gesamt</p>
+      {/* HEADER CARDS - FREI UND FLEXIBEL AUF MOBIL & DESKTOP */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-400">Gruppen Gesamt</p>
           <p className="mt-2 text-3xl font-black text-white">{groups.length}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Absolvierte Gruppenspiele</p>
+        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-400">Absolvierte Gruppenspiele</p>
           <p className="mt-2 text-3xl font-black text-emerald-400">
             {totalFinishedGroupGames} <span className="text-xs text-slate-500">/ {totalGroupGames}</span>
           </p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Qualifikation pro Gruppe</p>
+        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-400">Qualifikation pro Gruppe</p>
           <p className="mt-2 text-3xl font-black" style={{ color: primaryColor }}>
             Top {qualifiersPerGroup} <span className="text-xs text-slate-400 font-bold">K.-o.-Einzug</span>
           </p>
@@ -319,7 +319,7 @@ export default function AdminTabellePage() {
           {groupStandings.map(({ group, standings }) => (
             <div
               key={group.id}
-              className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-4"
+              className="rounded-3xl border border-white/10 bg-slate-900/50 p-4 sm:p-6 shadow-lg backdrop-blur-xl space-y-4 overflow-hidden"
             >
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <h3 className="text-lg font-black text-white">{group.name}</h3>
@@ -328,22 +328,23 @@ export default function AdminTabellePage() {
                 </span>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              {/* HORIZONTALE SCROLLBAR FÜR DIGITALE MOBILE GERÄTE */}
+              <div className="overflow-x-auto rounded-xl">
+                <table className="w-full text-left text-xs min-w-[540px]">
                   <thead>
-                    <tr className="border-b border-white/10 text-[10px] font-black uppercase text-slate-400">
-                      <th className="py-2.5 px-2 text-center">#</th>
+                    <tr className="border-b border-white/10 text-[10px] font-black uppercase text-slate-400 whitespace-nowrap">
+                      <th className="py-2.5 px-2 text-center w-8">#</th>
                       <th className="py-2.5 px-2">Team</th>
-                      <th className="py-2.5 px-2 text-center" title="Spiele">Sp</th>
-                      <th className="py-2.5 px-2 text-center" title="Siege">S</th>
-                      <th className="py-2.5 px-2 text-center" title="Unentschieden">U</th>
-                      <th className="py-2.5 px-2 text-center" title="Niederlagen">N</th>
-                      <th className="py-2.5 px-2 text-center" title="Tore / Becher">Tore</th>
-                      <th className="py-2.5 px-2 text-center" title="Differenz">Diff</th>
-                      <th className="py-2.5 px-2 text-center font-black text-white">Pkt</th>
+                      <th className="py-2.5 px-2 text-center w-10" title="Spiele">Sp</th>
+                      <th className="py-2.5 px-2 text-center w-10" title="Siege">S</th>
+                      <th className="py-2.5 px-2 text-center w-10" title="Unentschieden">U</th>
+                      <th className="py-2.5 px-2 text-center w-10" title="Niederlagen">N</th>
+                      <th className="py-2.5 px-2 text-center w-16" title="Tore / Becher">Tore</th>
+                      <th className="py-2.5 px-2 text-center w-12" title="Differenz">Diff</th>
+                      <th className="py-2.5 px-2 text-center w-12 font-black text-white">Pkt</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5 font-bold">
+                  <tbody className="divide-y divide-white/5 font-bold whitespace-nowrap">
                     {standings.length === 0 ? (
                       <tr>
                         <td colSpan={9} className="py-4 text-center text-slate-500">
@@ -376,7 +377,7 @@ export default function AdminTabellePage() {
                             </td>
 
                             <td className="py-3 px-2">
-                              <div className="font-black text-white truncate max-w-[140px] sm:max-w-none">
+                              <div className="font-black text-white truncate max-w-[160px]">
                                 {team.teamName}
                               </div>
                             </td>
@@ -427,7 +428,7 @@ export default function AdminTabellePage() {
               </div>
 
               <div className="pt-2 text-[10px] text-slate-500 font-bold flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0"></span>
                 <span>Grüne Ränge = Qualifikation für K.-o.-Phase</span>
               </div>
             </div>
