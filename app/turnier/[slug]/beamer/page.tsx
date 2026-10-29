@@ -326,6 +326,7 @@ export default function BeamerPage() {
   }, [tournament?.id, loadData])
 
   const teamsById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
+  const groupsById = useMemo(() => new Map(groups.map((g) => [g.id, g])), [groups])
   const knockoutMatches = useMemo(() => matches.filter((m) => KO_PHASES.includes(m.phase)), [matches])
   const hasKOStarted = knockoutMatches.length > 0
 
@@ -1070,6 +1071,12 @@ export default function BeamerPage() {
                     const isKOMatch = KO_PHASES.includes(m.phase)
                     const isLargeMatchCount = activeRound.matches.length > 12
 
+                    // Gruppe auflösen
+                    const groupName = m.group_id ? groupsById.get(m.group_id)?.name : null
+                    const matchLabel = isKOMatch
+                      ? getPhaseName(m.phase)
+                      : (groupName || 'Gruppe')
+
                     return (
                       <div
                         key={m.id}
@@ -1100,7 +1107,7 @@ export default function BeamerPage() {
                           ) : finished ? (
                             <span className="font-extrabold" style={{ color: primaryColor }}>✓ Fertig</span>
                           ) : (
-                            <span className="text-white/60">{isKOMatch ? getPhaseName(m.phase) : 'Gruppe'}</span>
+                            <span className="text-white/60">{matchLabel}</span>
                           )}
                         </div>
 
