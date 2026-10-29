@@ -70,32 +70,35 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-4 text-white sm:p-8">
+    <div className="flex min-h-[85vh] items-center justify-center p-4 text-slate-100 sm:p-8">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <Link
             href="/"
-            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-2xl ring-1 ring-amber-500/30 transition hover:scale-105"
+            className="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-2xl shadow-lg backdrop-blur-md transition hover:scale-105"
           >
             🏆
           </Link>
-          <h1 className="mt-4 text-2xl font-black tracking-tight sm:text-3xl">
+          <span className="mt-4 block text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">
+            Veranstalter-Portal
+          </span>
+          <h1 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">
             {isRegister ? 'Veranstalter-Konto erstellen' : 'Veranstalter-Login'}
           </h1>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1.5 text-xs font-medium text-slate-300">
             Melde dich an, um deine Turniere sicher zu verwalten.
           </p>
         </div>
 
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
           {errorMessage && (
-            <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-bold text-red-400">
+            <div className="mb-4 rounded-2xl border border-red-500/30 bg-red-950/20 p-3.5 text-xs font-bold text-red-300 backdrop-blur-md">
               {errorMessage}
             </div>
           )}
 
           {successMessage && (
-            <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-bold text-emerald-400">
+            <div className="mb-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs font-bold text-emerald-300 backdrop-blur-md">
               {successMessage}
             </div>
           )}
@@ -103,7 +106,7 @@ export default function AdminLoginPage() {
           <form onSubmit={handleAuth} className="space-y-4">
             {/* EMAIL FELD */}
             <div>
-              <label className="block text-xs font-black uppercase text-slate-400">
+              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
                 E-Mail-Adresse
               </label>
               <input
@@ -112,16 +115,16 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="veranstalter@domain.de"
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-bold text-white focus:border-amber-500 focus:outline-none"
+                className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
               />
             </div>
 
             {/* PASSWORT FELD MIT SICHTBARKEITSSCHALTER */}
             <div>
-              <label className="block text-xs font-black uppercase text-slate-400">
+              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
                 Passwort
               </label>
-              <div className="relative mt-1.5">
+              <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
@@ -129,7 +132,7 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800 pl-4 pr-11 py-3 text-sm font-bold text-white focus:border-amber-500 focus:outline-none"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 pl-4 pr-11 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
                 />
                 <button
                   type="button"
@@ -145,10 +148,10 @@ export default function AdminLoginPage() {
             {/* PASSWORT BESTÄTIGEN (NUR BEI REGISTRIERUNG) */}
             {isRegister && (
               <div>
-                <label className="block text-xs font-black uppercase text-slate-400">
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
                   Passwort bestätigen
                 </label>
-                <div className="relative mt-1.5">
+                <div className="relative">
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     required
@@ -156,7 +159,7 @@ export default function AdminLoginPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800 pl-4 pr-11 py-3 text-sm font-bold text-white focus:border-amber-500 focus:outline-none"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 pl-4 pr-11 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -173,7 +176,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-amber-500 py-3.5 text-xs font-black text-slate-950 shadow-lg transition hover:bg-amber-400 disabled:opacity-50 mt-2"
+              className="w-full rounded-2xl bg-amber-400 py-3.5 text-xs font-black text-slate-950 shadow-lg transition hover:bg-amber-300 disabled:opacity-50 mt-2"
             >
               {loading
                 ? 'Verarbeite …'
@@ -188,7 +191,7 @@ export default function AdminLoginPage() {
               <button
                 type="button"
                 onClick={() => toggleRegisterMode(false)}
-                className="text-amber-400 hover:underline"
+                className="text-amber-300 hover:underline"
               >
                 Bereits ein Konto? Hier anmelden
               </button>
@@ -196,7 +199,7 @@ export default function AdminLoginPage() {
               <button
                 type="button"
                 onClick={() => toggleRegisterMode(true)}
-                className="text-amber-400 hover:underline"
+                className="text-amber-300 hover:underline"
               >
                 Noch kein Konto? Jetzt registrieren
               </button>
@@ -204,6 +207,6 @@ export default function AdminLoginPage() {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   )
 }

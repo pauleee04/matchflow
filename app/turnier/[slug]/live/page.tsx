@@ -478,18 +478,18 @@ export default function PublicLivePage() {
     return (
       <div className="relative w-full min-w-[130px]" style={{ height: KO_CARD_HEIGHT }}>
         <div
-          className={`h-full overflow-hidden rounded-2xl border shadow-md transition flex flex-col justify-between ${
+          className={`h-full overflow-hidden rounded-2xl border shadow-lg transition flex flex-col justify-between backdrop-blur-md ${
             isFinal
-              ? 'border-amber-500/80 bg-slate-900 text-white ring-1 ring-amber-500/40'
+              ? 'border-amber-500/80 bg-slate-900/90 text-white ring-1 ring-amber-500/40'
               : isThirdPlace
-              ? 'border-amber-600/50 bg-slate-900 text-white'
+              ? 'border-amber-600/50 bg-slate-900/90 text-white'
               : finished
-              ? 'border-emerald-500/40 bg-slate-900 text-white dark:bg-gray-900'
+              ? 'border-emerald-500/40 bg-slate-900/90 text-white'
               : live
-              ? 'border-red-500/60 bg-red-950/40 animate-pulse text-white'
+              ? 'border-red-500/60 bg-red-950/60 animate-pulse text-white'
               : match
-              ? 'border-gray-200 bg-white text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-white'
-              : 'border-dashed border-gray-300 bg-gray-50/50 text-gray-400 dark:border-gray-800 dark:bg-gray-950/40'
+              ? 'border-white/10 bg-slate-900/80 text-slate-100'
+              : 'border-dashed border-white/10 bg-slate-950/40 text-slate-500'
           }`}
         >
           <div
@@ -502,18 +502,18 @@ export default function PublicLivePage() {
                 ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
                 : live
                 ? 'border-red-500/20 bg-red-500/10 text-red-400'
-                : 'border-gray-100 bg-gray-50 text-gray-500 dark:border-gray-800 dark:bg-gray-800/80 dark:text-gray-400'
+                : 'border-white/10 bg-slate-950/60 text-slate-400'
             }`}
           >
             <span>{isThirdPlace ? 'Platz 3' : `Spiel #${position}`}</span>
             {live ? (
-              <span className="text-red-500 dark:text-red-300 font-extrabold flex items-center gap-1">
+              <span className="text-red-400 font-extrabold flex items-center gap-1">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> LIVE
               </span>
             ) : finished ? (
-              <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">✓ Fertig</span>
+              <span className="text-emerald-400 font-extrabold">✓ Fertig</span>
             ) : (
-              <span className="text-gray-400 font-normal">{match && formatTime(match.scheduled_time)}</span>
+              <span className="text-slate-400 font-normal">{match && formatTime(match.scheduled_time)}</span>
             )}
           </div>
 
@@ -521,10 +521,10 @@ export default function PublicLivePage() {
             <div
               className={`flex h-5 items-center justify-between gap-1 rounded-md px-1.5 text-[10px] ${
                 t1Winner
-                  ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-black'
+                  ? 'bg-emerald-500/20 text-emerald-300 font-black'
                   : match
-                  ? 'bg-gray-100 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 font-bold'
-                  : 'text-gray-400 font-medium'
+                  ? 'bg-slate-950/60 text-slate-200 font-bold'
+                  : 'text-slate-500 font-medium'
               }`}
             >
               <span title={t1Name} className="truncate min-w-0">{t1Name}</span>
@@ -534,10 +534,10 @@ export default function PublicLivePage() {
             <div
               className={`flex h-5 items-center justify-between gap-1 rounded-md px-1.5 text-[10px] ${
                 t2Winner
-                  ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-black'
+                  ? 'bg-emerald-500/20 text-emerald-300 font-black'
                   : match
-                  ? 'bg-gray-100 dark:bg-gray-800/80 text-gray-900 dark:text-gray-100 font-bold'
-                  : 'text-gray-400 font-medium'
+                  ? 'bg-slate-950/60 text-slate-200 font-bold'
+                  : 'text-slate-500 font-medium'
               }`}
             >
               <span title={t2Name} className="truncate min-w-0">{t2Name}</span>
@@ -545,7 +545,7 @@ export default function PublicLivePage() {
             </div>
           </div>
 
-          <div className="flex h-4 items-center justify-between border-t border-gray-100 dark:border-gray-800/80 px-2 text-[7px] font-bold text-gray-400">
+          <div className="flex h-4 items-center justify-between border-t border-white/10 px-2 text-[7px] font-bold text-slate-400">
             <span>{match?.table_number ? `Tisch ${match.table_number}` : 'Tisch -'}</span>
             <span>{formatTime(match?.scheduled_time) ? `${formatTime(match?.scheduled_time)} Uhr` : ''}</span>
           </div>
@@ -582,7 +582,7 @@ export default function PublicLivePage() {
       return (
         <div className="relative w-3 shrink-0" style={{ height }} aria-hidden="true">
           <svg
-            className="absolute inset-0 w-full text-gray-300 dark:text-gray-700"
+            className="absolute inset-0 w-full text-slate-700"
             style={{ top: KO_HEADER_HEIGHT, height: bodyHeight }}
             viewBox={`0 0 28 ${bodyHeight}`}
             preserveAspectRatio="none"
@@ -612,7 +612,7 @@ export default function PublicLivePage() {
     return (
       <div className="relative w-3 shrink-0" style={{ height }} aria-hidden="true">
         <svg
-          className="absolute inset-0 w-full text-gray-300 dark:text-gray-700"
+          className="absolute inset-0 w-full text-slate-700"
           style={{ top: KO_HEADER_HEIGHT, height: bodyHeight }}
           viewBox={`0 0 28 ${bodyHeight}`}
           preserveAspectRatio="none"
@@ -670,7 +670,7 @@ export default function PublicLivePage() {
         style={{ height: KO_HEADER_HEIGHT + totalRows * KO_ROW_HEIGHT }}
       >
         <div
-          className="flex shrink-0 items-center justify-center text-[9px] font-black uppercase tracking-wider text-gray-400 truncate px-1"
+          className="flex shrink-0 items-center justify-center text-[9px] font-black uppercase tracking-wider text-slate-400 truncate px-1"
           style={{ height: KO_HEADER_HEIGHT }}
         >
           {getPhaseName(phase)}
@@ -720,7 +720,7 @@ export default function PublicLivePage() {
     const bracketHeight = KO_HEADER_HEIGHT + totalRows * KO_ROW_HEIGHT
 
     return (
-      <div className="relative w-full overflow-x-auto py-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-800">
+      <div className="relative w-full overflow-x-auto py-2 scrollbar-thin scrollbar-thumb-slate-800">
         <div className="min-w-[850px] w-full px-2">
           <div className="flex items-start justify-center gap-1 w-full">
             {/* LINKE HÄLFTE */}
@@ -766,7 +766,7 @@ export default function PublicLivePage() {
                 style={{ height: KO_HEADER_HEIGHT }}
               >
                 <span
-                  className="rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white shadow-sm truncate"
+                  className="rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-slate-950 shadow-sm truncate"
                   style={{ backgroundColor: primaryColor }}
                 >
                   🏆 FINALE &amp; PLATZ 3
@@ -797,7 +797,7 @@ export default function PublicLivePage() {
                     {thirdPlaceMatch ? (
                       <BracketMatchCard phase="third_place" position={1} />
                     ) : (
-                      <div className="w-full rounded-2xl border border-dashed border-slate-700/60 bg-slate-950/40 p-2 text-center">
+                      <div className="w-full rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-2 text-center">
                         <p className="text-[9px] font-bold text-slate-500">Spiel um Platz 3 (folgt)</p>
                       </div>
                     )}
@@ -835,10 +835,13 @@ export default function PublicLivePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-gray-900 dark:text-white">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 dark:border-gray-800 dark:border-t-blue-400" />
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400">
+          <div
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
+          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
             Lade Live-Daten …
           </p>
         </div>
@@ -848,35 +851,31 @@ export default function PublicLivePage() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-lg rounded-3xl border border-red-200 bg-red-50/90 p-6 text-center shadow-sm backdrop-blur-md dark:border-red-900/40 dark:bg-red-950/20">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-xl dark:bg-red-900/40">
+      <div className="mx-auto max-w-lg rounded-3xl border border-red-500/30 bg-red-950/20 p-6 text-center backdrop-blur-md">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-xl text-red-400">
           ⚠️
         </div>
-        <h2 className="text-lg font-black text-red-900 dark:text-red-200">
-          Fehler beim Laden
-        </h2>
-        <p className="mt-1 text-xs font-semibold text-red-700 dark:text-red-300">
-          {error}
-        </p>
+        <h2 className="text-lg font-black text-slate-100">Fehler beim Laden</h2>
+        <p className="mt-1 text-xs font-semibold text-red-300">{error}</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-2 sm:px-6 space-y-10 pb-12">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
       {/* SEITEN-KOPF */}
-      <section className="rounded-3xl border border-gray-200/80 bg-white/90 p-6 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90 sm:p-8">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             {tournament?.logo_url ? (
               <img
                 src={tournament.logo_url}
                 alt={tournament.name}
-                className="h-12 w-12 rounded-2xl object-contain bg-slate-100 p-1 dark:bg-slate-800"
+                className="h-12 w-12 rounded-2xl object-contain bg-slate-950/60 p-1 border border-white/10"
               />
             ) : (
               <span
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-white shadow-sm"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-slate-950 shadow-lg"
                 style={{ backgroundColor: primaryColor }}
               >
                 🏆
@@ -889,63 +888,63 @@ export default function PublicLivePage() {
               >
                 Echtzeit Arena
               </span>
-              <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
                 {tournament?.name || 'Live-Spielplan & Ergebnisse'}
               </h1>
             </div>
           </div>
-          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3.5 py-1.5 text-xs font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-bold text-emerald-400">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             Live Sync
           </span>
         </div>
-        <p className="mt-3 text-xs leading-relaxed text-gray-500 dark:text-gray-400 sm:text-sm">
+        <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-300 font-medium">
           Alle aktuellen Gruppentabellen, Begegnungen und K.-o.-Spiele in Echtzeit.
         </p>
       </section>
 
       {/* LAUFENDE SPIELE (WENN VORHANDEN) */}
       {liveMatches.length > 0 && (
-        <section className="rounded-3xl border border-red-500/30 bg-red-500/10 p-6 shadow-sm backdrop-blur-md">
+        <section className="rounded-[32px] border border-red-500/30 bg-red-500/10 p-6 shadow-2xl backdrop-blur-xl space-y-4">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping" />
-            <h2 className="text-lg font-black text-red-600 dark:text-red-400">
+            <h2 className="text-lg font-black text-red-400">
               Laufende Spiele ({liveMatches.length})
             </h2>
           </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {liveMatches.map((match) => (
               <article
                 key={match.id}
-                className="rounded-2xl border border-red-500/30 bg-white p-4 shadow-sm dark:bg-gray-900"
+                className="rounded-2xl border border-red-500/30 bg-slate-950/80 p-4 shadow-xl backdrop-blur-md space-y-3"
               >
                 <div className="flex items-center justify-between text-xs font-bold">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-black uppercase text-red-700 dark:bg-red-950 dark:text-red-300">
+                    <span className="rounded-full bg-red-500/20 border border-red-500/30 px-2.5 py-0.5 text-[10px] font-black uppercase text-red-300">
                       LIVE
                     </span>
                     {formatTime(match.scheduled_time) && (
-                      <span className="text-[10px] font-mono font-bold text-red-600 dark:text-red-400">
+                      <span className="text-[10px] font-mono font-bold text-red-400">
                         ⏰ {formatTime(match.scheduled_time)} Uhr
                       </span>
                     )}
                   </div>
                   {match.table_number && (
-                    <span className="text-gray-500 dark:text-gray-400 font-mono">
+                    <span className="text-slate-400 font-mono">
                       Tisch {match.table_number}
                     </span>
                   )}
                 </div>
-                <div className="mt-3 space-y-2">
-                  <div className="flex items-center justify-between font-black text-sm">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between font-black text-sm text-white">
                     <span className="truncate">{getTeamName(match.team1_id)}</span>
-                    <span className="text-base font-mono text-emerald-600 dark:text-emerald-400">
+                    <span className="text-base font-mono text-emerald-400">
                       {match.team1_score ?? '-'}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between font-black text-sm">
+                  <div className="flex items-center justify-between font-black text-sm text-white">
                     <span className="truncate">{getTeamName(match.team2_id)}</span>
-                    <span className="text-base font-mono text-emerald-600 dark:text-emerald-400">
+                    <span className="text-base font-mono text-emerald-400">
                       {match.team2_score ?? '-'}
                     </span>
                   </div>
@@ -956,109 +955,107 @@ export default function PublicLivePage() {
         </section>
       )}
 
-      {/* K.-O.-BRACKET / TURNIERBAUM (FALLS K.-O.-PHASE GESTARTET) */}
+      {/* K.-O.-BRACKET / TURNIERBAUM */}
       {hasKOStarted && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2.5">
-              <span className="text-2xl">🌳</span>
-              <div>
-                <h2 className="text-xl font-black text-gray-900 dark:text-white">
-                  K.-o.-Phase Turnierbaum
-                </h2>
-                <p className="text-xs text-gray-400">Der direkte Weg ins Finale und zum Spiel um Platz 3.</p>
-              </div>
+        <section className="space-y-4">
+          <div className="flex items-center gap-2.5 px-1">
+            <span className="text-2xl">🌳</span>
+            <div>
+              <h2 className="text-xl font-black text-white">
+                K.-o.-Phase Turnierbaum
+              </h2>
+              <p className="text-xs text-slate-400 font-medium">Der direkte Weg ins Finale und zum Spiel um Platz 3.</p>
             </div>
           </div>
-          <div className="overflow-hidden py-1">
+          <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-4 sm:p-6 shadow-2xl backdrop-blur-xl overflow-hidden">
             <KnockoutBracket />
           </div>
-        </div>
+        </section>
       )}
 
       {/* GRUPPENTABELLEN */}
       {groupStandings.length > 0 && (
-        <div className="space-y-4">
+        <section className="space-y-4">
           <div className="flex items-center gap-2.5 px-1">
             <span className="text-xl">📊</span>
-            <h2 className="text-xl font-black text-gray-900 dark:text-white">
+            <h2 className="text-xl font-black text-white">
               Gruppentabellen
             </h2>
           </div>
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {groupStandings.map(({ group, standings }) => (
-              <div key={group.id} className="space-y-3">
-                <div className="flex items-center justify-between border-b border-gray-200/60 pb-2 dark:border-gray-800/60 px-1">
-                  <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
+              <div key={group.id} className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <h3 className="text-sm font-black text-white uppercase tracking-wider">
                     {group.name}
                   </h3>
-                  <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                  <span className="text-[10px] font-bold text-slate-400">
                     {standings.length} Teams
                   </span>
                 </div>
 
-                <div className="overflow-x-auto rounded-2xl border border-gray-200/60 bg-white/40 p-4 dark:border-gray-800/60 dark:bg-gray-900/40 shadow-sm">
+                <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-gray-200/40 text-[10px] font-black uppercase text-gray-400 dark:border-gray-800/40">
+                      <tr className="border-b border-white/10 text-[10px] font-black uppercase text-slate-400">
                         <th className="py-2 px-1 text-center">#</th>
                         <th className="py-2 px-1">Team</th>
                         <th className="py-2 px-1 text-center" title="Spiele">Sp</th>
-                        <th className="py-2 px-1 text-center text-emerald-600 dark:text-emerald-400" title="Siege">S</th>
-                        <th className="py-2 px-1 text-center text-amber-600 dark:text-amber-400" title="Unentschieden">U</th>
-                        <th className="py-2 px-1 text-center text-red-600 dark:text-red-400" title="Niederlagen">N</th>
+                        <th className="py-2 px-1 text-center text-emerald-400" title="Siege">S</th>
+                        <th className="py-2 px-1 text-center text-amber-400" title="Unentschieden">U</th>
+                        <th className="py-2 px-1 text-center text-red-400" title="Niederlagen">N</th>
                         <th className="py-2 px-1 text-center" title="Tore">Tore</th>
                         <th className="py-2 px-1 text-center" title="Differenz">Diff</th>
-                        <th className="py-2 px-1 text-right font-black text-gray-900 dark:text-white" title="Punkte">Pkt</th>
+                        <th className="py-2 px-1 text-right font-black text-white" title="Punkte">Pkt</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200/30 font-bold dark:divide-gray-800/30">
+                    <tbody className="divide-y divide-white/10 font-bold text-slate-200">
                       {standings.map((st, idx) => {
                         const isQualified = idx < 2
                         return (
                           <tr
                             key={st.teamId}
                             className={`transition ${
-                              isQualified ? 'bg-emerald-500/5 dark:bg-emerald-500/10' : ''
+                              isQualified ? 'bg-emerald-500/10 text-white' : ''
                             }`}
                           >
                             <td className="py-2.5 px-1 text-center font-mono">
                               <span
                                 className={`inline-flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-black ${
                                   isQualified
-                                    ? 'bg-emerald-500 text-white'
-                                    : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                                    ? 'bg-emerald-500 text-slate-950'
+                                    : 'bg-slate-950/60 text-slate-400 border border-white/10'
                                 }`}
                               >
                                 {idx + 1}
                               </span>
                             </td>
-                            <td className="py-2.5 px-1 font-extrabold text-gray-900 dark:text-white truncate max-w-[150px]">
+                            <td className="py-2.5 px-1 font-extrabold text-white truncate max-w-[150px]">
                               {st.teamName}
                             </td>
-                            <td className="py-2.5 px-1 text-center font-mono text-gray-500 dark:text-gray-400">
+                            <td className="py-2.5 px-1 text-center font-mono text-slate-400">
                               {st.played}
                             </td>
-                            <td className="py-2.5 px-1 text-center font-mono text-emerald-600 dark:text-emerald-400">
+                            <td className="py-2.5 px-1 text-center font-mono text-emerald-400">
                               {st.wins}
                             </td>
-                            <td className="py-2.5 px-1 text-center font-mono text-amber-600 dark:text-amber-400">
+                            <td className="py-2.5 px-1 text-center font-mono text-amber-400">
                               {st.draws}
                             </td>
-                            <td className="py-2.5 px-1 text-center font-mono text-red-600 dark:text-red-400">
+                            <td className="py-2.5 px-1 text-center font-mono text-red-400">
                               {st.losses}
                             </td>
-                            <td className="py-2.5 px-1 text-center font-mono text-gray-600 dark:text-gray-300">
+                            <td className="py-2.5 px-1 text-center font-mono text-slate-300">
                               {st.scored}:{st.conceded}
                             </td>
                             <td className="py-2.5 px-1 text-center font-mono font-black">
                               <span
                                 className={
                                   st.diff > 0
-                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    ? 'text-emerald-400'
                                     : st.diff < 0
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-gray-400'
+                                    ? 'text-red-400'
+                                    : 'text-slate-400'
                                 }
                               >
                                 {st.diff > 0 ? `+${st.diff}` : st.diff}
@@ -1079,52 +1076,53 @@ export default function PublicLivePage() {
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {/* SPIELPLAN UNTERGLIEDERT NACH GRUPPEN */}
-      <div className="space-y-4">
+      <section className="space-y-4">
         <div className="flex items-center gap-2.5 px-1">
           <span className="text-xl">📅</span>
-          <h2 className="text-xl font-black text-gray-900 dark:text-white">
+          <h2 className="text-xl font-black text-white">
             Spielplan nach Gruppen
           </h2>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {matchesByGroup.map(({ group, matches: gMatches }) => {
             const sectionKey = `group-${group.id}`
             const isCollapsed = collapsedSections[sectionKey] ?? false
 
             return (
-              <div key={group.id} className="space-y-3">
+              <div key={group.id} className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-4">
                 <button
+                  type="button"
                   onClick={() => toggleSection(sectionKey)}
-                  className="flex w-full items-center justify-between py-2 px-1 text-left border-b border-gray-200/60 dark:border-gray-800/60 transition hover:opacity-80"
+                  className="flex w-full items-center justify-between text-left transition hover:opacity-80"
                 >
                   <div className="flex items-center gap-3">
                     <span
-                      className="flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black text-white"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black text-slate-950 shadow-md"
                       style={{ backgroundColor: primaryColor }}
                     >
                       {group.name.replace(/gruppe\s*/i, '').trim().charAt(0) || 'G'}
                     </span>
-                    <h3 className="text-base font-black text-gray-900 dark:text-white">
+                    <h3 className="text-base font-black text-white">
                       {group.name}
                     </h3>
-                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                    <span className="text-[10px] font-bold text-slate-400">
                       {gMatches.length} {gMatches.length === 1 ? 'Spiel' : 'Spiele'}
                     </span>
                   </div>
-                  <span className="text-gray-400 font-bold text-sm">
+                  <span className="text-slate-400 font-bold text-xs">
                     {isCollapsed ? '▼ Ausklappen' : '▲ Einklappen'}
                   </span>
                 </button>
 
                 {!isCollapsed && (
-                  <div className="pt-1">
+                  <div className="pt-2 border-t border-white/10">
                     {gMatches.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {gMatches.map((match) => {
                           const finished = isFinished(match)
                           const live = isLive(match)
@@ -1133,26 +1131,26 @@ export default function PublicLivePage() {
                           return (
                             <article
                               key={match.id}
-                              className={`rounded-2xl border p-4 transition shadow-sm ${
+                              className={`rounded-2xl border p-4 transition shadow-md backdrop-blur-md ${
                                 live
-                                  ? 'border-red-500/40 bg-red-500/10'
+                                  ? 'border-red-500/40 bg-red-950/40'
                                   : finished
-                                  ? 'border-emerald-500/20 bg-emerald-50/5 dark:bg-emerald-950/20'
-                                  : 'border-gray-200/60 bg-white/60 dark:border-gray-800 dark:bg-gray-800/40'
+                                  ? 'border-emerald-500/20 bg-emerald-500/5'
+                                  : 'border-white/10 bg-slate-950/60'
                               }`}
                             >
-                              <div className="flex items-center justify-between text-[10px] font-black uppercase text-gray-400">
+                              <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="font-mono text-gray-700 dark:text-gray-300 font-bold">
+                                  <span className="font-mono text-slate-300 font-bold">
                                     ⏰ {formattedMatchTime ? `${formattedMatchTime} Uhr` : 'Zeit k.A.'}
                                   </span>
                                   {live && (
-                                    <span className="text-red-500 font-black animate-pulse flex items-center gap-1">
+                                    <span className="text-red-400 font-black animate-pulse flex items-center gap-1">
                                       • LIVE
                                     </span>
                                   )}
                                   {finished && (
-                                    <span className="text-emerald-600 dark:text-emerald-400">
+                                    <span className="text-emerald-400">
                                       • ✓ Beendet
                                     </span>
                                   )}
@@ -1162,7 +1160,7 @@ export default function PublicLivePage() {
                                 )}
                               </div>
 
-                              <div className="mt-3 space-y-1.5 text-xs font-extrabold text-gray-900 dark:text-white">
+                              <div className="mt-3 space-y-1.5 text-xs font-extrabold text-white">
                                 <div className="flex items-center justify-between">
                                   <span className="truncate max-w-[150px]">{getTeamName(match.team1_id)}</span>
                                   <span className="font-mono font-black text-sm">
@@ -1181,7 +1179,7 @@ export default function PublicLivePage() {
                         })}
                       </div>
                     ) : (
-                      <div className="text-center text-xs font-bold text-gray-400 py-4">
+                      <div className="text-center text-xs font-bold text-slate-400 py-4">
                         Keine Spiele für diese Gruppe angesetzt.
                       </div>
                     )}
@@ -1191,48 +1189,49 @@ export default function PublicLivePage() {
             )
           })}
         </div>
-      </div>
+      </section>
 
       {/* SPIELPLAN UNTERGLIEDERT NACH K.-O.-PHASEN */}
       {matchesByKOPhase.length > 0 && (
-        <div className="space-y-4">
+        <section className="space-y-4">
           <div className="flex items-center gap-2.5 px-1">
             <span className="text-xl">⚔️</span>
-            <h2 className="text-xl font-black text-gray-900 dark:text-white">
+            <h2 className="text-xl font-black text-white">
               K.-o.-Phase Spiele
             </h2>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {matchesByKOPhase.map(({ phase, phaseName, matches: pMatches }) => {
               const sectionKey = `ko-${phase}`
               const isCollapsed = collapsedSections[sectionKey] ?? false
 
               return (
-                <div key={phase} className="space-y-3">
+                <div key={phase} className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-4">
                   <button
+                    type="button"
                     onClick={() => toggleSection(sectionKey)}
-                    className="flex w-full items-center justify-between py-2 px-1 text-left border-b border-gray-200/60 dark:border-gray-800/60 transition hover:opacity-80"
+                    className="flex w-full items-center justify-between text-left transition hover:opacity-80"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/20 text-xs font-black text-amber-600 dark:text-amber-400">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/30 text-xs font-black text-amber-400">
                         🏆
                       </span>
-                      <h3 className="text-base font-black text-gray-900 dark:text-white">
+                      <h3 className="text-base font-black text-white">
                         {phaseName}
                       </h3>
-                      <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                      <span className="text-[10px] font-bold text-slate-400">
                         {pMatches.length} {pMatches.length === 1 ? 'Spiel' : 'Spiele'}
                       </span>
                     </div>
-                    <span className="text-gray-400 font-bold text-sm">
+                    <span className="text-slate-400 font-bold text-xs">
                       {isCollapsed ? '▼ Ausklappen' : '▲ Einklappen'}
                     </span>
                   </button>
 
                   {!isCollapsed && (
-                    <div className="pt-1">
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="pt-2 border-t border-white/10">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {pMatches.map((match) => {
                           const finished = isFinished(match)
                           const live = isLive(match)
@@ -1241,26 +1240,26 @@ export default function PublicLivePage() {
                           return (
                             <article
                               key={match.id}
-                              className={`rounded-2xl border p-4 transition shadow-sm ${
+                              className={`rounded-2xl border p-4 transition shadow-md backdrop-blur-md ${
                                 live
-                                  ? 'border-red-500/40 bg-red-500/10'
+                                  ? 'border-red-500/40 bg-red-950/40'
                                   : finished
-                                  ? 'border-emerald-500/20 bg-emerald-50/5 dark:bg-emerald-950/20'
-                                  : 'border-gray-200/60 bg-white/60 dark:border-gray-800 dark:bg-gray-800/40'
+                                  ? 'border-emerald-500/20 bg-emerald-500/5'
+                                  : 'border-white/10 bg-slate-950/60'
                               }`}
                             >
-                              <div className="flex items-center justify-between text-[10px] font-black uppercase text-gray-400">
+                              <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="font-mono text-gray-700 dark:text-gray-300 font-bold">
+                                  <span className="font-mono text-slate-300 font-bold">
                                     ⏰ {formattedMatchTime ? `${formattedMatchTime} Uhr` : 'Zeit k.A.'}
                                   </span>
                                   {live && (
-                                    <span className="text-red-500 font-black animate-pulse flex items-center gap-1">
+                                    <span className="text-red-400 font-black animate-pulse flex items-center gap-1">
                                       • LIVE
                                     </span>
                                   )}
                                   {finished && (
-                                    <span className="text-emerald-600 dark:text-emerald-400">
+                                    <span className="text-emerald-400">
                                       • ✓ Beendet
                                     </span>
                                   )}
@@ -1270,7 +1269,7 @@ export default function PublicLivePage() {
                                 )}
                               </div>
 
-                              <div className="mt-3 space-y-1.5 text-xs font-extrabold text-gray-900 dark:text-white">
+                              <div className="mt-3 space-y-1.5 text-xs font-extrabold text-white">
                                 <div className="flex items-center justify-between">
                                   <span className="truncate max-w-[150px]">{getTeamName(match.team1_id)}</span>
                                   <span className="font-mono font-black text-sm">
@@ -1294,7 +1293,7 @@ export default function PublicLivePage() {
               )
             })}
           </div>
-        </div>
+        </section>
       )}
     </div>
   )

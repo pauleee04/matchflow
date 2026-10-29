@@ -125,7 +125,7 @@ function MatchScoreEditor({
   }, [match.team1_score, match.team2_score])
 
   return (
-    <div className="mt-2 border-t border-gray-200/40 pt-2 dark:border-gray-800/40">
+    <div className="mt-2 border-t border-white/10 pt-2">
       <div className="flex items-center gap-2">
         <input
           type="number"
@@ -135,9 +135,9 @@ function MatchScoreEditor({
           onChange={(event) =>
             setScore1(Math.min(10, Math.max(0, Number(event.target.value) || 0)))
           }
-          className="h-9 w-12 rounded-lg border border-gray-300/80 bg-white/80 text-center text-xs font-black outline-none dark:border-gray-700/80 dark:bg-gray-800/80"
+          className="h-9 w-12 rounded-xl border border-white/10 bg-slate-950/80 text-center text-xs font-black text-white outline-none focus:border-white/30"
         />
-        <span className="font-black text-gray-400">:</span>
+        <span className="font-black text-slate-500">:</span>
         <input
           type="number"
           min="0"
@@ -146,12 +146,12 @@ function MatchScoreEditor({
           onChange={(event) =>
             setScore2(Math.min(10, Math.max(0, Number(event.target.value) || 0)))
           }
-          className="h-9 w-12 rounded-lg border border-gray-300/80 bg-white/80 text-center text-xs font-black outline-none dark:border-gray-700/80 dark:bg-gray-800/80"
+          className="h-9 w-12 rounded-xl border border-white/10 bg-slate-950/80 text-center text-xs font-black text-white outline-none focus:border-white/30"
         />
         <button
           type="button"
           onClick={() => onSave(match.id, score1, score2)}
-          className="ml-auto h-9 rounded-lg px-3 text-[10px] font-black text-slate-950 transition opacity-90 hover:opacity-100"
+          className="ml-auto h-9 rounded-xl px-3 text-[10px] font-black text-slate-950 transition hover:opacity-90 shadow-md"
           style={{ backgroundColor: primaryColor }}
         >
           Speichern
@@ -181,6 +181,8 @@ export default function AdminKOPage() {
   const [openPhases, setOpenPhases] = useState<Record<string, boolean>>({})
   const [editingRound, setEditingRound] = useState<string | null>(null)
   const [roundTimes, setRoundTimes] = useState<Record<string, string>>({})
+
+  const primaryColor = tournament?.primary_color || '#22c55e'
 
   async function loadData() {
     if (!slug) return
@@ -696,7 +698,6 @@ export default function AdminKOPage() {
   }
 
   function getCurrentRoundMatches() {
-    // Falls das Finale schon existiert, nehmen wir das Haupt-KO-Spiele
     const existingPhases = KO_PHASES.filter(
       (phase) => phase !== 'third_place' && matches.some((match) => match.phase === phase)
     )
@@ -1130,12 +1131,12 @@ export default function AdminKOPage() {
           className={[
             'h-full overflow-hidden rounded-2xl border shadow-lg backdrop-blur-md transition',
             finished
-              ? 'border-emerald-500/40 bg-slate-900/90'
+              ? 'border-emerald-500/40 bg-slate-950/90'
               : live
-              ? 'border-red-500/50 bg-slate-900/90'
+              ? 'border-red-500/50 bg-slate-950/90'
               : match
-              ? 'border-slate-700 bg-slate-900/80'
-              : 'border-dashed border-slate-700/70 bg-slate-950/60',
+              ? 'border-white/10 bg-slate-950/80'
+              : 'border-dashed border-white/10 bg-slate-950/40',
           ].join(' ')}
         >
           <div
@@ -1145,7 +1146,7 @@ export default function AdminKOPage() {
                 ? 'border-emerald-500/20 bg-emerald-500/10'
                 : live
                 ? 'border-red-500/20 bg-red-500/10'
-                : 'border-slate-800 bg-slate-800/80',
+                : 'border-white/10 bg-slate-900/80',
             ].join(' ')}
           >
             <span className="truncate text-[7px] font-black uppercase tracking-[0.1em] text-slate-400">
@@ -1165,7 +1166,7 @@ export default function AdminKOPage() {
                 Offen
               </span>
             ) : (
-              <span className="text-[6px] font-black uppercase tracking-wider text-slate-600">
+              <span className="text-[6px] font-black uppercase tracking-wider text-slate-500">
                 folgt
               </span>
             )}
@@ -1174,10 +1175,10 @@ export default function AdminKOPage() {
           <div className="space-y-0.5 p-0.5">
             <div
               className={[
-                'flex h-5 items-center justify-between gap-1 rounded-md px-1.5',
+                'flex h-5 items-center justify-between gap-1 rounded-lg px-1.5',
                 team1Winner
                   ? 'bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/40'
-                  : 'bg-slate-800/60',
+                  : 'bg-slate-900/60',
               ].join(' ')}
             >
               <span
@@ -1188,7 +1189,7 @@ export default function AdminKOPage() {
                     ? 'font-black text-emerald-300'
                     : match
                     ? 'font-bold text-white'
-                    : 'font-semibold text-slate-500',
+                    : 'font-semibold text-slate-400',
                 ].join(' ')}
               >
                 {team1Name}
@@ -1205,10 +1206,10 @@ export default function AdminKOPage() {
 
             <div
               className={[
-                'flex h-5 items-center justify-between gap-1 rounded-md px-1.5',
+                'flex h-5 items-center justify-between gap-1 rounded-lg px-1.5',
                 team2Winner
                   ? 'bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/40'
-                  : 'bg-slate-800/60',
+                  : 'bg-slate-900/60',
               ].join(' ')}
             >
               <span
@@ -1219,7 +1220,7 @@ export default function AdminKOPage() {
                     ? 'font-black text-emerald-300'
                     : match
                     ? 'font-bold text-white'
-                    : 'font-semibold text-slate-500',
+                    : 'font-semibold text-slate-400',
                 ].join(' ')}
               >
                 {team2Name}
@@ -1235,7 +1236,7 @@ export default function AdminKOPage() {
             </div>
           </div>
 
-          <div className="flex h-4 items-center justify-between border-t border-slate-800 px-1.5 text-[6px] font-bold text-slate-500">
+          <div className="flex h-4 items-center justify-between border-t border-white/10 px-1.5 text-[6px] font-bold text-slate-400">
             <span>{match?.table_number ? `Tisch ${match.table_number}` : 'Tisch -'}</span>
             <span>
               {match && formatMatchTime(match) ? `${formatMatchTime(match)} Uhr` : 'Zeit -'}
@@ -1289,7 +1290,7 @@ export default function AdminKOPage() {
           aria-hidden="true"
         >
           <svg
-            className="absolute left-0 right-0 w-full text-slate-600 dark:text-slate-500"
+            className="absolute left-0 right-0 w-full text-white/20"
             style={{ top: BRACKET_HEADER_HEIGHT, height: bodyHeight }}
             viewBox={`0 0 28 ${bodyHeight}`}
             preserveAspectRatio="none"
@@ -1344,7 +1345,7 @@ export default function AdminKOPage() {
         aria-hidden="true"
       >
         <svg
-          className="absolute left-0 right-0 w-full text-slate-600 dark:text-slate-500"
+          className="absolute left-0 right-0 w-full text-white/20"
           style={{ top: BRACKET_HEADER_HEIGHT, height: bodyHeight }}
           viewBox={`0 0 28 ${bodyHeight}`}
           preserveAspectRatio="none"
@@ -1540,15 +1541,15 @@ export default function AdminKOPage() {
                   <div className="w-full">
                     <div className="mb-2 flex items-center justify-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">
+                      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">
                         Das große Finale
                       </span>
                     </div>
                     <BracketMatchCard phase="final" position={1} side="center" />
                   </div>
                 ) : (
-                  <div className="w-full rounded-2xl border border-dashed border-slate-700 bg-slate-950/70 px-1 py-3 text-center sm:px-2 sm:py-4">
-                    <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl bg-slate-800 text-sm sm:h-9 sm:w-9">
+                  <div className="w-full rounded-2xl border border-dashed border-white/10 bg-slate-950/40 px-1 py-3 text-center sm:px-2 sm:py-4">
+                    <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-sm sm:h-9 sm:w-9 border border-white/10">
                       🏆
                     </div>
                     <p className="mt-3 text-xs font-black text-slate-300">Finale</p>
@@ -1561,14 +1562,14 @@ export default function AdminKOPage() {
                   <div className="w-full">
                     <div className="mb-2 flex items-center justify-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-500">
+                      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">
                         Spiel um Platz 3
                       </span>
                     </div>
                     {thirdPlaceMatch ? (
                       <BracketMatchCard phase="third_place" position={1} side="center" />
                     ) : (
-                      <div className="w-full rounded-2xl border border-dashed border-slate-700/60 bg-slate-950/40 px-1 py-2 text-center">
+                      <div className="w-full rounded-2xl border border-dashed border-white/10 bg-slate-950/40 px-1 py-2 text-center">
                         <p className="text-[10px] font-bold text-slate-500">Spiel um Platz 3 (folgt)</p>
                       </div>
                     )}
@@ -1612,17 +1613,29 @@ export default function AdminKOPage() {
   const existingPhases = getExistingBracketPhases()
 
   if (loading) {
-    return <div className="p-8 text-center font-bold text-gray-400 text-xs">Lade K.-o.-Phase …</div>
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+        <div className="text-center">
+          <div
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
+          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+            Lade K.-o.-Phase …
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
       {statusMessage && (
         <div
-          className={`rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
+          className={`w-full rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
             statusMessage.type === 'success'
-              ? 'border-emerald-500/30 bg-emerald-500/20 text-emerald-600 dark:text-emerald-300'
-              : 'border-red-500/30 bg-red-500/20 text-red-600 dark:text-red-300'
+              ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
+              : 'border-red-500/30 bg-red-950/20 text-red-300'
           }`}
         >
           {statusMessage.text}
@@ -1631,74 +1644,74 @@ export default function AdminKOPage() {
 
       {/* STATUS CARDS */}
       <section className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl border border-gray-200/60 bg-white/50 p-5 shadow-lg backdrop-blur-xl dark:border-gray-800/60 dark:bg-gray-900/50">
-          <p className="text-xs font-black uppercase text-gray-400">KO-Größe</p>
-          <p className="mt-2 text-3xl font-black">{getKOSize()} Teams</p>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">KO-Größe</p>
+          <p className="mt-2 text-3xl font-black text-white">{getKOSize()} Teams</p>
         </div>
-        <div className="rounded-3xl border border-gray-200/60 bg-white/50 p-5 shadow-lg backdrop-blur-xl dark:border-gray-800/60 dark:bg-gray-900/50">
-          <p className="text-xs font-black uppercase text-gray-400">Spiele Beendet</p>
-          <p className="mt-2 text-3xl font-black">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Spiele Beendet</p>
+          <p className="mt-2 text-3xl font-black text-white">
             {finishedKO} / {totalKO}
           </p>
         </div>
-        <div className="rounded-3xl border border-gray-200/60 bg-white/50 p-5 shadow-lg backdrop-blur-xl dark:border-gray-800/60 dark:bg-gray-900/50">
-          <p className="text-xs font-black uppercase text-gray-400">Fortschritt</p>
-          <p className="mt-2 text-3xl font-black" style={{ color: tournament?.primary_color || '#f59e0b' }}>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Fortschritt</p>
+          <p className="mt-2 text-3xl font-black" style={{ color: primaryColor }}>
             {progressPercent}%
           </p>
         </div>
       </section>
 
       {/* SETUP & RUNDENPLANUNG */}
-      <section className="overflow-hidden rounded-3xl border border-gray-200/60 bg-white/50 shadow-lg backdrop-blur-xl dark:border-gray-800/60 dark:bg-gray-900/50">
-        <div className="border-b border-gray-200/40 p-6 dark:border-gray-800/40">
+      <section className="overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/60 shadow-2xl backdrop-blur-xl">
+        <div className="border-b border-white/10 p-6 sm:p-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <span
-                  className="rounded-lg px-2.5 py-1 text-[9px] font-black uppercase text-slate-950"
-                  style={{ backgroundColor: tournament?.primary_color || '#f59e0b' }}
+                  className="rounded-full px-2.5 py-1 text-[9px] font-black uppercase text-slate-950"
+                  style={{ backgroundColor: primaryColor }}
                 >
                   KO Setup
                 </span>
-                <span className="text-[11px] font-bold text-gray-400">Spielplanung</span>
+                <span className="text-xs font-bold text-slate-400">Spielplanung</span>
               </div>
-              <h2 className="text-xl font-black tracking-tight sm:text-2xl">Rundenplanung</h2>
-              <p className="mt-1 text-xs text-gray-400">
+              <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl">Rundenplanung</h2>
+              <p className="mt-1 text-xs font-medium text-slate-300">
                 Alle Spiele einer Runde können parallel stattfinden. Uhrzeiten können flexibel angepasst werden.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end">
               <div>
-                <label className="mb-2 block text-[9px] font-black uppercase tracking-wider text-gray-400">
+                <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-slate-400">
                   Rundenabstand
                 </label>
-                <div className="flex min-h-12 items-center rounded-xl border border-gray-300/80 bg-white/70 p-1.5 dark:border-gray-700/80 dark:bg-gray-800/70">
+                <div className="flex min-h-12 items-center rounded-2xl border border-white/10 bg-slate-950/80 p-1.5">
                   <input
                     type="number"
                     min="0"
                     max="180"
                     value={roundGapMinutes}
                     onChange={(e) => setRoundGapMinutes(Math.max(0, Number(e.target.value) || 0))}
-                    className="w-full min-w-0 rounded-lg bg-transparent px-1 py-1 text-center text-base font-black outline-none sm:w-20"
+                    className="w-full min-w-0 bg-transparent px-2 py-1 text-center text-base font-black text-white outline-none sm:w-20"
                   />
-                  <span className="pr-1 text-xs font-bold text-gray-400">Min.</span>
+                  <span className="pr-2 text-xs font-bold text-slate-400">Min.</span>
                 </div>
               </div>
-              <div className="rounded-xl border border-gray-300/80 bg-white/80 px-4 py-2.5 dark:border-gray-700/80 dark:bg-gray-800/80">
-                <p className="text-[8px] font-black uppercase tracking-wider text-gray-400">Tische</p>
-                <p className="text-xl font-black">{availableTables}</p>
+              <div className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tische</p>
+                <p className="text-xl font-black text-white">{availableTables}</p>
               </div>
             </div>
           </div>
 
-          <div className="mt-5 h-2 overflow-hidden rounded-full bg-gray-200/60 dark:bg-gray-800/60">
+          <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-950/80">
             <div
               className="h-full rounded-full transition-all"
               style={{
                 width: `${progressPercent}%`,
-                backgroundColor: tournament?.primary_color || '#f59e0b',
+                backgroundColor: primaryColor,
               }}
             />
           </div>
@@ -1707,22 +1720,19 @@ export default function AdminKOPage() {
 
       {/* BRACKET VIEW */}
       {knockoutMatches.length > 0 && (
-        <section className="overflow-hidden rounded-3xl border border-gray-200/60 bg-white/50 shadow-lg backdrop-blur-xl dark:border-gray-800/60 dark:bg-gray-900/50">
-          <div className="border-b border-gray-200/40 p-6 dark:border-gray-800/40">
+        <section className="overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/60 shadow-2xl backdrop-blur-xl">
+          <div className="border-b border-white/10 p-6 sm:p-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="mb-2 flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.16em] text-gray-400 sm:text-xs">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
                   Tournament Bracket
                 </div>
-                <h2 className="text-2xl font-black tracking-tight sm:text-3xl">Der Weg ins Finale</h2>
+                <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">Der Weg ins Finale</h2>
               </div>
               <div
-                className="w-fit rounded-full px-3 py-1.5 text-[10px] font-black"
-                style={{
-                  backgroundColor: `${tournament?.primary_color || '#f59e0b'}20`,
-                  color: tournament?.primary_color || '#f59e0b',
-                }}
+                className="w-fit rounded-full px-3 py-1.5 text-xs font-black border border-white/10 bg-slate-950/80"
+                style={{ color: primaryColor }}
               >
                 {existingPhases.length} {existingPhases.length === 1 ? 'Runde' : 'Runden'} vorhanden
               </div>
@@ -1734,15 +1744,15 @@ export default function AdminKOPage() {
       )}
 
       {/* QUALIFIED TEAMS POOL */}
-      <section className="rounded-3xl border border-gray-200/60 bg-white/50 p-6 shadow-lg backdrop-blur-xl dark:border-gray-800/60 dark:bg-gray-900/50 space-y-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-gray-200/40 pb-4 dark:border-gray-800/40">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-4">
           <div>
-            <h2 className="text-xl font-black">Qualifizierte Teams</h2>
-            <p className="mt-1 text-xs text-gray-400">Übersicht der Teams in der K.-o.-Phase.</p>
+            <h2 className="text-xl font-black text-white tracking-tight">Qualifizierte Teams</h2>
+            <p className="mt-1 text-xs font-medium text-slate-300">Übersicht der Teams in der K.-o.-Phase.</p>
           </div>
           <div
-            className="w-fit rounded-full px-4 py-1.5 text-xs font-black text-slate-950"
-            style={{ backgroundColor: tournament?.primary_color || '#f59e0b' }}
+            className="w-fit rounded-full px-4 py-1.5 text-xs font-black text-slate-950 shadow-md"
+            style={{ backgroundColor: primaryColor }}
           >
             {qualifiedTeams.length} / {getKOSize()} Plätze besetzt
           </div>
@@ -1752,27 +1762,27 @@ export default function AdminKOPage() {
           {qualifiedTeams.map((team, index) => (
             <div
               key={team.teamId}
-              className="rounded-2xl border border-gray-200/60 bg-white/70 p-4 shadow-sm backdrop-blur-md dark:border-gray-800/60 dark:bg-gray-800/70"
+              className="rounded-2xl border border-white/10 bg-slate-950/80 p-4 shadow-lg"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-black text-gray-400">#{index + 1}</span>
-                <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[9px] font-black text-emerald-500">
+                <span className="text-xs font-black text-slate-500">#{index + 1}</span>
+                <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[9px] font-black text-emerald-400">
                   {team.source}
                 </span>
               </div>
-              <p className="mt-2 truncate text-sm font-black">{team.teamName}</p>
-              <p className="mt-0.5 text-[10px] text-gray-400">
+              <p className="mt-2 truncate text-sm font-black text-white">{team.teamName}</p>
+              <p className="mt-0.5 text-[10px] text-slate-400">
                 {team.groupName} • {team.position}. Platz
               </p>
             </div>
           ))}
         </div>
 
-        <div className="rounded-2xl bg-gray-900 p-5 text-white dark:bg-gray-800">
+        <div className="rounded-2xl border border-white/10 bg-slate-950/80 p-5 text-white shadow-xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-black">K.-o.-Phase starten / auslosen</p>
-              <p className="mt-0.5 text-xs text-gray-400">
+              <p className="font-black text-sm">K.-o.-Phase starten / auslosen</p>
+              <p className="mt-0.5 text-xs text-slate-400">
                 {qualifiedTeams.length} von {getKOSize()} Startplätzen besetzt.
               </p>
             </div>
@@ -1785,8 +1795,8 @@ export default function AdminKOPage() {
                 !groupPhaseFinished ||
                 qualifiedTeams.length !== getKOSize()
               }
-              className="rounded-xl px-5 py-3 text-xs font-black text-slate-950 shadow-md transition opacity-90 hover:opacity-100 disabled:opacity-40"
-              style={{ backgroundColor: tournament?.primary_color || '#f59e0b' }}
+              className="rounded-2xl px-5 py-3 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 disabled:opacity-40 shrink-0"
+              style={{ backgroundColor: primaryColor }}
             >
               {creating
                 ? 'Verarbeitung …'
@@ -1800,15 +1810,15 @@ export default function AdminKOPage() {
 
       {/* MATCH CENTER */}
       {knockoutMatches.length > 0 && (
-        <section className="rounded-3xl border border-gray-200/60 bg-white/50 p-6 shadow-lg backdrop-blur-xl dark:border-gray-800/60 dark:bg-gray-900/50 space-y-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-gray-200/40 pb-4 dark:border-gray-800/40">
+        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-4">
             <div>
-              <h2 className="text-xl font-black">K.-o.-Spiele &amp; Live-Ergebnisse</h2>
-              <p className="mt-1 text-xs text-gray-400">Runden verwalten und Ergebnisse direkt eintragen.</p>
+              <h2 className="text-xl font-black text-white tracking-tight">K.-o.-Spiele &amp; Live-Ergebnisse</h2>
+              <p className="mt-1 text-xs font-medium text-slate-300">Runden verwalten und Ergebnisse direkt eintragen.</p>
             </div>
           </div>
 
-          <div className="divide-y divide-gray-200/40 dark:divide-gray-800/40">
+          <div className="divide-y divide-white/10">
             {KO_PHASES.map((phase) => {
               const phaseMatches = getPhaseMatches(phase)
               if (phaseMatches.length === 0) return null
@@ -1826,17 +1836,17 @@ export default function AdminKOPage() {
                       className="flex min-w-0 items-center gap-3 text-left"
                     >
                       <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-black ${
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-black border ${
                           allFinished
-                            ? 'bg-emerald-500/20 text-emerald-500'
-                            : 'bg-amber-500/20 text-amber-500'
+                            ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
+                            : 'border-amber-500/30 bg-amber-950/20 text-amber-300'
                         }`}
                       >
                         {allFinished ? '✓' : getRoundNumber(phase)}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="truncate text-lg font-black">{getPhaseName(phase)}</h3>
-                        <p className="text-[10px] font-semibold text-gray-400">
+                        <h3 className="truncate text-lg font-black text-white">{getPhaseName(phase)}</h3>
+                        <p className="text-[10px] font-semibold text-slate-400">
                           {phaseMatches.length} Spiele • {allFinished ? 'Alle beendet' : 'Spiele offen'}
                           {currentTime && ` • ${currentTime} Uhr`}
                         </p>
@@ -1855,21 +1865,21 @@ export default function AdminKOPage() {
                                 [phase]: event.target.value,
                               }))
                             }
-                            className="h-10 rounded-xl border border-gray-300/80 bg-white/80 px-3 text-xs font-bold shadow-sm backdrop-blur-md dark:border-gray-700/80 dark:bg-gray-800/80"
+                            className="h-10 rounded-2xl border border-white/10 bg-slate-950/80 px-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
                           />
                           <button
                             type="button"
                             onClick={() => saveRoundTime(phase)}
                             disabled={savingTime}
-                            className="h-10 rounded-xl px-4 text-xs font-black text-slate-950 shadow-sm transition opacity-90 hover:opacity-100 disabled:opacity-50"
-                            style={{ backgroundColor: tournament?.primary_color || '#f59e0b' }}
+                            className="h-10 rounded-2xl px-4 text-xs font-black text-slate-950 shadow-md transition hover:opacity-90 disabled:opacity-40"
+                            style={{ backgroundColor: primaryColor }}
                           >
                             {savingTime ? 'Speichern …' : 'Zeit speichern'}
                           </button>
                           <button
                             type="button"
                             onClick={() => setEditingRound(null)}
-                            className="h-10 rounded-xl border border-gray-300/80 bg-white/60 px-4 text-xs font-bold dark:border-gray-700/80 dark:bg-gray-800/60"
+                            className="h-10 rounded-2xl border border-white/10 bg-slate-950/60 px-4 text-xs font-bold text-slate-300 hover:text-white"
                           >
                             Abbrechen
                           </button>
@@ -1885,7 +1895,7 @@ export default function AdminKOPage() {
                               }))
                               setEditingRound(phase)
                             }}
-                            className="h-10 rounded-xl border border-gray-300/80 bg-white/70 px-4 text-xs font-bold shadow-sm backdrop-blur-md hover:bg-white dark:border-gray-700/80 dark:bg-gray-800/70"
+                            className="h-10 rounded-2xl border border-white/10 bg-slate-950/60 px-4 text-xs font-bold text-slate-300 hover:text-white transition"
                           >
                             ⏰ Zeit ändern
                           </button>
@@ -1895,7 +1905,7 @@ export default function AdminKOPage() {
                               type="button"
                               onClick={createNextRound}
                               disabled={creating}
-                              className="h-10 rounded-xl bg-emerald-500 px-4 text-xs font-black text-slate-950 shadow-md transition hover:bg-emerald-400 disabled:opacity-50"
+                              className="h-10 rounded-2xl bg-emerald-500 px-4 text-xs font-black text-slate-950 shadow-md transition hover:bg-emerald-400 disabled:opacity-40"
                             >
                               {creating ? 'Erstelle …' : '▶ Nächste Runde freischalten'}
                             </button>
@@ -1912,19 +1922,19 @@ export default function AdminKOPage() {
                         return (
                           <div
                             key={match.id}
-                            className="rounded-2xl border border-gray-200/60 bg-white/70 p-3 shadow-sm backdrop-blur-md dark:border-gray-800/60 dark:bg-gray-800/70 space-y-2"
+                            className="rounded-2xl border border-white/10 bg-slate-950/80 p-4 space-y-2.5 shadow-lg"
                           >
-                            <div className="flex items-center justify-between text-[10px] font-black text-gray-400">
+                            <div className="flex items-center justify-between text-[10px] font-black text-slate-400">
                               <span>
                                 {match.phase === 'third_place'
                                   ? 'Spiel um Platz 3'
                                   : `Spiel #${getGlobalMatchNumber(match.phase, match.knockout_position ?? 1)}`}
                               </span>
                               <span
-                                className={`rounded-full px-2 py-0.5 text-[8px] font-black ${
+                                className={`rounded-full px-2 py-0.5 text-[8px] font-black border ${
                                   match.status === 'finished'
-                                    ? 'bg-emerald-500/20 text-emerald-500'
-                                    : 'bg-amber-500/20 text-amber-500'
+                                    ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
+                                    : 'border-amber-500/30 bg-amber-950/20 text-amber-300'
                                 }`}
                               >
                                 {match.status === 'finished' ? 'FERTIG' : 'OFFEN'}
@@ -1935,8 +1945,8 @@ export default function AdminKOPage() {
                               <div
                                 className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold ${
                                   winner === match.team1_id
-                                    ? 'bg-emerald-500/20 text-emerald-500'
-                                    : 'bg-gray-100 dark:bg-gray-900'
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                    : 'bg-slate-900/80 text-white border border-white/5'
                                 }`}
                               >
                                 <span className="truncate">{getTeamName(match.team1_id)}</span>
@@ -1946,8 +1956,8 @@ export default function AdminKOPage() {
                               <div
                                 className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold ${
                                   winner === match.team2_id
-                                    ? 'bg-emerald-500/20 text-emerald-500'
-                                    : 'bg-gray-100 dark:bg-gray-900'
+                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                    : 'bg-slate-900/80 text-white border border-white/5'
                                 }`}
                               >
                                 <span className="truncate">{getTeamName(match.team2_id)}</span>
@@ -1957,7 +1967,7 @@ export default function AdminKOPage() {
 
                             <MatchScoreEditor
                               match={match}
-                              primaryColor={tournament?.primary_color || '#f59e0b'}
+                              primaryColor={primaryColor}
                               onSave={saveMatchScore}
                             />
                           </div>

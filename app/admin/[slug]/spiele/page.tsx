@@ -100,7 +100,14 @@ function generateGroupRounds(teamIds: number[], firstByeTeamId?: number) {
 export default function AdminSpielePage() {
   const params = useParams()
   const rawSlug = (params?.slug as string) || ''
-  const slug = decodeURIComponent(rawSlug)
+
+  const slug = useMemo(() => {
+    try {
+      return decodeURIComponent(rawSlug)
+    } catch {
+      return rawSlug
+    }
+  }, [rawSlug])
 
   const [tournament, setTournament] = useState<TournamentData | null>(null)
   const [teams, setTeams] = useState<Team[]>([])
@@ -128,8 +135,10 @@ export default function AdminSpielePage() {
   // Einklappbare Tische State
   const [collapsedTables, setCollapsedTables] = useState<Record<string | number, boolean>>({})
 
+  const primaryColor = tournament?.primary_color || '#22c55e'
+
   async function loadData() {
-    if (!slug) return
+    if (!slug && !rawSlug) return
     setLoading(true)
     setStatusMessage(null)
 
@@ -137,7 +146,7 @@ export default function AdminSpielePage() {
       const { data: tourneyData, error: tourneyError } = await supabase
         .from('tournaments')
         .select('id, name, slug, primary_color')
-        .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
+        .or(`slug.eq.${slug},slug.eq.${rawSlug}`)
         .maybeSingle()
 
       if (tourneyError) throw tourneyError
@@ -198,7 +207,7 @@ export default function AdminSpielePage() {
 
   useEffect(() => {
     void loadData()
-  }, [slug])
+  }, [slug, rawSlug])
 
   async function triggerBroadcast() {
     if (!tournament?.id) return
@@ -219,7 +228,7 @@ export default function AdminSpielePage() {
     return groups.find((g) => g.id === id)?.name || `Gruppe #${id}`
   }
 
-  // AUTOMATISCHER SPIELPLAN-GENERATOR (BERGER-SYSTEM WITH ODD/EVEN BYE LOGIC)
+  // AUTOMATISCHER SPIELPLAN-GENERATOR
   async function handleGenerateGroupSchedule() {
     if (!tournament?.id || groups.length === 0) return
 
@@ -458,51 +467,63 @@ export default function AdminSpielePage() {
   const liveMatches = matches.filter((m) => m.status === 'live').length
   const openMatches = matches.filter((m) => m.status === 'scheduled').length
 
-  const primaryColor = tournament?.primary_color || '#22c55e'
-
   if (loading) {
-    return <div className="p-8 text-center font-bold text-slate-400 text-xs">Lade Spielplan …</div>
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+        <div className="text-center">
+          <div
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
+          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+            Lade Spielplan …
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-8 w-full max-w-full overflow-hidden">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
       {statusMessage && (
         <div
-          className={`rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
+          className={`w-full rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
             statusMessage.type === 'success'
-              ? 'border-emerald-500/30 bg-emerald-500/20 text-emerald-300'
-              : 'border-red-500/30 bg-red-500/20 text-red-300'
+              ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
+              : 'border-red-500/30 bg-red-950/20 text-red-300'
           }`}
         >
           {statusMessage.text}
         </div>
       )}
 
-      {/* METRIK CARDS - FREI UND FLEXIBEL AUF MOBIL & DESKTOP */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between">
-          <p className="text-xs font-black uppercase tracking-wider text-slate-400">Spiele Gesamt</p>
+      {/* METRIK CARDS */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Spiele Gesamt</p>
           <p className="mt-2 text-3xl font-black text-white">{totalMatches}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between">
-          <p className="text-xs font-black uppercase tracking-wider text-slate-400">🔴 Live / Aktiv</p>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">🔴 Live / Aktiv</p>
           <p className="mt-2 text-3xl font-black text-red-400">{liveMatches}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between">
-          <p className="text-xs font-black uppercase tracking-wider text-slate-400">Offen</p>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Offen</p>
           <p className="mt-2 text-3xl font-black text-amber-400">{openMatches}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl flex flex-col justify-between">
-          <p className="text-xs font-black uppercase tracking-wider text-slate-400">Beendet</p>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Beendet</p>
           <p className="mt-2 text-3xl font-black text-emerald-400">{finishedMatches}</p>
         </div>
       </section>
 
-      {/* AUTOMATISCHER SPIELPLAN GENERATOR MIT SPIELFREI-OPTIONEN */}
-      <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-6">
+      {/* AUTOMATISCHER SPIELPLAN GENERATOR */}
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
         <div className="border-b border-white/10 pb-4">
-          <h2 className="text-xl font-black text-white">Gruppen-Spielplan generieren</h2>
-          <p className="mt-1 text-xs text-slate-400">
+          <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
+            Gruppen-Spielplan generieren
+          </h2>
+          <p className="mt-1 text-xs font-medium text-slate-300">
             Erstelle automatisch alle Gruppen-Paarungen (Round-Robin / Berger-System) inkl. automatischer Spielfrei-Verteilung bei ungeraden Gruppengrößen.
           </p>
         </div>
@@ -518,7 +539,7 @@ export default function AdminSpielePage() {
               max="64"
               value={tableCount}
               onChange={(e) => setTableCount(Math.max(1, Number(e.target.value) || 1))}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-black text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
             />
           </div>
 
@@ -532,7 +553,7 @@ export default function AdminSpielePage() {
               max="120"
               value={matchDurationMinutes}
               onChange={(e) => setMatchDurationMinutes(Math.max(1, Number(e.target.value) || 1))}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-black text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
             />
           </div>
 
@@ -544,18 +565,18 @@ export default function AdminSpielePage() {
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-black text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
             />
           </div>
         </div>
 
-        {/* EINSTELLUNGEN FÜR UNGERADE GRUPPEN (SPIELFREI IN RUNDE 1) */}
+        {/* EINSTELLUNGEN FÜR UNGERADE GRUPPEN */}
         {groups.some((g) => members.filter((m) => m.group_id === g.id).length % 2 !== 0) && (
-          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-950/30 p-4 space-y-3">
             <div className="flex items-center gap-2 text-xs font-black text-amber-300">
               <span>⏸️ Ungerade Gruppengröße erkannt</span>
             </div>
-            <p className="text-[11px] text-amber-200/80">
+            <p className="text-[11px] font-medium text-amber-200/80">
               Bei Gruppen mit ungerader Teamanzahl hat pro Runde jeweils ein Team spielfrei. Wähle hier aus, welches Team in <strong>Runde 1</strong> spielfrei startet:
             </p>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -596,12 +617,12 @@ export default function AdminSpielePage() {
         )}
 
         {/* AKTIONEN: GENERIEREN UND ZURÜCKSETZEN */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-white/10">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/10">
           <button
             type="button"
             onClick={handleResetMatches}
             disabled={saving || matches.length === 0}
-            className="w-full sm:w-auto rounded-xl border border-red-500/30 bg-red-500/15 px-4 py-3 text-xs font-black text-red-300 hover:bg-red-500/25 transition disabled:opacity-40"
+            className="w-full sm:w-auto rounded-2xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-xs font-black text-red-300 hover:bg-red-900/40 transition disabled:opacity-40"
           >
             🗑️ Spielplan &amp; Spiele zurücksetzen
           </button>
@@ -610,7 +631,7 @@ export default function AdminSpielePage() {
             type="button"
             onClick={handleGenerateGroupSchedule}
             disabled={saving || groups.length === 0}
-            className="w-full sm:w-auto rounded-xl px-5 py-3 text-xs font-black text-slate-950 shadow-md transition hover:opacity-90 disabled:opacity-40"
+            className="w-full sm:w-auto rounded-2xl px-5 py-3 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 disabled:opacity-40"
             style={{ backgroundColor: primaryColor }}
           >
             {saving ? 'Generiere Spielplan …' : '⚡ Gruppen-Spielplan automatisch erstellen'}
@@ -619,9 +640,11 @@ export default function AdminSpielePage() {
       </section>
 
       {/* FILTER & SEARCH BAR */}
-      <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-4">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-xl font-black text-white">Spiele Übersicht &amp; Live-Eingabe</h2>
+          <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
+            Spiele Übersicht &amp; Live-Eingabe
+          </h2>
           <span className="text-xs text-slate-400 font-bold">
             {filteredMatches.length} von {matches.length} Spielen
           </span>
@@ -630,16 +653,16 @@ export default function AdminSpielePage() {
         <div className="grid gap-3 sm:grid-cols-3">
           <input
             type="text"
-            placeholder="🔍 Nach Team Suchen …"
+            placeholder="🔍 Nach Team suchen …"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-emerald-500"
+            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-white/30"
           />
 
           <select
             value={selectedGroupFilter}
             onChange={(e) => setSelectedGroupFilter(e.target.value)}
-            className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
+            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
           >
             <option value="all">Alle Gruppen &amp; Phasen</option>
             {groups.map((g) => (
@@ -652,7 +675,7 @@ export default function AdminSpielePage() {
           <select
             value={selectedStatusFilter}
             onChange={(e) => setSelectedStatusFilter(e.target.value)}
-            className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
+            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
           >
             <option value="all">Alle Status-Arten</option>
             <option value="scheduled">Offen / Angesetzt</option>
@@ -664,7 +687,7 @@ export default function AdminSpielePage() {
 
       {/* SPIEL-LISTE NACH TISCHEN GEORDNET */}
       {filteredMatches.length === 0 ? (
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-8 text-center text-xs font-bold text-slate-500 backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-8 text-center text-xs font-bold text-slate-400 backdrop-blur-xl">
           Keine Spiele für die aktuelle Filterauswahl gefunden.
         </div>
       ) : (
@@ -677,20 +700,20 @@ export default function AdminSpielePage() {
             return (
               <div
                 key={tableKey}
-                className="overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 shadow-lg backdrop-blur-xl transition"
+                className="overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/60 shadow-2xl backdrop-blur-xl transition"
               >
                 {/* TISCH HEADER */}
                 <button
                   type="button"
                   onClick={() => toggleTable(tableKey)}
-                  className="flex w-full items-center justify-between p-5 text-left transition hover:bg-white/5"
+                  className="flex w-full items-center justify-between p-5 sm:p-6 text-left transition hover:bg-white/5"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 font-black text-xs text-white border border-white/10">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 font-black text-xs text-white border border-white/10">
                       {tableKey === 'unassigned' ? '?' : `T${tableKey}`}
                     </span>
                     <div>
-                      <h3 className="text-base font-black text-white">{title}</h3>
+                      <h3 className="text-base font-black text-white sm:text-lg">{title}</h3>
                       <p className="text-[10px] font-bold text-slate-400">
                         {tableMatches.length} {tableMatches.length === 1 ? 'Spiel' : 'Spiele'}
                       </p>
@@ -714,7 +737,7 @@ export default function AdminSpielePage() {
 
                 {/* TISCH SPIELE GRID */}
                 {!isCollapsed && (
-                  <div className="border-t border-white/10 p-5 bg-slate-950/30">
+                  <div className="border-t border-white/10 p-5 sm:p-6 bg-slate-950/40">
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {tableMatches.map((match) => (
                         <MatchCard
@@ -783,12 +806,12 @@ function MatchCard({
 
   return (
     <div
-      className={`flex flex-col justify-between rounded-3xl border p-4 shadow-lg backdrop-blur-xl transition ${
+      className={`flex flex-col justify-between rounded-2xl border p-4 shadow-lg backdrop-blur-xl transition ${
         isFinished
-          ? 'border-emerald-500/30 bg-slate-900/60'
+          ? 'border-emerald-500/30 bg-slate-950/80'
           : isLive
           ? 'border-red-500/50 bg-red-950/20'
-          : 'border-white/10 bg-slate-900/50'
+          : 'border-white/10 bg-slate-950/80'
       }`}
     >
       <div className="space-y-3">
@@ -803,7 +826,7 @@ function MatchCard({
 
         {/* TEAMS & PUNKTE */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-950/60 px-3 py-2 text-xs font-bold text-white">
+          <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-900/80 px-3 py-2 text-xs font-bold text-white border border-white/5">
             <span className="truncate">{team1Name}</span>
             <input
               type="number"
@@ -811,11 +834,11 @@ function MatchCard({
               max="99"
               value={score1}
               onChange={(e) => setScore1(e.target.value)}
-              className="h-7 w-10 rounded-lg border border-white/10 bg-slate-900 text-center font-black text-white outline-none focus:border-emerald-500"
+              className="h-8 w-12 rounded-xl border border-white/10 bg-slate-950/80 text-center font-black text-xs text-white outline-none focus:border-white/30"
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-950/60 px-3 py-2 text-xs font-bold text-white">
+          <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-900/80 px-3 py-2 text-xs font-bold text-white border border-white/5">
             <span className="truncate">{team2Name}</span>
             <input
               type="number"
@@ -823,7 +846,7 @@ function MatchCard({
               max="99"
               value={score2}
               onChange={(e) => setScore2(e.target.value)}
-              className="h-7 w-10 rounded-lg border border-white/10 bg-slate-900 text-center font-black text-white outline-none focus:border-emerald-500"
+              className="h-8 w-12 rounded-xl border border-white/10 bg-slate-950/80 text-center font-black text-xs text-white outline-none focus:border-white/30"
             />
           </div>
         </div>
@@ -858,7 +881,7 @@ function MatchCard({
         <button
           type="button"
           onClick={() => save('finished')}
-          className="rounded-lg px-3 py-1 text-[10px] font-black text-slate-950 transition hover:opacity-90"
+          className="rounded-lg px-3 py-1 text-[10px] font-black text-slate-950 transition hover:opacity-90 shadow-md"
           style={{ backgroundColor: isFinished ? '#10b981' : primaryColor }}
         >
           {isFinished ? '✓ Fertig' : 'Speichern'}

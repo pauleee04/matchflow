@@ -1,20 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
+  color-scheme: dark !important;
   --background: #030712;
   --foreground: #f8fafc;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Zwingt das gesamte Dokument dauerhaft auf dunkle Grundfarben */
+html, body {
+  background-color: #030712 !important;
+  color: #f8fafc !important;
+  color-scheme: dark !important;
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+/* Verhindert, dass Browser im Light Mode weiße Eingabefelder erzwingen */
+input, select, textarea, button {
+  color-scheme: dark !important;
 }

@@ -362,17 +362,29 @@ export default function AdminEinstellungenPage() {
   }
 
   if (loading) {
-    return <div className="p-8 text-center font-bold text-slate-400 text-xs">Lade Einstellungen …</div>
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+        <div className="text-center">
+          <div
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
+          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+            Lade Einstellungen …
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <form onSubmit={handleSave} className="w-full space-y-8">
+    <form onSubmit={handleSave} className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
       {statusMessage && (
         <div
           className={`w-full rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
             statusMessage.type === 'success'
-              ? 'border-emerald-500/30 bg-emerald-500/20 text-emerald-300'
-              : 'border-red-500/30 bg-red-500/20 text-red-300'
+              ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
+              : 'border-red-500/30 bg-red-950/20 text-red-300'
           }`}
         >
           {statusMessage.text}
@@ -380,13 +392,13 @@ export default function AdminEinstellungenPage() {
       )}
 
       {/* HEADER BAR */}
-      <div className="w-full flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl">
+      <section className="w-full flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: primaryColor }}>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
             Konfiguration
           </span>
-          <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">Turnier-Einstellungen</h1>
-          <p className="mt-1 text-xs text-slate-400">
+          <h1 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">Turnier-Einstellungen</h1>
+          <p className="mt-1 text-xs font-medium text-slate-300">
             Verwalte Grunddaten, Branding, Spielplan und Zahlungswege.
           </p>
         </div>
@@ -394,22 +406,22 @@ export default function AdminEinstellungenPage() {
         <button
           type="submit"
           disabled={saving}
-          className="rounded-xl px-6 py-3 text-xs font-black text-slate-950 shadow-md transition hover:opacity-90 disabled:opacity-40 shrink-0"
+          className="rounded-2xl px-6 py-3 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 disabled:opacity-40 shrink-0"
           style={{ backgroundColor: primaryColor }}
         >
           {saving ? 'Speichere …' : '💾 Einstellungen Speichern'}
         </button>
-      </div>
+      </section>
 
       {/* 1. ALLGEMEINES & SICHTBARKEIT */}
-      <section className="w-full rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-4">
-        <h2 className="text-lg font-black text-white border-b border-white/10 pb-3">
+      <section className="w-full rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-5">
+        <h2 className="text-lg font-black tracking-tight text-white border-b border-white/10 pb-3">
           1. Allgemeines &amp; Sichtbarkeit
         </h2>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
               Turnier-Name *
             </label>
             <input
@@ -417,19 +429,19 @@ export default function AdminEinstellungenPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
               URL-Slug (schreibgeschützt)
             </label>
             <input
               type="text"
               disabled
               value={tournament?.slug || ''}
-              className="w-full rounded-xl border border-white/5 bg-slate-950/40 px-4 py-2.5 text-xs font-bold text-slate-500 cursor-not-allowed"
+              className="w-full rounded-2xl border border-white/5 bg-slate-950/40 px-4 py-3 text-xs font-bold text-slate-500 cursor-not-allowed"
             />
           </div>
         </div>
@@ -438,7 +450,7 @@ export default function AdminEinstellungenPage() {
         <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4">
           <div>
             <div className="text-xs font-black text-white">Öffentlicher Turnier-Status</div>
-            <div className="text-[10px] text-slate-400">
+            <div className="text-[10px] text-slate-400 mt-0.5">
               Ist das Turnier öffentlich aufrufbar oder im Entwurfsmodus?
             </div>
           </div>
@@ -446,7 +458,7 @@ export default function AdminEinstellungenPage() {
           <button
             type="button"
             onClick={() => setIsPublic(!isPublic)}
-            className={`rounded-xl px-4 py-2 text-xs font-black transition border ${
+            className={`rounded-2xl px-4 py-2.5 text-xs font-black transition border ${
               isPublic
                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                 : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
@@ -460,7 +472,7 @@ export default function AdminEinstellungenPage() {
         <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4">
           <div>
             <div className="text-xs font-black text-white">Team-Anmeldungen erlauben</div>
-            <div className="text-[10px] text-slate-400">
+            <div className="text-[10px] text-slate-400 mt-0.5">
               Steuert, ob sich neue Teams öffentlich anmelden dürfen.
             </div>
           </div>
@@ -468,7 +480,7 @@ export default function AdminEinstellungenPage() {
           <button
             type="button"
             onClick={() => setRegistrationOpen(!registrationOpen)}
-            className={`rounded-xl px-4 py-2 text-xs font-black transition border ${
+            className={`rounded-2xl px-4 py-2.5 text-xs font-black transition border ${
               registrationOpen
                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                 : 'bg-red-500/20 text-red-300 border-red-500/40'
@@ -480,8 +492,8 @@ export default function AdminEinstellungenPage() {
       </section>
 
       {/* 2. DESIGN & BRANDING (MIT PRESETS UND BILD-UPLOAD) */}
-      <section className="w-full rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-6">
-        <h2 className="text-lg font-black text-white border-b border-white/10 pb-3">
+      <section className="w-full rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
+        <h2 className="text-lg font-black tracking-tight text-white border-b border-white/10 pb-3">
           2. Design &amp; Branding
         </h2>
 
@@ -497,7 +509,7 @@ export default function AdminEinstellungenPage() {
           <div className="grid gap-4 sm:grid-cols-2 items-start pt-2">
             {/* Datei Upload */}
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase text-slate-400">
+              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 1. Bild-Datei hochladen
               </label>
               <input
@@ -505,7 +517,7 @@ export default function AdminEinstellungenPage() {
                 accept="image/*"
                 onChange={handleLogoFileUpload}
                 disabled={uploadingLogo}
-                className="w-full cursor-pointer rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs font-bold text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-xs file:font-black file:text-white hover:file:bg-white/20"
+                className="w-full cursor-pointer rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-xs font-bold text-slate-300 file:mr-3 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-black file:text-white hover:file:bg-white/20"
               />
               {uploadingLogo && (
                 <p className="text-[10px] font-bold text-emerald-400 animate-pulse">
@@ -516,7 +528,7 @@ export default function AdminEinstellungenPage() {
 
             {/* URL EINGABE */}
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase text-slate-400">
+              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 2. Oder Bild-URL eingeben
               </label>
               <input
@@ -524,15 +536,15 @@ export default function AdminEinstellungenPage() {
                 placeholder="https://beispiel.de/logo.png"
                 value={logoUrl}
                 onChange={(e) => setLogoUrl(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs font-bold text-white outline-none focus:border-emerald-500"
+                className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
               />
             </div>
           </div>
 
           {/* VORSCHAU */}
           {logoUrl && (
-            <div className="mt-3 rounded-xl border border-white/10 bg-slate-900 p-3 text-center">
-              <span className="text-[10px] text-slate-500 uppercase font-black block mb-2">Logo Vorschau</span>
+            <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/80 p-3 text-center">
+              <span className="text-[10px] text-slate-400 uppercase font-black block mb-2 tracking-wider">Logo Vorschau</span>
               <img src={logoUrl} alt="Logo Preview" className="mx-auto h-16 w-auto object-contain" />
             </div>
           )}
@@ -544,11 +556,11 @@ export default function AdminEinstellungenPage() {
             <label className="block text-xs font-black text-white">
               🎨 Farb-Design des Turniers
             </label>
-            <div className="flex rounded-xl bg-slate-950 p-1 border border-white/10">
+            <div className="flex rounded-2xl bg-slate-950/80 p-1 border border-white/10">
               <button
                 type="button"
                 onClick={() => setDesignMode('preset')}
-                className={`rounded-lg px-3 py-1 text-xs font-black transition ${
+                className={`rounded-xl px-3 py-1.5 text-xs font-black transition ${
                   designMode === 'preset'
                     ? 'bg-white/15 text-white'
                     : 'text-slate-400 hover:text-white'
@@ -559,7 +571,7 @@ export default function AdminEinstellungenPage() {
               <button
                 type="button"
                 onClick={() => setDesignMode('custom')}
-                className={`rounded-lg px-3 py-1 text-xs font-black transition ${
+                className={`rounded-xl px-3 py-1.5 text-xs font-black transition ${
                   designMode === 'custom'
                     ? 'bg-white/15 text-white'
                     : 'text-slate-400 hover:text-white'
@@ -583,7 +595,7 @@ export default function AdminEinstellungenPage() {
                     onClick={() => handlePresetSelect(preset.name)}
                     className={`flex flex-col justify-between rounded-2xl border p-4 text-left transition ${
                       isSelected
-                        ? 'border-emerald-500 bg-emerald-500/15 ring-2 ring-emerald-500/30'
+                        ? 'border-emerald-500/60 bg-emerald-500/15 ring-2 ring-emerald-500/30'
                         : 'border-white/10 bg-slate-950/60 hover:border-white/20'
                     }`}
                   >
@@ -597,12 +609,12 @@ export default function AdminEinstellungenPage() {
 
                     <div className="mt-3 flex items-center gap-2">
                       <div
-                        className="h-4 w-8 rounded-full border border-white/20"
+                        className="h-4 w-8 rounded-full border border-white/20 shadow-sm"
                         style={{ backgroundColor: preset.primary }}
                         title="Primärfarbe"
                       />
                       <div
-                        className="h-4 w-8 rounded-full border border-white/20"
+                        className="h-4 w-8 rounded-full border border-white/20 shadow-sm"
                         style={{ backgroundColor: preset.secondary }}
                         title="Sekundärfarbe"
                       />
@@ -617,7 +629,7 @@ export default function AdminEinstellungenPage() {
           {designMode === 'custom' && (
             <div className="grid gap-4 sm:grid-cols-2 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
                   Primärfarbe (Hauptakzent)
                 </label>
                 <div className="flex items-center gap-3">
@@ -625,19 +637,19 @@ export default function AdminEinstellungenPage() {
                     type="color"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="h-10 w-12 cursor-pointer rounded-xl border-0 bg-transparent"
+                    className="h-10 w-12 cursor-pointer rounded-2xl border-0 bg-transparent"
                   />
                   <input
                     type="text"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-xs font-mono font-bold text-white outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-mono font-bold text-white focus:border-white/30 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
                   Sekundärfarbe (Gradients / Badges)
                 </label>
                 <div className="flex items-center gap-3">
@@ -645,13 +657,13 @@ export default function AdminEinstellungenPage() {
                     type="color"
                     value={secondaryColor}
                     onChange={(e) => setSecondaryColor(e.target.value)}
-                    className="h-10 w-12 cursor-pointer rounded-xl border-0 bg-transparent"
+                    className="h-10 w-12 cursor-pointer rounded-2xl border-0 bg-transparent"
                   />
                   <input
                     type="text"
                     value={secondaryColor}
                     onChange={(e) => setSecondaryColor(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-xs font-mono font-bold text-white outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-mono font-bold text-white focus:border-white/30 focus:outline-none"
                   />
                 </div>
               </div>
@@ -661,14 +673,14 @@ export default function AdminEinstellungenPage() {
       </section>
 
       {/* 3. SPIELFELD & ZEITPLANUNG */}
-      <section className="w-full rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-4">
-        <h2 className="text-lg font-black text-white border-b border-white/10 pb-3">
+      <section className="w-full rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+        <h2 className="text-lg font-black tracking-tight text-white border-b border-white/10 pb-3">
           3. Spielfeld &amp; Zeitplanung
         </h2>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
               Maximal-Teams
             </label>
             <input
@@ -677,12 +689,12 @@ export default function AdminEinstellungenPage() {
               max="256"
               value={teamCount}
               onChange={(e) => setTeamCount(Number(e.target.value) || 2)}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
               Anzahl Tische / Plätze
             </label>
             <input
@@ -691,12 +703,12 @@ export default function AdminEinstellungenPage() {
               max="64"
               value={tableCount}
               onChange={(e) => setTableCount(Number(e.target.value) || 1)}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
               Spieldauer (Minuten)
             </label>
             <input
@@ -705,27 +717,27 @@ export default function AdminEinstellungenPage() {
               max="120"
               value={matchDuration}
               onChange={(e) => setMatchDuration(Number(e.target.value) || 1)}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
               Startzeit (Uhrzeit)
             </label>
             <input
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
             />
           </div>
         </div>
       </section>
 
       {/* 4. K.-O.-PHASE & PLATZ 3 */}
-      <section className="w-full rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-4">
-        <h2 className="text-lg font-black text-white border-b border-white/10 pb-3">
+      <section className="w-full rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+        <h2 className="text-lg font-black tracking-tight text-white border-b border-white/10 pb-3">
           4. K.-o.-Phase
         </h2>
 
@@ -737,7 +749,7 @@ export default function AdminEinstellungenPage() {
         <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4">
           <div>
             <div className="text-xs font-black text-white">Spiel um Platz 3 austragen</div>
-            <div className="text-[10px] text-slate-400">
+            <div className="text-[10px] text-slate-400 mt-0.5">
               Erstellt in der K.-o.-Phase ein zusätzliches Match zwischen den Verlierern der Halbfinals.
             </div>
           </div>
@@ -745,10 +757,10 @@ export default function AdminEinstellungenPage() {
           <button
             type="button"
             onClick={() => setHasThirdPlaceMatch(!hasThirdPlaceMatch)}
-            className={`rounded-xl px-4 py-2 text-xs font-black transition border ${
+            className={`rounded-2xl px-4 py-2.5 text-xs font-black transition border ${
               hasThirdPlaceMatch
                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                : 'bg-slate-800 text-slate-400 border-white/10'
+                : 'bg-slate-950/80 text-slate-400 border-white/10'
             }`}
           >
             {hasThirdPlaceMatch ? '✓ Aktiv' : 'Inaktiv'}
@@ -756,14 +768,14 @@ export default function AdminEinstellungenPage() {
         </div>
       </section>
 
-      {/* 5. STARTGELD & ZAHLUNGSARTEN */}
-      <section className="w-full rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-4">
-        <h2 className="text-lg font-black text-white border-b border-white/10 pb-3">
+      {/* 5. STARTGELD & ZAHLUNGSOPTIONEN */}
+      <section className="w-full rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+        <h2 className="text-lg font-black tracking-tight text-white border-b border-white/10 pb-3">
           5. Startgeld &amp; Zahlungsoptionen
         </h2>
 
         <div>
-          <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
             Startgebühr pro Team (€)
           </label>
           <input
@@ -772,7 +784,7 @@ export default function AdminEinstellungenPage() {
             step="0.50"
             value={entryFee}
             onChange={(e) => setEntryFee(Number(e.target.value) || 0)}
-            className="w-full sm:max-w-xs rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
+            className="w-full sm:max-w-xs rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
           />
         </div>
 
@@ -780,15 +792,15 @@ export default function AdminEinstellungenPage() {
         <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4">
           <div>
             <div className="text-xs font-black text-white">💵 Barzahlung vor Ort</div>
-            <div className="text-[10px] text-slate-400">Erlaubt es Teams, das Startgeld am Turnier-Tag bar zu bezahlen.</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">Erlaubt es Teams, das Startgeld am Turnier-Tag bar zu bezahlen.</div>
           </div>
           <button
             type="button"
             onClick={() => setCashEnabled(!cashEnabled)}
-            className={`rounded-xl px-4 py-2 text-xs font-black transition border ${
+            className={`rounded-2xl px-4 py-2.5 text-xs font-black transition border ${
               cashEnabled
                 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                : 'bg-slate-800 text-slate-400 border-white/10'
+                : 'bg-slate-950/80 text-slate-400 border-white/10'
             }`}
           >
             {cashEnabled ? '✓ Aktiv' : 'Inaktiv'}
@@ -800,15 +812,15 @@ export default function AdminEinstellungenPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs font-black text-white">🏛️ Banküberweisung</div>
-              <div className="text-[10px] text-slate-400">Zeigt den Teams eure Bankdaten für Vorab-Überweisungen.</div>
+              <div className="text-[10px] text-slate-400 mt-0.5">Zeigt den Teams eure Bankdaten für Vorab-Überweisungen.</div>
             </div>
             <button
               type="button"
               onClick={() => setBankTransferEnabled(!bankTransferEnabled)}
-              className={`rounded-xl px-4 py-2 text-xs font-black transition border ${
+              className={`rounded-2xl px-4 py-2.5 text-xs font-black transition border ${
                 bankTransferEnabled
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-400 border-white/10'
+                  : 'bg-slate-950/80 text-slate-400 border-white/10'
               }`}
             >
               {bankTransferEnabled ? '✓ Aktiv' : 'Inaktiv'}
@@ -818,33 +830,33 @@ export default function AdminEinstellungenPage() {
           {bankTransferEnabled && (
             <div className="grid gap-3 sm:grid-cols-3 pt-2">
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Kontoinhaber</label>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Kontoinhaber</label>
                 <input
                   type="text"
                   placeholder="z.B. Max Mustermann"
                   value={bankAccountHolder}
                   onChange={(e) => setBankAccountHolder(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs font-bold text-white outline-none"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">IBAN</label>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">IBAN</label>
                 <input
                   type="text"
                   placeholder="DE89 3704 0044 ..."
                   value={bankIban}
                   onChange={(e) => setBankIban(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs font-mono font-bold text-white outline-none"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-mono font-bold text-white focus:border-white/30 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Verwendungszweck</label>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Verwendungszweck</label>
                 <input
                   type="text"
                   placeholder="z.B. Turnier + Teamname"
                   value={bankReference}
                   onChange={(e) => setBankReference(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs font-bold text-white outline-none"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
                 />
               </div>
             </div>
@@ -856,15 +868,15 @@ export default function AdminEinstellungenPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs font-black text-white">💳 PayPal-Zahlung</div>
-              <div className="text-[10px] text-slate-400">Ermöglicht direkte Zahlungen per PayPal-Link.</div>
+              <div className="text-[10px] text-slate-400 mt-0.5">Ermöglicht direkte Zahlungen per PayPal-Link.</div>
             </div>
             <button
               type="button"
               onClick={() => setPaypalEnabled(!paypalEnabled)}
-              className={`rounded-xl px-4 py-2 text-xs font-black transition border ${
+              className={`rounded-2xl px-4 py-2.5 text-xs font-black transition border ${
                 paypalEnabled
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                  : 'bg-slate-800 text-slate-400 border-white/10'
+                  : 'bg-slate-950/80 text-slate-400 border-white/10'
               }`}
             >
               {paypalEnabled ? '✓ Aktiv' : 'Inaktiv'}
@@ -873,13 +885,13 @@ export default function AdminEinstellungenPage() {
 
           {paypalEnabled && (
             <div className="pt-2">
-              <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">PayPal.me / Payment Link</label>
+              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">PayPal.me / Payment Link</label>
               <input
                 type="url"
                 placeholder="https://paypal.me/DeinName"
                 value={paypalPaymentLink}
                 onChange={(e) => setPaypalPaymentLink(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs font-bold text-white outline-none"
+                className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
               />
             </div>
           )}
@@ -887,11 +899,11 @@ export default function AdminEinstellungenPage() {
       </section>
 
       {/* SPEICHERN BUTTON UNTEN */}
-      <div className="flex justify-end pt-4">
+      <div className="flex justify-end pt-2">
         <button
           type="submit"
           disabled={saving}
-          className="rounded-2xl px-8 py-4 text-xs font-black text-slate-950 shadow-xl transition hover:opacity-90 disabled:opacity-40"
+          className="rounded-2xl px-8 py-4 text-xs font-black text-slate-950 shadow-2xl transition hover:opacity-90 disabled:opacity-40"
           style={{ backgroundColor: primaryColor }}
         >
           {saving ? 'Speichere Einstellungen …' : '💾 Alle Einstellungen Speichern'}

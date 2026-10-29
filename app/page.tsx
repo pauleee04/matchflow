@@ -70,7 +70,7 @@ export default function PlatformHomePage() {
       </div>
 
       {/* NAVIGATION BAR */}
-      <nav className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
+      <nav className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-xl font-black text-slate-950 shadow-lg shadow-amber-500/20">
@@ -98,7 +98,7 @@ export default function PlatformHomePage() {
             </Link>
             <Link
               href="/admin"
-              className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-xs font-black text-slate-950 shadow-md shadow-amber-500/15 transition hover:brightness-110 active:scale-95"
+              className="rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-xs font-black text-slate-950 shadow-md shadow-amber-500/15 transition hover:brightness-110 active:scale-95"
             >
               + Turnier veranstalten
             </Link>
@@ -120,7 +120,7 @@ export default function PlatformHomePage() {
           </span>
         </h1>
 
-        <p className="mx-auto mt-6 max-w-2xl text-sm font-medium leading-relaxed text-slate-400 sm:text-lg">
+        <p className="mx-auto mt-6 max-w-2xl text-sm font-medium leading-relaxed text-slate-300 sm:text-lg">
           Ob 🍺 Bierpong, ⚽ Fußball, 🎾 Tennis oder 🎯 Darts: Erstelle mit <strong>MatchFlow</strong> in Sekunden dein eigenes Turnier mit automatischer Gruppen-Auslosung, Live-Ticker auf jedem Smartphone und Fullscreen-Beamer-Displays.
         </p>
 
@@ -135,35 +135,35 @@ export default function PlatformHomePage() {
 
           <a
             href="#tournaments"
-            className="w-full sm:w-auto rounded-2xl border border-slate-800 bg-slate-900/80 px-8 py-4 text-sm font-bold text-slate-300 backdrop-blur-md transition hover:border-slate-700 hover:bg-slate-800"
+            className="w-full sm:w-auto rounded-2xl border border-white/10 bg-slate-900/60 px-8 py-4 text-sm font-bold text-slate-200 backdrop-blur-xl transition hover:border-white/20 hover:bg-slate-900/90"
           >
             🔍 Aktive Turniere suchen
           </a>
         </div>
 
         {/* STATS STRIP */}
-        <div className="mt-16 grid grid-cols-2 gap-4 rounded-3xl border border-slate-800/80 bg-slate-900/50 p-6 backdrop-blur-xl sm:grid-cols-4 sm:p-8">
+        <div className="mt-16 grid grid-cols-2 gap-4 rounded-[32px] border border-white/10 bg-slate-900/60 p-6 backdrop-blur-xl sm:grid-cols-4 sm:p-8 shadow-2xl">
           <div>
             <div className="text-2xl font-black text-amber-400 sm:text-3xl">100% Realtime</div>
-            <div className="mt-1 text-xs font-bold text-slate-500">Live-Sync ohne Neuladen</div>
+            <div className="mt-1 text-xs font-bold text-slate-400">Live-Sync ohne Neuladen</div>
           </div>
           <div>
             <div className="text-2xl font-black text-amber-400 sm:text-3xl">Multi-Sport</div>
-            <div className="mt-1 text-xs font-bold text-slate-500">Automatische Regeln & Zählungen</div>
+            <div className="mt-1 text-xs font-bold text-slate-400">Automatische Regeln & Zählungen</div>
           </div>
           <div>
             <div className="text-2xl font-black text-amber-400 sm:text-3xl">Custom Branding</div>
-            <div className="mt-1 text-xs font-bold text-slate-500">Eigene Farben & Wasserzeichen</div>
+            <div className="mt-1 text-xs font-bold text-slate-400">Eigene Farben & Wasserzeichen</div>
           </div>
           <div>
             <div className="text-2xl font-black text-amber-400 sm:text-3xl">Beamer Mode</div>
-            <div className="mt-1 text-xs font-bold text-slate-500">Optimierte Hallen-Anzeige</div>
+            <div className="mt-1 text-xs font-bold text-slate-400">Optimierte Hallen-Anzeige</div>
           </div>
         </div>
       </section>
 
       {/* MULTI-SPORT AUTO-CONFIGURATION ENGINE SHOWCASE */}
-      <section className="relative z-10 border-t border-b border-slate-800/80 bg-slate-900/40 py-20 backdrop-blur-md">
+      <section className="relative z-10 border-t border-b border-white/10 bg-slate-900/40 py-20 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <div className="text-center">
             <span className="text-xs font-black uppercase tracking-widest text-amber-500">
@@ -187,10 +187,10 @@ export default function PlatformHomePage() {
                   key={type}
                   type="button"
                   onClick={() => setShowcaseSport(type)}
-                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-extrabold transition ${
+                  className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-extrabold transition ${
                     isSelected
                       ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                      : 'border border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700 hover:text-white'
+                      : 'border border-white/10 bg-slate-950/80 text-slate-400 hover:text-white'
                   }`}
                 >
                   <span>{cfg.emoji}</span>
@@ -201,7 +201,7 @@ export default function PlatformHomePage() {
           </div>
 
           {/* DYNAMIC RULES PREVIEW CARD */}
-          <div className="mt-8 rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl backdrop-blur-xl sm:p-10">
+          <div className="mt-8 rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl sm:p-10">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-4 lg:max-w-md">
                 <div className="flex items-center gap-3">
@@ -217,15 +217,15 @@ export default function PlatformHomePage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-                    <span className="text-[10px] font-black uppercase text-slate-500">Abschnitte</span>
+                  <div className="rounded-2xl border border-white/10 bg-slate-950/80 p-3.5">
+                    <span className="text-[10px] font-black uppercase text-slate-400">Abschnitte</span>
                     <p className="mt-1 font-bold text-slate-200">
                       {activeSportConfig.periodNames.join(', ')}
                     </p>
                   </div>
 
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-                    <span className="text-[10px] font-black uppercase text-slate-500">Punkte-System</span>
+                  <div className="rounded-2xl border border-white/10 bg-slate-950/80 p-3.5">
+                    <span className="text-[10px] font-black uppercase text-slate-400">Punkte-System</span>
                     <p className="mt-1 font-bold text-slate-200">
                       Sieg: {activeSportConfig.scoringRules.winPoints} Pkt | Remis: {activeSportConfig.scoringRules.drawPoints} Pkt
                     </p>
@@ -233,7 +233,7 @@ export default function PlatformHomePage() {
                 </div>
 
                 {activeSportConfig.scoringRules.customNotice && (
-                  <p className="rounded-xl bg-amber-500/10 p-3 text-xs font-bold text-amber-400 border border-amber-500/20">
+                  <p className="rounded-2xl bg-amber-500/10 p-3.5 text-xs font-bold text-amber-400 border border-amber-500/20">
                     💡 {activeSportConfig.scoringRules.customNotice}
                   </p>
                 )}
@@ -247,8 +247,8 @@ export default function PlatformHomePage() {
               </div>
 
               {/* CODE / PRESET PREVIEW */}
-              <div className="flex-1 rounded-2xl border border-slate-800 bg-slate-950 p-5">
-                <span className="text-[10px] font-mono font-bold uppercase text-slate-500">
+              <div className="flex-1 rounded-2xl border border-white/10 bg-slate-950/80 p-5">
+                <span className="text-[10px] font-mono font-bold uppercase text-slate-400">
                   Automatisch generierte Turnier-Regeln:
                 </span>
                 <pre className="mt-2 whitespace-pre-wrap font-mono text-xs leading-relaxed text-slate-300">
@@ -272,7 +272,7 @@ export default function PlatformHomePage() {
         </div>
 
         <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-8 shadow-md backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
+          <div className="group rounded-[32px] border border-white/10 bg-slate-900/60 p-8 shadow-2xl backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-2xl text-amber-400 ring-1 ring-amber-500/30">
               ⚡
             </div>
@@ -282,7 +282,7 @@ export default function PlatformHomePage() {
             </p>
           </div>
 
-          <div className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-8 shadow-md backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
+          <div className="group rounded-[32px] border border-white/10 bg-slate-900/60 p-8 shadow-2xl backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-2xl text-amber-400 ring-1 ring-amber-500/30">
               🎨
             </div>
@@ -292,7 +292,7 @@ export default function PlatformHomePage() {
             </p>
           </div>
 
-          <div className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-8 shadow-md backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
+          <div className="group rounded-[32px] border border-white/10 bg-slate-900/60 p-8 shadow-2xl backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-2xl text-amber-400 ring-1 ring-amber-500/30">
               🔀
             </div>
@@ -302,7 +302,7 @@ export default function PlatformHomePage() {
             </p>
           </div>
 
-          <div className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-8 shadow-md backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
+          <div className="group rounded-[32px] border border-white/10 bg-slate-900/60 p-8 shadow-2xl backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-2xl text-amber-400 ring-1 ring-amber-500/30">
               🏆
             </div>
@@ -312,7 +312,7 @@ export default function PlatformHomePage() {
             </p>
           </div>
 
-          <div className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-8 shadow-md backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
+          <div className="group rounded-[32px] border border-white/10 bg-slate-900/60 p-8 shadow-2xl backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-2xl text-amber-400 ring-1 ring-amber-500/30">
               📺
             </div>
@@ -322,7 +322,7 @@ export default function PlatformHomePage() {
             </p>
           </div>
 
-          <div className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-8 shadow-md backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
+          <div className="group rounded-[32px] border border-white/10 bg-slate-900/60 p-8 shadow-2xl backdrop-blur-xl transition hover:border-amber-500/50 hover:bg-slate-900/90">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-2xl text-amber-400 ring-1 ring-amber-500/30">
               📊
             </div>
@@ -335,7 +335,7 @@ export default function PlatformHomePage() {
       </section>
 
       {/* ACTIVE TOURNAMENTS SECTION */}
-      <section id="tournaments" className="relative z-10 border-t border-slate-800/80 bg-slate-900/30 py-20 backdrop-blur-md">
+      <section id="tournaments" className="relative z-10 border-t border-white/10 bg-slate-900/30 py-20 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 sm:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -349,7 +349,7 @@ export default function PlatformHomePage() {
 
             <Link
               href="/admin"
-              className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-black text-amber-400 transition hover:bg-amber-500/20"
+              className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-black text-amber-400 transition hover:bg-amber-500/20 shrink-0"
             >
               + Eigenes Turnier hinzufügen
             </Link>
@@ -363,7 +363,7 @@ export default function PlatformHomePage() {
                 placeholder="Turnier nach Name oder Slug suchen …"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-slate-800 bg-slate-950 px-5 py-3.5 pl-11 text-sm font-bold text-white placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-5 py-3.5 pl-11 text-sm font-bold text-white placeholder-slate-500 focus:border-white/30 focus:outline-none"
               />
               <span className="absolute left-4 top-3.5 text-slate-500">🔍</span>
             </div>
@@ -372,10 +372,10 @@ export default function PlatformHomePage() {
               <button
                 type="button"
                 onClick={() => setSelectedSportTab('all')}
-                className={`rounded-xl px-3.5 py-2 text-xs font-extrabold transition ${
+                className={`rounded-2xl px-3.5 py-2 text-xs font-extrabold transition ${
                   selectedSportTab === 'all'
-                    ? 'bg-amber-500 text-slate-950'
-                    : 'border border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+                    ? 'bg-amber-500 text-slate-950 shadow-md'
+                    : 'border border-white/10 bg-slate-950/80 text-slate-400 hover:text-white'
                 }`}
               >
                 Alle
@@ -388,10 +388,10 @@ export default function PlatformHomePage() {
                     key={st}
                     type="button"
                     onClick={() => setSelectedSportTab(st)}
-                    className={`rounded-xl px-3.5 py-2 text-xs font-extrabold transition ${
+                    className={`rounded-2xl px-3.5 py-2 text-xs font-extrabold transition ${
                       selectedSportTab === st
-                        ? 'bg-amber-500 text-slate-950'
-                        : 'border border-slate-800 bg-slate-900 text-slate-400 hover:text-white'
+                        ? 'bg-amber-500 text-slate-950 shadow-md'
+                        : 'border border-white/10 bg-slate-950/80 text-slate-400 hover:text-white'
                     }`}
                   >
                     {cfg.emoji} {cfg.name}
@@ -403,11 +403,11 @@ export default function PlatformHomePage() {
 
           {/* TOURNAMENT CARDS */}
           {loading ? (
-            <div className="mt-12 text-center text-sm font-bold text-slate-500">
+            <div className="mt-12 text-center text-sm font-bold text-slate-400">
               Lade aktive Turniere …
             </div>
           ) : filteredTournaments.length === 0 ? (
-            <div className="mt-12 rounded-3xl border border-slate-800 bg-slate-950/50 p-12 text-center text-xs font-bold text-slate-500">
+            <div className="mt-12 rounded-[32px] border border-white/10 bg-slate-950/60 p-12 text-center text-xs font-bold text-slate-400">
               Keine aktiven Turniere in dieser Kategorie gefunden.
             </div>
           ) : (
@@ -418,7 +418,7 @@ export default function PlatformHomePage() {
                   <Link
                     key={t.id}
                     href={`/turnier/${t.slug}`}
-                    className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl backdrop-blur-xl transition hover:-translate-y-1 hover:border-amber-500/50 hover:shadow-2xl"
+                    className="group relative flex flex-col justify-between overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl transition hover:-translate-y-1 hover:border-amber-500/50"
                   >
                     <div>
                       <div className="flex items-center justify-between">
@@ -438,16 +438,16 @@ export default function PlatformHomePage() {
                         </span>
                       </div>
 
-                      <h3 className="mt-4 text-2xl font-black tracking-tight group-hover:text-amber-400">
+                      <h3 className="mt-4 text-2xl font-black tracking-tight group-hover:text-amber-400 transition-colors">
                         {t.name}
                       </h3>
-                      <p className="mt-1 font-mono text-xs text-slate-500">
+                      <p className="mt-1 font-mono text-xs text-slate-400">
                         /turnier/{t.slug}
                       </p>
                     </div>
 
-                    <div className="mt-6 flex items-center justify-between border-t border-slate-800/80 pt-4 text-xs font-extrabold text-amber-500">
-                      <span>Turnier-Übersicht & Tische</span>
+                    <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4 text-xs font-extrabold text-amber-500">
+                      <span>Turnier-Übersicht &amp; Tische</span>
                       <span>→</span>
                     </div>
                   </Link>
@@ -460,7 +460,7 @@ export default function PlatformHomePage() {
 
       {/* BOTTOM CTA BANNER */}
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-8">
-        <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-500/20 via-orange-500/10 to-purple-500/20 p-8 text-center shadow-2xl backdrop-blur-xl sm:p-16">
+        <div className="relative overflow-hidden rounded-[32px] border border-amber-500/30 bg-gradient-to-r from-amber-500/20 via-orange-500/10 to-purple-500/20 p-8 text-center shadow-2xl backdrop-blur-xl sm:p-16">
           <h2 className="text-3xl font-black tracking-tight sm:text-5xl">
             Bereit für dein nächstes Turnier?
           </h2>
@@ -480,7 +480,7 @@ export default function PlatformHomePage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs font-bold text-slate-500">
+      <footer className="border-t border-white/10 bg-slate-950 py-8 text-center text-xs font-bold text-slate-400">
         <div className="mx-auto max-w-7xl px-4">
           © 2026 MatchFlow — Global Realtime Tournament Engine
         </div>

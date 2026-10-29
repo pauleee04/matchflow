@@ -71,7 +71,7 @@ export default function WinnerPage() {
       const { data: tourneyData, error: tourneyError } = await supabase
         .from('tournaments')
         .select('id, name, slug, logo_url, primary_color, background_style')
-        .eq('slug', slug)
+        .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
         .maybeSingle()
 
       if (tourneyError) throw tourneyError
@@ -107,7 +107,7 @@ export default function WinnerPage() {
     } finally {
       setLoading(false)
     }
-  }, [slug])
+  }, [slug, rawSlug])
 
   useEffect(() => {
     void loadData()
@@ -138,8 +138,10 @@ export default function WinnerPage() {
   const placements = useMemo(() => {
     const list: Placement[] = []
 
-    const finalMatch = matches.find((m) => m.phase === 'final')
-    const thirdPlaceMatch = matches.find((m) => m.phase === 'third_place' || m.phase === 'spiel_um_platz_3')
+    const finalMatch = matches.find((m) => m.phase?.toLowerCase() === 'final')
+    const thirdPlaceMatch = matches.find(
+      (m) => m.phase?.toLowerCase() === 'third_place' || m.phase?.toLowerCase() === 'spiel_um_platz_3'
+    )
 
     if (finalMatch && isFinished(finalMatch) && finalMatch.team1_score !== null && finalMatch.team2_score !== null) {
       const winnerId = finalMatch.team1_score > finalMatch.team2_score ? finalMatch.team1_id : finalMatch.team2_id
@@ -153,9 +155,20 @@ export default function WinnerPage() {
       }
     }
 
-    if (thirdPlaceMatch && isFinished(thirdPlaceMatch) && thirdPlaceMatch.team1_score !== null && thirdPlaceMatch.team2_score !== null) {
-      const thirdId = thirdPlaceMatch.team1_score > thirdPlaceMatch.team2_score ? thirdPlaceMatch.team1_id : thirdPlaceMatch.team2_id
-      const fourthId = thirdPlaceMatch.team1_score > thirdPlaceMatch.team2_score ? thirdPlaceMatch.team2_id : thirdPlaceMatch.team1_id
+    if (
+      thirdPlaceMatch &&
+      isFinished(thirdPlaceMatch) &&
+      thirdPlaceMatch.team1_score !== null &&
+      thirdPlaceMatch.team2_score !== null
+    ) {
+      const thirdId =
+        thirdPlaceMatch.team1_score > thirdPlaceMatch.team2_score
+          ? thirdPlaceMatch.team1_id
+          : thirdPlaceMatch.team2_id
+      const fourthId =
+        thirdPlaceMatch.team1_score > thirdPlaceMatch.team2_score
+          ? thirdPlaceMatch.team2_id
+          : thirdPlaceMatch.team1_id
 
       if (thirdId) {
         list.push({ rank: 3, teamId: thirdId, teamName: getTeamName(thirdId), badge: '🥉 3. Platz' })
@@ -172,14 +185,17 @@ export default function WinnerPage() {
   const secondPlace = placements.find((p) => p.rank === 2)
   const thirdPlace = placements.find((p) => p.rank === 3)
 
-  const primaryColor = tournament?.primary_color?.trim() || '#2563eb'
+  const primaryColor = tournament?.primary_color?.trim() || '#22c55e'
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-gray-900 dark:text-white">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 dark:border-gray-800 dark:border-t-blue-400" />
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400">
+          <div
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
+          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
             Lade Siegerliste …
           </p>
         </div>
@@ -187,33 +203,37 @@ export default function WinnerPage() {
     )
   }
 
-  if (error) {
+  if (error || !tournament) {
     return (
-      <div className="mx-auto max-w-lg rounded-3xl border border-red-200 bg-red-50/90 p-6 text-center shadow-sm backdrop-blur-md dark:border-red-900/40 dark:bg-red-950/20">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-xl dark:bg-red-900/40">
+      <div className="mx-auto max-w-lg rounded-3xl border border-red-500/30 bg-red-950/20 p-6 text-center backdrop-blur-md">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-xl text-red-400">
           ⚠️
         </div>
-        <h2 className="text-lg font-black text-red-900 dark:text-red-200">
-          Fehler beim Laden
-        </h2>
-        <p className="mt-1 text-xs font-semibold text-red-700 dark:text-red-300">
-          {error}
-        </p>
+        <h2 className="text-lg font-black text-slate-100">Fehler beim Laden</h2>
+        <p className="mt-1 text-xs font-semibold text-red-300">{error || 'Turnier existiert nicht.'}</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 pb-12">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
       {/* SEITEN-KOPF */}
-      <section className="rounded-3xl border border-gray-200/80 bg-white/90 p-6 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90 sm:p-8">
-        <div className="flex items-center gap-3">
-          <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg font-black text-white shadow-sm"
-            style={{ backgroundColor: primaryColor }}
-          >
-            🏆
-          </span>
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+        <div className="flex items-center gap-4">
+          {tournament.logo_url ? (
+            <img
+              src={tournament.logo_url}
+              alt={tournament.name}
+              className="h-12 w-12 rounded-2xl object-contain bg-slate-950/60 p-1 border border-white/10"
+            />
+          ) : (
+            <span
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl font-black text-slate-950 shadow-lg"
+              style={{ backgroundColor: primaryColor }}
+            >
+              🏆
+            </span>
+          )}
           <div>
             <span
               className="text-[10px] font-black uppercase tracking-[0.2em]"
@@ -221,27 +241,27 @@ export default function WinnerPage() {
             >
               Hall of Fame
             </span>
-            <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white sm:text-3xl">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
               Sieger &amp; Platzierungen
             </h1>
           </div>
         </div>
-        <p className="mt-3 text-xs leading-relaxed text-gray-500 dark:text-gray-400 sm:text-sm">
+        <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-300 font-medium">
           Die feierliche Übersicht der Champions und finalen Turnierplatzierungen.
         </p>
       </section>
 
       {/* 🥇 SIEGERTREPPCHEN (PODIUM) */}
       {firstPlace ? (
-        <section className="rounded-3xl border border-amber-300/60 bg-gradient-to-b from-amber-500/10 via-white/80 to-white/90 p-6 shadow-sm backdrop-blur-md dark:border-amber-500/30 dark:from-amber-500/10 dark:via-gray-900/90 dark:to-gray-900/90 sm:p-8">
+        <section className="rounded-[32px] border border-amber-500/30 bg-gradient-to-b from-amber-500/10 via-slate-900/80 to-slate-900/90 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
           <div className="text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 px-3.5 py-1 text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-300">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/20 px-3.5 py-1 text-[10px] font-black uppercase tracking-widest text-amber-300">
               👑 Turniersieger
             </span>
-            <h2 className="mt-3 text-3xl font-black text-gray-900 dark:text-white sm:text-4xl">
+            <h2 className="mt-3 text-3xl sm:text-4xl font-black text-white">
               {firstPlace.teamName}
             </h2>
-            <p className="mt-1 text-xs font-extrabold text-amber-600 dark:text-amber-400">
+            <p className="mt-1 text-xs font-extrabold text-amber-400">
               Glückwunsch an die Champions des Turniers! 🎉
             </p>
           </div>
@@ -251,10 +271,10 @@ export default function WinnerPage() {
             {/* PLATZ 2 */}
             <div className="flex flex-col items-center">
               <span className="text-2xl sm:text-3xl">🥈</span>
-              <p className="mt-1 text-center text-xs font-black text-gray-800 dark:text-gray-200 truncate w-full">
+              <p className="mt-1 text-center text-xs font-black text-slate-200 truncate w-full">
                 {secondPlace?.teamName || 'Offen'}
               </p>
-              <div className="mt-2 w-full h-24 sm:h-32 rounded-t-2xl bg-gray-200/80 border-t-4 border-gray-400 flex items-center justify-center font-black text-gray-500 text-lg dark:bg-gray-800 dark:text-gray-400">
+              <div className="mt-2 w-full h-24 sm:h-32 rounded-t-2xl bg-slate-800/80 border-t-4 border-slate-400 flex items-center justify-center font-black text-slate-300 text-lg shadow-lg">
                 2.
               </div>
             </div>
@@ -262,10 +282,10 @@ export default function WinnerPage() {
             {/* PLATZ 1 */}
             <div className="flex flex-col items-center">
               <span className="text-4xl sm:text-5xl animate-bounce">🏆</span>
-              <p className="mt-1 text-center text-sm font-black text-amber-600 dark:text-amber-400 truncate w-full">
+              <p className="mt-1 text-center text-sm font-black text-amber-400 truncate w-full">
                 {firstPlace.teamName}
               </p>
-              <div className="mt-2 w-full h-32 sm:h-44 rounded-t-2xl bg-amber-400/80 border-t-4 border-amber-300 flex items-center justify-center font-black text-amber-950 text-2xl shadow-lg dark:bg-amber-500/80 dark:text-amber-950">
+              <div className="mt-2 w-full h-32 sm:h-44 rounded-t-2xl bg-amber-500/80 border-t-4 border-amber-300 flex items-center justify-center font-black text-slate-950 text-2xl shadow-xl">
                 1.
               </div>
             </div>
@@ -273,24 +293,24 @@ export default function WinnerPage() {
             {/* PLATZ 3 */}
             <div className="flex flex-col items-center">
               <span className="text-2xl sm:text-3xl">🥉</span>
-              <p className="mt-1 text-center text-xs font-black text-gray-800 dark:text-gray-200 truncate w-full">
+              <p className="mt-1 text-center text-xs font-black text-slate-200 truncate w-full">
                 {thirdPlace?.teamName || 'Offen'}
               </p>
-              <div className="mt-2 w-full h-20 sm:h-24 rounded-t-2xl bg-amber-800/20 border-t-4 border-amber-700 flex items-center justify-center font-black text-amber-800 text-base dark:bg-amber-950/40 dark:text-amber-600">
+              <div className="mt-2 w-full h-20 sm:h-24 rounded-t-2xl bg-amber-950/60 border-t-4 border-amber-700 flex items-center justify-center font-black text-amber-500 text-base shadow-lg">
                 3.
               </div>
             </div>
           </div>
         </section>
       ) : (
-        <section className="rounded-3xl border border-gray-200/80 bg-white/90 p-8 text-center shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-2xl dark:bg-amber-950/40">
+        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-8 text-center shadow-2xl backdrop-blur-xl">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/20 text-2xl">
             🥇
           </div>
-          <h2 className="text-lg font-black text-gray-900 dark:text-white">
+          <h2 className="text-lg font-black text-white">
             Das Turnier läuft noch
           </h2>
-          <p className="mt-1 text-xs font-semibold text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-xs font-semibold text-slate-400">
             Sobald die K.-o.-Phase abgeschlossen ist, wird das finale Siegertreppchen hier angezeigt.
           </p>
         </section>
@@ -298,30 +318,30 @@ export default function WinnerPage() {
 
       {/* 📊 ALLE ENDPLATZIERUNGEN */}
       {placements.length > 0 && (
-        <section className="rounded-3xl border border-gray-200/80 bg-white/90 p-6 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90">
+        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
           <div className="flex items-center gap-2.5">
             <span className="text-xl">🎖️</span>
-            <h2 className="text-lg font-black text-gray-900 dark:text-white">
+            <h2 className="text-lg font-black text-white">
               Finale Rangliste
             </h2>
           </div>
 
-          <div className="mt-4 space-y-2.5">
+          <div className="space-y-2.5">
             {placements.map((p) => (
               <div
                 key={p.teamId}
-                className="flex items-center justify-between rounded-2xl border border-gray-200/60 bg-gray-50/50 p-3.5 dark:border-gray-800 dark:bg-gray-800/40"
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 backdrop-blur-md"
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-xl font-mono text-xs font-black text-gray-700 dark:text-gray-300 bg-gray-200/80 dark:bg-gray-800">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl font-mono text-xs font-black text-slate-300 bg-slate-900 border border-white/10">
                     #{p.rank}
                   </span>
-                  <span className="text-xs font-extrabold text-gray-900 dark:text-white">
+                  <span className="text-xs font-extrabold text-white">
                     {p.teamName}
                   </span>
                 </div>
                 {p.badge && (
-                  <span className="rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-black text-amber-600 dark:text-amber-400">
+                  <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-black text-amber-400">
                     {p.badge}
                   </span>
                 )}

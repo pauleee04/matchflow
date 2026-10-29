@@ -96,25 +96,25 @@ function HighlightCard({
   getTeamName: (id: number | null) => string
 }) {
   return (
-    <article className="rounded-3xl border border-gray-200/80 bg-white/90 p-6 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90">
+    <article className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-3">
       <div className="flex items-center gap-2">
         <span className="text-xl">{icon}</span>
-        <h2 className="text-sm font-black uppercase tracking-wider text-gray-900 dark:text-white">
+        <h2 className="text-sm font-black uppercase tracking-wider text-white">
           {title}
         </h2>
       </div>
-      <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-gray-200/60 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/40">
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4 backdrop-blur-md">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold text-gray-900 dark:text-white">
+          <div className="flex items-center gap-1.5 text-xs font-extrabold text-white">
             <span className="truncate max-w-[42%]">{getTeamName(match.team1_id)}</span>
-            <span className="shrink-0 text-[10px] font-bold text-gray-400">vs.</span>
+            <span className="shrink-0 text-[10px] font-bold text-slate-400">vs.</span>
             <span className="truncate max-w-[42%]">{getTeamName(match.team2_id)}</span>
           </div>
-          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {formatPhaseName(match.phase)}
           </p>
         </div>
-        <div className="shrink-0 font-mono text-lg font-black text-gray-900 dark:text-white">
+        <div className="shrink-0 font-mono text-lg font-black text-white">
           {match.team1_score ?? 0} : {match.team2_score ?? 0}
         </div>
       </div>
@@ -124,7 +124,7 @@ function HighlightCard({
 
 function EmptyHighlightCard({ text }: { text: string }) {
   return (
-    <article className="flex min-h-[120px] items-center justify-center rounded-3xl border border-gray-200/80 bg-white/90 p-6 text-center text-xs font-bold text-gray-400 dark:border-gray-800/80 dark:bg-gray-900/90">
+    <article className="flex min-h-[120px] items-center justify-center rounded-[32px] border border-dashed border-white/10 bg-slate-900/40 p-6 text-center text-xs font-bold text-slate-400 backdrop-blur-xl">
       {text}
     </article>
   )
@@ -134,14 +134,17 @@ export default function StatsPage() {
   const params = useParams()
   const rawParam = params?.slug
 
-  const slug = useMemo(() => {
-    const str = Array.isArray(rawParam) ? rawParam[0] : rawParam || ''
-    try {
-      return decodeURIComponent(str)
-    } catch {
-      return str
-    }
+  const rawSlug = useMemo(() => {
+    return Array.isArray(rawParam) ? rawParam[0] : rawParam || ''
   }, [rawParam])
+
+  const slug = useMemo(() => {
+    try {
+      return decodeURIComponent(rawSlug)
+    } catch {
+      return rawSlug
+    }
+  }, [rawSlug])
 
   const [tournament, setTournament] = useState<TournamentInfo | null>(null)
   const [teams, setTeams] = useState<Team[]>([])
@@ -156,7 +159,7 @@ export default function StatsPage() {
       const { data: tourneyData, error: tourneyError } = await supabase
         .from('tournaments')
         .select('id, name, slug, logo_url, primary_color, background_style')
-        .eq('slug', slug)
+        .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
         .maybeSingle()
 
       if (tourneyError) throw tourneyError
@@ -192,7 +195,7 @@ export default function StatsPage() {
     } finally {
       setLoading(false)
     }
-  }, [slug])
+  }, [slug, rawSlug])
 
   useEffect(() => {
     void loadData()
@@ -356,14 +359,17 @@ export default function StatsPage() {
   const blowout = stats.biggestBlowoutMatch
   const blowoutDiff = stats.biggestDiff
 
-  const primaryColor = tournament?.primary_color?.trim() || '#2563eb'
+  const primaryColor = tournament?.primary_color?.trim() || '#22c55e'
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-gray-900 dark:text-white">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 dark:border-gray-800 dark:border-t-blue-400" />
-          <p className="text-xs font-black uppercase tracking-widest text-gray-400">
+          <div
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
+          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
             Berechne Statistiken …
           </p>
         </div>
@@ -371,76 +377,80 @@ export default function StatsPage() {
     )
   }
 
-  if (error) {
+  if (error || !tournament) {
     return (
-      <div className="mx-auto max-w-lg rounded-3xl border border-red-200 bg-red-50/90 p-6 text-center shadow-sm backdrop-blur-md dark:border-red-900/40 dark:bg-red-950/20">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-xl dark:bg-red-900/40">
+      <div className="mx-auto max-w-lg rounded-3xl border border-red-500/30 bg-red-950/20 p-6 text-center backdrop-blur-md">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-xl text-red-400">
           ⚠️
         </div>
-        <h2 className="text-lg font-black text-red-900 dark:text-red-200">
-          Fehler beim Laden
-        </h2>
-        <p className="mt-1 text-xs font-semibold text-red-700 dark:text-red-300">
-          {error}
-        </p>
+        <h2 className="text-lg font-black text-slate-100">Fehler beim Laden</h2>
+        <p className="mt-1 text-xs font-semibold text-red-300">{error || 'Turnier existiert nicht.'}</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 pb-12">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
       {/* HEADER */}
-      <section className="rounded-3xl border border-gray-200/80 bg-white/90 p-6 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90 sm:p-8">
-        <div className="flex items-center gap-3">
-          <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-lg font-black text-white shadow-sm"
-            style={{ backgroundColor: primaryColor }}
-          >
-            📊
-          </span>
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+        <div className="flex items-center gap-4">
+          {tournament.logo_url ? (
+            <img
+              src={tournament.logo_url}
+              alt={tournament.name}
+              className="h-12 w-12 rounded-2xl object-contain bg-slate-950/60 p-1 border border-white/10"
+            />
+          ) : (
+            <span
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl font-black text-slate-950 shadow-lg"
+              style={{ backgroundColor: primaryColor }}
+            >
+              📊
+            </span>
+          )}
           <div>
             <span
               className="text-[10px] font-black uppercase tracking-[0.2em]"
               style={{ color: primaryColor }}
             >
-              Turnierdaten {"&"} Analytics
+              Turnierdaten &amp; Analytics
             </span>
-            <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-              Statistiken {"&"} Kennzahlen
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              Statistiken &amp; Kennzahlen
             </h1>
           </div>
         </div>
-        <p className="mt-3 text-xs leading-relaxed text-gray-500 dark:text-gray-400 sm:text-sm">
+        <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-300 font-medium">
           Echtzeit-Auswertung aller beendeten Spiele, Torquoten und Rekorde.
         </p>
       </section>
 
       {/* KPI KACHELN */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-3xl border border-gray-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90">
-          <p className="text-[10px] font-black uppercase text-gray-400">Gespielte Spiele</p>
-          <p className="mt-2 font-mono text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">
-            {stats.totalFinished} <span className="text-xs text-gray-400 font-sans">/ {stats.totalMatches}</span>
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black uppercase text-slate-400">Gespielte Spiele</p>
+          <p className="mt-2 font-mono text-2xl sm:text-3xl font-black text-white">
+            {stats.totalFinished} <span className="text-xs text-slate-400 font-sans">/ {stats.totalMatches}</span>
           </p>
         </div>
 
-        <div className="rounded-3xl border border-gray-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90">
-          <p className="text-[10px] font-black uppercase text-gray-400">Treffer Gesamt</p>
-          <p className="mt-2 font-mono text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black uppercase text-slate-400">Treffer Gesamt</p>
+          <p className="mt-2 font-mono text-2xl sm:text-3xl font-black text-white">
             {stats.totalScored}
           </p>
         </div>
 
-        <div className="rounded-3xl border border-gray-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90">
-          <p className="text-[10px] font-black uppercase text-gray-400">Ø Treffer / Spiel</p>
-          <p className="mt-2 font-mono text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black uppercase text-slate-400">Ø Treffer / Spiel</p>
+          <p className="mt-2 font-mono text-2xl sm:text-3xl font-black text-white">
             {stats.avgScoredPerMatch}
           </p>
         </div>
 
-        <div className="rounded-3xl border border-gray-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90">
-          <p className="text-[10px] font-black uppercase text-gray-400">Teams im Turnier</p>
-          <p className="mt-2 font-mono text-2xl font-black text-gray-900 dark:text-white sm:text-3xl">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black uppercase text-slate-400">Teams im Turnier</p>
+          <p className="mt-2 font-mono text-2xl sm:text-3xl font-black text-white">
             {teams.length}
           </p>
         </div>
@@ -476,125 +486,125 @@ export default function StatsPage() {
       {/* LEADERBOARDS: OFFENSIVE & DEFENSIVE */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* TOP OFFENSIVE */}
-        <section className="overflow-hidden rounded-3xl border border-gray-200/80 bg-white/90 p-6 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
+        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-3">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <div className="flex items-center gap-2">
               <span className="text-xl">🎯</span>
-              <h2 className="text-sm font-black uppercase tracking-wider text-gray-900 dark:text-white">
+              <h2 className="text-sm font-black uppercase tracking-wider text-white">
                 Beste Offensive
               </h2>
             </div>
-            <span className="text-[10px] font-black uppercase text-gray-400">Ø Tore / Spiel</span>
+            <span className="text-[10px] font-black uppercase text-slate-400">Ø Tore / Spiel</span>
           </div>
 
           {stats.topOffense.length > 0 ? (
-            <div className="mt-3 space-y-2">
+            <div className="space-y-2">
               {stats.topOffense.slice(0, 5).map((st, idx) => (
                 <div
                   key={st.teamId}
-                  className="flex items-center justify-between rounded-2xl border border-gray-200/60 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-gray-800/40"
+                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-3 backdrop-blur-md"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl font-mono text-xs font-black text-gray-500 bg-gray-200/80 dark:bg-gray-800 dark:text-gray-400">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl font-mono text-xs font-black text-slate-400 bg-slate-900 border border-white/10">
                       #{idx + 1}
                     </span>
-                    <span className="truncate text-xs font-extrabold text-gray-900 dark:text-white">
+                    <span className="truncate text-xs font-extrabold text-white">
                       {st.teamName}
                     </span>
                   </div>
                   <div className="text-right font-mono">
-                    <p className="text-xs font-black text-gray-900 dark:text-white">Ø {st.avgScored} Tore</p>
-                    <p className="text-[10px] font-bold text-gray-400">{st.scored} gesamt ({st.played} Spiele)</p>
+                    <p className="text-xs font-black text-white">Ø {st.avgScored} Tore</p>
+                    <p className="text-[10px] font-bold text-slate-400">{st.scored} gesamt ({st.played} Spiele)</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-center text-xs font-bold text-gray-400 py-4">Noch keine Daten vorhanden</p>
+            <p className="text-center text-xs font-bold text-slate-400 py-4">Noch keine Daten vorhanden</p>
           )}
         </section>
 
         {/* TOP DEFENSIVE */}
-        <section className="overflow-hidden rounded-3xl border border-gray-200/80 bg-white/90 p-6 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
+        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-3">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
             <div className="flex items-center gap-2">
               <span className="text-xl">🛡️</span>
-              <h2 className="text-sm font-black uppercase tracking-wider text-gray-900 dark:text-white">
+              <h2 className="text-sm font-black uppercase tracking-wider text-white">
                 Beste Defensive
               </h2>
             </div>
-            <span className="text-[10px] font-black uppercase text-gray-400">Wenigste Gegentore / Spiel</span>
+            <span className="text-[10px] font-black uppercase text-slate-400">Wenigste Gegentore / Spiel</span>
           </div>
 
           {stats.topDefense.length > 0 ? (
-            <div className="mt-3 space-y-2">
+            <div className="space-y-2">
               {stats.topDefense.slice(0, 5).map((st, idx) => (
                 <div
                   key={st.teamId}
-                  className="flex items-center justify-between rounded-2xl border border-gray-200/60 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-gray-800/40"
+                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-3 backdrop-blur-md"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl font-mono text-xs font-black text-gray-500 bg-gray-200/80 dark:bg-gray-800 dark:text-gray-400">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl font-mono text-xs font-black text-slate-400 bg-slate-900 border border-white/10">
                       #{idx + 1}
                     </span>
-                    <span className="truncate text-xs font-extrabold text-gray-900 dark:text-white">
+                    <span className="truncate text-xs font-extrabold text-white">
                       {st.teamName}
                     </span>
                   </div>
                   <div className="text-right font-mono">
-                    <p className="text-xs font-black text-gray-900 dark:text-white">Ø {st.avgConceded} Gegentore</p>
-                    <p className="text-[10px] font-bold text-gray-400">{st.conceded} gesamt ({st.played} Spiele)</p>
+                    <p className="text-xs font-black text-white">Ø {st.avgConceded} Gegentore</p>
+                    <p className="text-[10px] font-bold text-slate-400">{st.conceded} gesamt ({st.played} Spiele)</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-center text-xs font-bold text-gray-400 py-4">Noch keine Daten vorhanden</p>
+            <p className="text-center text-xs font-bold text-slate-400 py-4">Noch keine Daten vorhanden</p>
           )}
         </section>
       </div>
 
       {/* TEAM EFFIZIENZ & SIEGQUOTE */}
-      <section className="overflow-hidden rounded-3xl border border-gray-200/80 bg-white/90 p-6 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/90">
-        <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-3">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
             <span className="text-xl">🥇</span>
-            <h2 className="text-sm font-black uppercase tracking-wider text-gray-900 dark:text-white">
-              Siegquote {"&"} Effizienz
+            <h2 className="text-sm font-black uppercase tracking-wider text-white">
+              Siegquote &amp; Effizienz
             </h2>
           </div>
-          <span className="text-[10px] font-black uppercase text-gray-400">Win Rate %</span>
+          <span className="text-[10px] font-black uppercase text-slate-400">Win Rate %</span>
         </div>
 
         {stats.topTeams.length > 0 ? (
-          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {stats.topTeams.slice(0, 6).map((st, idx) => (
               <div
                 key={st.teamId}
-                className="flex items-center justify-between rounded-2xl border border-gray-200/60 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-gray-800/40"
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-3 backdrop-blur-md"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl font-mono text-xs font-black text-gray-500 bg-gray-200/80 dark:bg-gray-800 dark:text-gray-400">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl font-mono text-xs font-black text-slate-400 bg-slate-900 border border-white/10">
                     #{idx + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-extrabold text-gray-900 dark:text-white">
+                    <p className="truncate text-xs font-extrabold text-white">
                       {st.teamName}
                     </p>
-                    <p className="text-[10px] font-bold text-gray-400">
+                    <p className="text-[10px] font-bold text-slate-400">
                       {st.wins}S - {st.draws}U - {st.losses}N
                     </p>
                   </div>
                 </div>
                 <div className="text-right font-mono">
-                  <p className="text-xs font-black text-emerald-600 dark:text-emerald-400">{st.winRate}% Siegquote</p>
-                  <p className="text-[10px] font-bold text-gray-400">Diff {st.diff > 0 ? `+${st.diff}` : st.diff}</p>
+                  <p className="text-xs font-black text-emerald-400">{st.winRate}% Siegquote</p>
+                  <p className="text-[10px] font-bold text-slate-400">Diff {st.diff > 0 ? `+${st.diff}` : st.diff}</p>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="mt-4 text-center text-xs font-bold text-gray-400 py-4">Noch keine Daten vorhanden</p>
+          <p className="text-center text-xs font-bold text-slate-400 py-4">Noch keine Daten vorhanden</p>
         )}
       </section>
     </div>

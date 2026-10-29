@@ -91,7 +91,7 @@ export default function AdminIndexPage() {
         status: 'active',
         primary_color: '#f59e0b',
         background_style: 'dark',
-        owner_id: currentUser.id, // Verknüpfung mit dem eingeloggten Veranstalter
+        owner_id: currentUser.id,
       }
 
       const { data, error } = await publicSupabase
@@ -126,147 +126,158 @@ export default function AdminIndexPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white font-bold text-sm">
-        Prüfe Veranstalter-Sitzung …
-      </main>
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800 border-t-amber-500" />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+            Prüfe Veranstalter-Sitzung …
+          </p>
+        </div>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 p-4 text-white sm:p-8">
-      <div className="mx-auto max-w-5xl space-y-8">
-        {/* HEADER WITH USER LOGOUT */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-6">
-          <div>
-            <span className="text-xs font-black uppercase tracking-widest text-amber-500">
-              Veranstalter Control Panel
-            </span>
-            <h1 className="text-3xl font-black sm:text-4xl">Meine Turniere</h1>
-            <p className="mt-1 text-xs text-slate-400">
-              Eingeloggt als: <span className="font-bold text-white">{currentUser?.email}</span>
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-300 transition hover:bg-slate-800 hover:text-white"
-            >
-              Abmelden
-            </button>
-            <Link
-              href="/"
-              className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-bold text-slate-300 transition hover:bg-slate-800 hover:text-white"
-            >
-              ← Plattform
-            </Link>
-          </div>
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
+      {/* HEADER WITH USER LOGOUT */}
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">
+            Veranstalter Control Panel
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
+            Meine Turniere
+          </h1>
+          <p className="mt-1 text-xs font-medium text-slate-300">
+            Eingeloggt als: <span className="font-bold text-white">{currentUser?.email}</span>
+          </p>
         </div>
 
-        {/* NEUES TURNIER ERSTELLEN */}
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl backdrop-blur-md sm:p-8">
-          <h2 className="text-lg font-black tracking-tight">Neues Turnier anlegen</h2>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:text-white backdrop-blur-md"
+          >
+            Abmelden
+          </button>
+          <Link
+            href="/"
+            className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:text-white backdrop-blur-md"
+          >
+            ← Plattform
+          </Link>
+        </div>
+      </section>
 
-          {errorMessage && (
-            <div className="mt-4 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-xs font-bold text-red-300">
-              {errorMessage}
-            </div>
-          )}
+      {/* NEUES TURNIER ERSTELLEN */}
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+        <h2 className="text-lg font-black tracking-tight text-white">Neues Turnier anlegen</h2>
 
-          <form onSubmit={handleCreateTournament} className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <label className="block text-xs font-black uppercase text-slate-400">Turniername *</label>
-              <input
-                type="text"
-                required
-                placeholder="z. B. Sommer-Cup 2026"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-bold text-white focus:border-amber-500 focus:outline-none"
-              />
-            </div>
+        {errorMessage && (
+          <div className="rounded-2xl border border-red-500/30 bg-red-950/20 p-4 text-xs font-bold text-red-300 backdrop-blur-md">
+            {errorMessage}
+          </div>
+        )}
 
-            <div className="w-full sm:w-48">
-              <label className="block text-xs font-black uppercase text-slate-400">Sportart</label>
-              <select
-                value={newType}
-                onChange={(e) => setNewType(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-bold text-white focus:border-amber-500 focus:outline-none"
+        <form onSubmit={handleCreateTournament} className="flex flex-col gap-4 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+              Turniername *
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="z. B. Sommer-Cup 2026"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
+            />
+          </div>
+
+          <div className="w-full sm:w-48">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+              Sportart
+            </label>
+            <select
+              value={newType}
+              onChange={(e) => setNewType(e.target.value)}
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
+            >
+              <option value="bierpong">🍺 Bierpong</option>
+              <option value="fussball">⚽ Fußball</option>
+              <option value="tennis">🎾 Tennis</option>
+              <option value="basketball">🏀 Basketball</option>
+              <option value="volleyball">🏐 Volleyball</option>
+              <option value="dart">🎯 Darts</option>
+              <option value="tischtennis">🏓 Tischtennis</option>
+              <option value="kicker">⚽ Kicker</option>
+              <option value="eishockey">🏒 Eishockey</option>
+              <option value="rocket_league">🚗 Rocket League</option>
+              <option value="sonstiges">🏆 Allgemein</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            disabled={creating}
+            className="rounded-2xl bg-amber-400 px-6 py-3 text-xs font-black text-slate-950 transition hover:bg-amber-300 disabled:opacity-50 shadow-lg"
+          >
+            {creating ? 'Erstelle …' : '+ Turnier Erstellen'}
+          </button>
+        </form>
+      </section>
+
+      {/* EIGENE TURNIERE LISTE */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-black tracking-tight text-white px-1">
+          Deine verwaltsfähigen Turniere
+        </h2>
+
+        {tournaments.length === 0 ? (
+          <div className="rounded-[32px] border border-dashed border-white/10 bg-slate-900/40 p-12 text-center text-xs font-bold text-slate-400 backdrop-blur-xl">
+            Du hast noch keine Turniere angelegt. Erstelle oben dein erstes Turnier!
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {tournaments.map((t) => (
+              <div
+                key={t.id}
+                className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl transition hover:border-amber-500/40"
               >
-                <option value="bierpong">🍺 Bierpong</option>
-                <option value="fussball">⚽ Fußball</option>
-                <option value="tennis">🎾 Tennis</option>
-                <option value="basketball">🏀 Basketball</option>
-                <option value="volleyball">🏐 Volleyball</option>
-                <option value="dart">🎯 Darts</option>
-                <option value="tischtennis">🏓 Tischtennis</option>
-                <option value="kicker">⚽ Kicker</option>
-                <option value="eishockey">🏒 Eishockey</option>
-                <option value="rocket_league">🚗 Rocket League</option>
-                <option value="sonstiges">🏆 Allgemein</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              disabled={creating}
-              className="rounded-xl bg-amber-500 px-6 py-3 text-sm font-black text-slate-950 transition hover:bg-amber-400 disabled:opacity-50"
-            >
-              {creating ? 'Erstelle …' : '+ Turnier Erstellen'}
-            </button>
-          </form>
-        </div>
-
-        {/* EIGENE TURNIERE LISTE */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-black tracking-tight">Deine verwaltsfähigen Turniere</h2>
-
-          {tournaments.length === 0 ? (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-8 text-center text-xs font-bold text-slate-500">
-              Du hast noch keine Turniere angelegt. Erstelle oben dein erstes Turnier!
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {tournaments.map((t) => (
-                <div
-                  key={t.id}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-900/80 p-5 transition hover:border-amber-500/50"
-                >
-                  <div>
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-                      <span className="uppercase">{t.type}</span>
-                      <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-black uppercase text-emerald-400">
-                        {t.status}
-                      </span>
-                    </div>
-
-                    <h3 className="mt-2 text-lg font-black tracking-tight">{t.name}</h3>
-                    <p className="mt-1 font-mono text-xs text-slate-500">/turnier/{t.slug}</p>
+                <div>
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400">
+                    <span className="tracking-wider">{t.type}</span>
+                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-black text-emerald-400">
+                      {t.status}
+                    </span>
                   </div>
 
-                  <div className="mt-6 flex items-center justify-between border-t border-slate-800/80 pt-4">
-                    <Link
-                      href={`/admin/${t.slug}`}
-                      className="rounded-xl bg-amber-500/10 px-3.5 py-2 text-xs font-black text-amber-400 transition hover:bg-amber-500/20"
-                    >
-                      Verwalten →
-                    </Link>
-
-                    <button
-                      type="button"
-                      onClick={() => deleteTournament(t.id, t.name)}
-                      className="text-xs font-bold text-red-500 hover:underline"
-                    >
-                      Löschen
-                    </button>
-                  </div>
+                  <h3 className="mt-3 text-lg font-black tracking-tight text-white">{t.name}</h3>
+                  <p className="mt-1 font-mono text-xs text-slate-400">/turnier/{t.slug}</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </main>
+
+                <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4">
+                  <Link
+                    href={`/admin/${t.slug}`}
+                    className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-black text-amber-300 transition hover:bg-amber-500/20"
+                  >
+                    Verwalten →
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => deleteTournament(t.id, t.name)}
+                    className="text-xs font-bold text-red-400 hover:underline"
+                  >
+                    Löschen
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   )
 }

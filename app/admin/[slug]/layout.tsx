@@ -1,14 +1,3 @@
-// Öffentliche Links im Admin-Layout (bleibt konstant sichtbar)
-// const publicLinks = [
-//   { href: `/turnier/${encodeURIComponent(slug)}`, label: '🌐 Turnierseite ↗' },
-//   { href: `/turnier/${encodeURIComponent(slug)}/anmeldung`, label: '📝 Anmeldung ↗' },
-//   { href: `/turnier/${encodeURIComponent(slug)}/beamer`, label: '📺 Beamer ↗' },
-//   { href: `/turnier/${encodeURIComponent(slug)}/live`, label: '🔴 Live ↗' },
-//   { href: `/turnier/${encodeURIComponent(slug)}/regeln`, label: '📜 Regeln ↗' },
-//   { href: `/turnier/${encodeURIComponent(slug)}/sieger`, label: '🥇 Sieger ↗' },
-//   { href: `/turnier/${encodeURIComponent(slug)}/stats`, label: '📈 Stats ↗' },
-// ]
-
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -89,9 +78,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div
-      className="relative min-h-screen p-4 sm:p-6 lg:p-8 space-y-8 text-slate-100 transition-colors duration-500 bg-[#04120c]"
+      className="relative min-h-screen p-4 sm:p-6 lg:p-8 space-y-8 text-slate-100 transition-colors duration-500 bg-slate-950"
       style={{
-        background: tournament?.background_style || `radial-gradient(circle at 50% 0%, ${primaryColor}25 0%, transparent 70%), radial-gradient(circle at 100% 100%, ${secondaryColor}18 0%, transparent 60%)`,
+        background: tournament?.background_style || `radial-gradient(circle at 50% 0%, ${primaryColor}20 0%, transparent 70%), radial-gradient(circle at 100% 100%, ${secondaryColor}15 0%, transparent 60%)`,
       }}
     >
       {/* GLOBAL OVERRIDE FÜR DIE TRANSPARENZ ALLER UNTERSEITEN-KARTEN */}
@@ -99,10 +88,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         main section, 
         main .rounded-3xl, 
         main .rounded-2xl {
-          background-color: rgba(6, 23, 16, 0.42) !important;
-          backdrop-filter: blur(10px) !important;
-          -webkit-backdrop-filter: blur(10px) !important;
-          border-color: rgba(16, 185, 129, 0.18) !important;
+          background-color: rgba(15, 23, 42, 0.6) !important;
+          backdrop-filter: blur(16px) !important;
+          -webkit-backdrop-filter: blur(16px) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
         }
       `}</style>
 
@@ -113,11 +102,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             src={tournament.logo_url}
             alt=""
             draggable={false}
-            className="h-[650px] w-[650px] max-w-[80vw] max-h-[80vh] object-contain opacity-20 filter grayscale blur-[0.5px]"
+            className="h-[650px] w-[650px] max-w-[80vw] max-h-[80vh] object-contain opacity-10 filter grayscale blur-[0.5px]"
           />
         ) : (
           <span
-            className="select-none text-center font-black uppercase tracking-[0.12em] text-7xl sm:text-9xl opacity-10"
+            className="select-none text-center font-black uppercase tracking-[0.12em] text-7xl sm:text-9xl opacity-5"
             style={{ color: primaryColor, lineHeight: 1 }}
           >
             {tournament?.name || 'ADMIN'}
@@ -126,7 +115,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       {/* 2. ADMIN CONTROL PANEL HEADER */}
-      <header className="relative z-10 overflow-hidden rounded-3xl border border-emerald-500/20 bg-[#061710]/45 p-6 shadow-2xl backdrop-blur-md space-y-5">
+      <header className="relative z-10 overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
         {/* TOP ROW: LOGO, TITEL & BUTTON */}
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4 min-w-0">
@@ -134,7 +123,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <img
                 src={tournament.logo_url}
                 alt={tournament.name || 'Logo'}
-                className="h-16 w-16 rounded-2xl border border-emerald-500/30 bg-slate-900/90 object-contain p-1 shadow-lg sm:h-20 sm:w-20"
+                className="h-16 w-16 rounded-2xl border border-white/10 bg-slate-950/80 object-contain p-1.5 shadow-lg sm:h-20 sm:w-20 shrink-0"
               />
             ) : (
               <div
@@ -147,16 +136,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             <div className="min-w-0 flex-1">
               <span
-                className="inline-block rounded-md px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest shadow-sm"
+                className="inline-block rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm"
                 style={{
-                  backgroundColor: `${primaryColor}25`,
+                  backgroundColor: `${primaryColor}20`,
                   color: primaryColor,
                   border: `1px solid ${primaryColor}40`,
                 }}
               >
                 Admin Control Panel
               </span>
-              <h1 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl drop-shadow-sm">
+              <h1 className="mt-1.5 text-2xl font-black tracking-tight text-white sm:text-3xl">
                 {tournament?.name ? `${tournament.name} (#${slug})` : `Turnier #${slug}`}
               </h1>
             </div>
@@ -165,7 +154,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/admin"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-950/40 px-4 py-2 text-xs font-extrabold text-slate-200 shadow-sm backdrop-blur-md transition hover:bg-emerald-900/50 hover:border-emerald-500/40"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-bold text-slate-300 shadow-lg backdrop-blur-md transition hover:border-white/20 hover:text-white"
             >
               ← Meine Turniere
             </Link>
@@ -173,7 +162,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* DREIZEILIGE NAVIGATION */}
-        <div className="relative z-10 flex flex-col gap-3.5 border-t border-emerald-500/20 pt-4">
+        <div className="relative z-10 flex flex-col gap-4 border-t border-white/10 pt-5">
           {/* REIHE 1: ADMIN SEITEN */}
           <div className="flex flex-wrap items-center gap-2">
             <span
@@ -194,11 +183,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-black transition-all shadow-sm"
+                  className="inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-black transition-all shadow-md"
                   style={{
-                    backgroundColor: isActive ? primaryColor : 'rgba(6, 23, 16, 0.5)',
+                    backgroundColor: isActive ? primaryColor : 'rgba(2, 6, 23, 0.6)',
                     color: isActive ? '#022c22' : '#e2e8f0',
-                    border: isActive ? `1px solid ${primaryColor}` : '1px solid rgba(16, 185, 129, 0.2)',
+                    border: isActive ? `1px solid ${primaryColor}` : '1px solid rgba(255, 255, 255, 0.1)',
                   }}
                 >
                   {link.label}
@@ -220,11 +209,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 key={link.href}
                 href={link.href}
                 target="_blank"
-                className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-extrabold backdrop-blur-md transition-all border shadow-sm hover:scale-105"
+                className="inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-xs font-extrabold backdrop-blur-md transition-all border shadow-sm hover:scale-105"
                 style={{
                   backgroundColor: `${secondaryColor}15`,
                   color: secondaryColor,
-                  borderColor: `${secondaryColor}40`,
+                  borderColor: `${secondaryColor}35`,
                 }}
               >
                 {link.label}
@@ -233,11 +222,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           {/* REIHE 3: SYSTEM AKTIONEN */}
-          <div className="flex items-center justify-end border-t border-emerald-500/20 pt-2">
+          <div className="flex items-center justify-end border-t border-white/10 pt-3">
             <button
               type="button"
               onClick={triggerBroadcast}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/20 bg-emerald-950/40 px-3.5 py-1.5 text-xs font-extrabold text-slate-200 shadow-sm backdrop-blur-md hover:bg-emerald-900/50 transition"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-extrabold text-slate-300 shadow-md backdrop-blur-md hover:border-white/20 hover:text-white transition"
             >
               🔄 Live-Sync / Aktualisieren
             </button>

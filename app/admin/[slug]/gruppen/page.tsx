@@ -990,43 +990,51 @@ export default function AdminGruppenPage() {
 
   if (loading) {
     return (
-      <div className="p-8 text-center font-bold text-slate-400 text-xs">
-        Lade Gruppen-Manager …
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+        <div className="text-center">
+          <div
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
+          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+            Lade Gruppen-Manager …
+          </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
       {/* ERROR & SUCCESS MESSAGES */}
       {error && (
-        <div className="rounded-2xl border border-red-500/30 bg-red-500/20 p-4 text-xs font-extrabold text-red-300 backdrop-blur-md">
-          <div className="font-bold uppercase">Fehler</div>
+        <div className="rounded-2xl border border-red-500/30 bg-red-950/20 p-4 text-xs font-extrabold text-red-300 backdrop-blur-md">
+          <div className="font-bold uppercase tracking-wider">Fehler</div>
           <div className="mt-1 whitespace-pre-wrap">{error}</div>
         </div>
       )}
       {success && (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/20 p-4 text-xs font-extrabold text-emerald-300 backdrop-blur-md">
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4 text-xs font-extrabold text-emerald-300 backdrop-blur-md">
           {success}
         </div>
       )}
 
       {/* TEAM OVERVIEW CARDS */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 w-full">
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Angemeldete Teams</p>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Angemeldete Teams</p>
           <p className="mt-2 text-3xl font-black text-white">{teams.length}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Aktuelle Gruppen</p>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Aktuelle Gruppen</p>
           <p className="mt-2 text-3xl font-black text-white">{groups.length}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Zugeordnet</p>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Zugeordnet</p>
           <p className="mt-2 text-3xl font-black text-white">{members.length}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Ohne Gruppe</p>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ohne Gruppe</p>
           <p
             className="mt-2 text-3xl font-black"
             style={{ color: teamsWithoutGroup.length > 0 ? '#ef4444' : primaryColor }}
@@ -1037,47 +1045,47 @@ export default function AdminGruppenPage() {
       </section>
 
       {/* INDIVIDUELLE VORGABEN */}
-      <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-6 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-white/10 pb-4">
           <div>
             <span
-              className="text-[10px] font-black uppercase tracking-wider"
+              className="text-[10px] font-black uppercase tracking-[0.2em]"
               style={{ color: primaryColor }}
             >
               Individuelle Vorgaben
             </span>
-            <h2 className="mt-1 text-xl font-black text-white">
+            <h2 className="mt-1 text-xl font-black text-white tracking-tight">
               Welche Teams sollen zusammen oder getrennt werden?
             </h2>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs font-medium text-slate-300">
               Wähle beliebig viele Teams aus und lege fest, ob sie gemeinsam in einer Gruppe
               spielen oder auf unterschiedliche Gruppen verteilt werden sollen.
             </p>
           </div>
           <div className="flex shrink-0 gap-2">
-            <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-[10px] font-black text-emerald-400 border border-emerald-500/30">
+            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-black text-emerald-400 border border-emerald-500/30">
               {togetherConstraints.length} Zusammen
             </span>
-            <span className="rounded-full bg-amber-500/20 px-3 py-1 text-[10px] font-black text-amber-400 border border-amber-500/30">
+            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-[10px] font-black text-amber-300 border border-amber-500/30">
               {separateConstraints.length} Trennen
             </span>
           </div>
         </div>
 
         <div className="space-y-4">
-          <label className="block text-xs font-black uppercase tracking-wider text-slate-300">
+          <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
             Ausgewählte Teams ({selectedConstraintTeamIds.length})
           </label>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {selectedConstraintTeamIds.map((selectedId, idx) => (
               <div key={idx} className="flex items-center gap-2">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-950 font-mono text-xs font-black text-slate-400 border border-white/10">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-950/80 font-mono text-xs font-black text-slate-400 border border-white/10">
                   #{idx + 1}
                 </span>
                 <select
                   value={selectedId}
                   onChange={(e) => handleConstraintTeamChange(idx, e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-3 py-2 text-xs font-bold text-white outline-none focus:border-emerald-500"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
                 >
                   <option value="">Team auswählen ...</option>
                   {teams.map((team) => (
@@ -1097,7 +1105,7 @@ export default function AdminGruppenPage() {
                   <button
                     type="button"
                     onClick={() => removeTeamSelectField(idx)}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition font-black"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-red-500/30 bg-red-950/20 text-red-400 hover:bg-red-900/30 transition font-black"
                     title="Entfernen"
                   >
                     ✕
@@ -1109,7 +1117,7 @@ export default function AdminGruppenPage() {
           <button
             type="button"
             onClick={addTeamSelectField}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-black text-slate-200 transition hover:bg-white/10"
+            className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-black text-slate-300 transition hover:border-white/20 hover:text-white"
           >
             + Weiteres Team-Feld
           </button>
@@ -1117,13 +1125,13 @@ export default function AdminGruppenPage() {
 
         <div className="grid gap-4 lg:grid-cols-[2fr_1fr] items-end pt-2 border-t border-white/10">
           <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-2">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
               Gruppenvorgabe
             </label>
             <select
               value={constraintType}
               onChange={(e) => setConstraintType(e.target.value as 'together' | 'separate')}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
             >
               <option value="separate">
                 → Alle ausgewählten Teams gegenseitig getrennt halten
@@ -1141,7 +1149,7 @@ export default function AdminGruppenPage() {
               teams.length < 2 ||
               selectedConstraintTeamIds.filter(Boolean).length < 2
             }
-            className="rounded-xl px-5 py-3 text-xs font-black text-slate-950 shadow-md transition hover:opacity-90 disabled:opacity-40"
+            className="rounded-2xl px-5 py-3.5 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 disabled:opacity-40"
             style={{ backgroundColor: primaryColor }}
           >
             {constraintSaving ? 'Speichere ...' : 'Vorgabe speichern'}
@@ -1151,12 +1159,12 @@ export default function AdminGruppenPage() {
         {/* LISTE DER GESPEICHERTEN PAAR-VORGABEN */}
         <div className="pt-4 border-t border-white/10 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
+            <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-400">
               Gespeicherte Paar-Vorgaben ({groupConstraints.length})
             </h3>
           </div>
           {groupConstraints.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-5 text-center text-xs font-bold text-slate-500">
+            <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-5 text-center text-xs font-bold text-slate-400">
               Noch keine individuellen Vorgaben gespeichert.
             </div>
           ) : (
@@ -1166,10 +1174,10 @@ export default function AdminGruppenPage() {
                 return (
                   <div
                     key={constraint.id}
-                    className={`flex items-center justify-between rounded-xl border p-3 text-xs font-bold backdrop-blur-md ${
+                    className={`flex items-center justify-between rounded-2xl border p-3 text-xs font-bold backdrop-blur-md ${
                       together
-                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
-                        : 'border-amber-500/30 bg-amber-500/10 text-amber-200'
+                        ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
+                        : 'border-amber-500/30 bg-amber-950/20 text-amber-300'
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate">
@@ -1200,7 +1208,7 @@ export default function AdminGruppenPage() {
 
       {/* EMPFEHLUNG VOLLAUTOMATISCH */}
       {recommendation && showRecommendation && (
-        <section className="rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-6 shadow-lg backdrop-blur-xl space-y-4 w-full">
+        <section className="rounded-[32px] border border-emerald-500/30 bg-emerald-950/20 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -1214,10 +1222,10 @@ export default function AdminGruppenPage() {
                   Sauberer Turnierbaum (ohne 3. Plätze)
                 </span>
               </div>
-              <h2 className="text-xl font-black text-white">
+              <h2 className="text-xl font-black text-white tracking-tight">
                 {recommendation.groupCount} Gruppen &amp; {recommendation.koSize}er-K.-o.
               </h2>
-              <p className="mt-1 text-xs text-slate-300 max-w-3xl">
+              <p className="mt-1 text-xs text-slate-300 max-w-3xl leading-relaxed">
                 Bei {teams.length} Teams werden voreingestellt {recommendation.groupCount} Gruppen erstellt.
                 Die besten 2 Teams pro Gruppe ziehen direkt in die K.-o.-Phase ({recommendation.koSize}er-Baum) ein.
                 Es werden <span className="font-bold text-emerald-400">keine 3. Plätze</span> benötigt!
@@ -1227,7 +1235,7 @@ export default function AdminGruppenPage() {
               <button
                 type="button"
                 onClick={applyRecommendation}
-                className="rounded-xl px-4 py-2 text-xs font-black text-slate-950 transition hover:opacity-90"
+                className="rounded-2xl px-4 py-2 text-xs font-black text-slate-950 transition hover:opacity-90 shadow-lg"
                 style={{ backgroundColor: primaryColor }}
               >
                 Übernehmen
@@ -1235,7 +1243,7 @@ export default function AdminGruppenPage() {
               <button
                 type="button"
                 onClick={() => setShowRecommendation(false)}
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-white/10"
+                className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-bold text-slate-300 hover:border-white/20 hover:text-white"
               >
                 Ausblenden
               </button>
@@ -1245,17 +1253,17 @@ export default function AdminGruppenPage() {
       )}
 
       {/* TURNIERKONFIGURATION */}
-      <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-6 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
         <div className="border-b border-white/10 pb-4">
-          <h2 className="text-xl font-black text-white">Turnierkonfiguration</h2>
-          <p className="mt-1 text-xs text-slate-400">
+          <h2 className="text-xl font-black text-white tracking-tight">Turnierkonfiguration</h2>
+          <p className="mt-1 text-xs font-medium text-slate-300">
             Diese Werte bestimmen die Gruppenaufteilung und K.-o.-Verteilung.
           </p>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2">
           <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-2">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
               Anzahl Gruppen
             </label>
             <input
@@ -1264,17 +1272,17 @@ export default function AdminGruppenPage() {
               max={teams.length || 1}
               value={configuration.groupCount}
               onChange={(e) => updateConfiguration('groupCount', Number(e.target.value))}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-black text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-2">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
               Größe der K.-o.-Phase
             </label>
             <select
               value={configuration.koSize}
               onChange={(e) => updateConfiguration('koSize', Number(e.target.value))}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-black text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
             >
               {[4, 8, 16, 32, 64].map((size) => (
                 <option key={size} value={size}>
@@ -1284,7 +1292,7 @@ export default function AdminGruppenPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-2">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
               Direkte Qualifikanten pro Gruppe
             </label>
             <input
@@ -1293,11 +1301,11 @@ export default function AdminGruppenPage() {
               max={configuration.koSize}
               value={configuration.directQualifiers}
               onChange={(e) => updateConfiguration('directQualifiers', Number(e.target.value))}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-black text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-300 mb-2">
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
               Zusätzliche Qualifikanten (z.B. 3. Plätze)
             </label>
             <input
@@ -1306,15 +1314,15 @@ export default function AdminGruppenPage() {
               max={configuration.koSize}
               value={configuration.additionalQualifiers}
               onChange={(e) => updateConfiguration('additionalQualifiers', Number(e.target.value))}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-black text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
             />
           </div>
         </div>
       </section>
 
       {/* PRÜFUNG / VALIDATION GRID */}
-      <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-4 w-full">
-        <h2 className="text-xl font-black text-white">Voraussetzungen &amp; Prüfung</h2>
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
+        <h2 className="text-xl font-black text-white tracking-tight">Voraussetzungen &amp; Prüfung</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ValidationItem
             valid={teams.length >= 4}
@@ -1361,17 +1369,17 @@ export default function AdminGruppenPage() {
 
       {/* AKTUELLE GRUPPEN MIT VOLLER HÖHE UND KOMPAKTER TEAM-DARSTELLUNG */}
       {groups.length > 0 && (
-        <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-xl backdrop-blur-xl space-y-6 w-full">
+        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
           {/* HEADER MIT SUCHLEISTE & AUFLÖSEN-BUTTON */}
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-white/10 pb-5">
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-xl font-black text-white">Aktuelle Gruppen</h2>
+                <h2 className="text-xl font-black text-white tracking-tight">Aktuelle Gruppen</h2>
                 <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-0.5 text-xs font-extrabold text-emerald-400">
                   {groups.length} Gruppen aktiv
                 </span>
               </div>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs font-medium text-slate-300">
                 Teams per Dropdown in andere Gruppen verschieben, gegenseitig tauschen oder Spielfrei-Regeln einstellen.
               </p>
             </div>
@@ -1384,12 +1392,12 @@ export default function AdminGruppenPage() {
                   placeholder="🔍 Gruppe oder Team suchen ..."
                   value={groupSearchQuery}
                   onChange={(e) => setGroupSearchQuery(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-3.5 py-2 text-xs font-semibold text-white placeholder-slate-500 outline-none focus:border-emerald-500"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-semibold text-white placeholder-slate-500 focus:border-white/30 focus:outline-none"
                 />
                 {groupSearchQuery && (
                   <button
                     onClick={() => setGroupSearchQuery('')}
-                    className="absolute right-2.5 top-2 text-xs font-black text-slate-400 hover:text-white"
+                    className="absolute right-3 top-2.5 text-xs font-black text-slate-400 hover:text-white"
                   >
                     ✕
                   </button>
@@ -1401,7 +1409,7 @@ export default function AdminGruppenPage() {
                 type="button"
                 onClick={resetGroupsAndMatches}
                 disabled={saving}
-                className="rounded-xl border border-red-500/30 bg-red-500/15 px-4 py-2 text-xs font-black text-red-300 hover:bg-red-500/25 transition disabled:opacity-40 shrink-0"
+                className="rounded-2xl border border-red-500/30 bg-red-950/20 px-4 py-2.5 text-xs font-black text-red-300 hover:bg-red-900/30 transition disabled:opacity-40 shrink-0"
               >
                 🗑️ Gruppen &amp; Spiele auflösen
               </button>
@@ -1425,13 +1433,13 @@ export default function AdminGruppenPage() {
               return (
                 <div
                   key={group.id}
-                  className="rounded-2xl border border-white/10 bg-slate-950/80 p-4 space-y-3.5 flex flex-col justify-between shadow-lg hover:border-white/20 transition-all"
+                  className="rounded-2xl border border-white/10 bg-slate-950/80 p-4 space-y-3.5 flex flex-col justify-between shadow-xl hover:border-white/20 transition-all"
                 >
                   <div className="space-y-3">
                     {/* CARD HEADER */}
                     <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                       <div className="flex items-center gap-2">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/20 text-[10px] font-black text-emerald-400 border border-emerald-500/30">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/10 text-[10px] font-black text-emerald-400 border border-emerald-500/30">
                           {group.name.replace('Gruppe ', '')}
                         </span>
                         <h3 className="font-black text-white text-base tracking-wide">{group.name}</h3>
@@ -1443,7 +1451,7 @@ export default function AdminGruppenPage() {
 
                     {/* HINWEIS UND DROPDOWN FÜR UNGERADE TEAMS (SPIELFREI) */}
                     {isOdd && (
-                      <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 space-y-1.5">
+                      <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-2.5 space-y-1.5">
                         <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-amber-300">
                           <span>⏸️ Ungerade ({groupItems.length} Teams)</span>
                         </div>
@@ -1458,7 +1466,7 @@ export default function AdminGruppenPage() {
                               [group.id]: Number(e.target.value),
                             }))
                           }
-                          className="w-full rounded-lg border border-amber-500/40 bg-slate-950/90 px-2 py-1 text-[10px] font-extrabold text-amber-200 outline-none"
+                          className="w-full rounded-xl border border-amber-500/40 bg-slate-950/90 px-2 py-1.5 text-[10px] font-extrabold text-amber-200 focus:outline-none"
                         >
                           {groupItems.map(({ team }) => (
                             <option key={team.id} value={team.id}>
@@ -1481,10 +1489,10 @@ export default function AdminGruppenPage() {
                           return (
                             <div
                               key={team.id}
-                              className={`rounded-xl border p-2.5 space-y-2 transition-all ${
+                              className={`rounded-2xl border p-2.5 space-y-2 transition-all ${
                                 isBeingSwapped
                                   ? 'border-amber-400 bg-amber-500/20 ring-2 ring-amber-400/50'
-                                  : 'border-white/5 bg-slate-900/90 hover:bg-slate-900'
+                                  : 'border-white/10 bg-slate-900/80 hover:bg-slate-900'
                               }`}
                             >
                               <div className="flex items-center justify-between gap-2">
@@ -1500,7 +1508,7 @@ export default function AdminGruppenPage() {
                               </div>
 
                               {/* TAUSCHEN UND VERSCHIEBEN AKTIONEN IN EINER KOMPAKTEN ZEILE */}
-                              <div className="flex items-center gap-1.5 pt-1.5 border-t border-white/5">
+                              <div className="flex items-center gap-1.5 pt-1.5 border-t border-white/10">
                                 {/* Direct Group Move */}
                                 <select
                                   defaultValue=""
@@ -1511,7 +1519,7 @@ export default function AdminGruppenPage() {
                                     }
                                   }}
                                   disabled={saving}
-                                  className="w-1/2 rounded-lg border border-white/10 bg-slate-950 px-1.5 py-1 text-[9px] font-bold text-slate-300 outline-none hover:border-emerald-500/50 truncate"
+                                  className="w-1/2 rounded-xl border border-white/10 bg-slate-950/80 px-2 py-1 text-[9px] font-bold text-slate-300 outline-none hover:border-white/30 truncate"
                                 >
                                   <option value="" disabled>In Gruppe ...</option>
                                   {groups
@@ -1535,10 +1543,10 @@ export default function AdminGruppenPage() {
                                     }
                                   }}
                                   disabled={saving}
-                                  className={`w-1/2 rounded-lg border px-1.5 py-1 text-[9px] font-black transition ${
+                                  className={`w-1/2 rounded-xl border px-2 py-1 text-[9px] font-black transition ${
                                     isBeingSwapped
                                       ? 'border-amber-400 bg-amber-400 text-slate-950'
-                                      : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                                      : 'border-white/10 bg-slate-950/60 text-slate-300 hover:text-white'
                                   }`}
                                 >
                                   {isBeingSwapped ? 'Abbrechen' : '⇄ Tauschen'}
@@ -1557,7 +1565,7 @@ export default function AdminGruppenPage() {
 
           {/* SWAP CONFIRM MODAL / BANNER */}
           {swapSourceMember && (
-            <div className="rounded-2xl border border-amber-400/50 bg-amber-500/15 p-4 backdrop-blur-md space-y-3">
+            <div className="rounded-2xl border border-amber-400/50 bg-amber-950/30 p-4 backdrop-blur-md space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase text-amber-300">
                   🔄 Team-Tausch aktiv für:{' '}
@@ -1577,7 +1585,7 @@ export default function AdminGruppenPage() {
                 <select
                   value={swapTargetMemberId}
                   onChange={(e) => setSwapTargetMemberId(e.target.value)}
-                  className="w-full sm:w-auto flex-1 rounded-xl border border-white/20 bg-slate-950 px-3 py-2 text-xs font-bold text-white outline-none"
+                  className="w-full sm:w-auto flex-1 rounded-2xl border border-white/20 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white focus:outline-none"
                 >
                   <option value="">Wähle ein Tausch-Partner-Team ...</option>
                   {members
@@ -1607,7 +1615,7 @@ export default function AdminGruppenPage() {
                       )
                     }
                   }}
-                  className="w-full sm:w-auto rounded-xl px-5 py-2 text-xs font-black text-slate-950 transition hover:opacity-90 disabled:opacity-40 shrink-0"
+                  className="w-full sm:w-auto rounded-2xl px-5 py-2.5 text-xs font-black text-slate-950 transition hover:opacity-90 disabled:opacity-40 shrink-0 shadow-lg"
                   style={{ backgroundColor: primaryColor }}
                 >
                   Jetzt tauschen
@@ -1619,8 +1627,8 @@ export default function AdminGruppenPage() {
       )}
 
       {/* VERTEILUNGSÜBERSICHT & STATISTIK */}
-      <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-4 w-full">
-        <h2 className="text-xl font-black text-white">Verteilungsübersicht</h2>
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
+        <h2 className="text-xl font-black text-white tracking-tight">Verteilungsübersicht</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <InfoBox
             label="Durchschnittliche Gruppengröße"
@@ -1633,10 +1641,10 @@ export default function AdminGruppenPage() {
       </section>
 
       {/* SYSTEM AKTIONEN */}
-      <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-5 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-5 w-full">
         <div>
-          <h2 className="text-xl font-black text-white">Aktionen</h2>
-          <p className="mt-1 text-xs text-slate-400">
+          <h2 className="text-xl font-black text-white tracking-tight">Aktionen</h2>
+          <p className="mt-1 text-xs font-medium text-slate-300">
             Speichere zuerst die Einstellungen oder veranlasse direkt das Neuerstellen aller
             Gruppen.
           </p>
@@ -1646,7 +1654,7 @@ export default function AdminGruppenPage() {
             type="button"
             onClick={saveSettings}
             disabled={saving || !configurationIsValid}
-            className="rounded-xl border border-white/10 bg-white/10 px-5 py-3 text-xs font-black text-white hover:bg-white/20 transition disabled:opacity-40"
+            className="rounded-2xl border border-white/10 bg-slate-950/60 px-5 py-3.5 text-xs font-black text-white hover:border-white/20 transition disabled:opacity-40"
           >
             {saving ? 'Speichere ...' : 'Konfiguration speichern'}
           </button>
@@ -1654,7 +1662,7 @@ export default function AdminGruppenPage() {
             type="button"
             onClick={createGroups}
             disabled={saving || !configurationIsValid}
-            className="rounded-xl px-5 py-3 text-xs font-black text-slate-950 shadow-md transition hover:opacity-90 disabled:opacity-40"
+            className="rounded-2xl px-5 py-3.5 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 disabled:opacity-40"
             style={{ backgroundColor: primaryColor }}
           >
             {saving ? 'Erstelle...' : 'Gruppen neu auslosen & erstellen'}
@@ -1678,8 +1686,8 @@ function ValidationItem({
     <div
       className={`rounded-2xl border p-4 backdrop-blur-md ${
         valid
-          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-          : 'border-red-500/30 bg-red-500/10 text-red-300'
+          ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
+          : 'border-red-500/30 bg-red-950/20 text-red-300'
       }`}
     >
       <div className="flex items-start gap-3">
@@ -1702,7 +1710,7 @@ function ValidationItem({
 function InfoBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
-      <p className="text-[10px] font-black uppercase text-slate-400">{label}</p>
+      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</p>
       <p className="mt-1 text-2xl font-black text-white">{value}</p>
     </div>
   )

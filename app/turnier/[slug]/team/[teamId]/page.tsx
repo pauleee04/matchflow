@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js'
 import { publicSupabase as supabase } from '@/lib/supabase'
@@ -82,24 +82,6 @@ type PublicTeamPage = {
 type TeamRulesPreview = {
   show_on_team_page: boolean
   team_summary: string | null
-}
-
-function hexToRgba(hex: string, alpha: number) {
-  if (!hex || typeof hex !== 'string') return `rgba(0, 230, 118, ${alpha})`
-  const cleanHex = hex.replace('#', '')
-  let r = 0, g = 0, b = 0
-  if (cleanHex.length === 3) {
-    r = parseInt(cleanHex[0] + cleanHex[0], 16)
-    g = parseInt(cleanHex[1] + cleanHex[1], 16)
-    b = parseInt(cleanHex[2] + cleanHex[2], 16)
-  } else if (cleanHex.length === 6) {
-    r = parseInt(cleanHex.substring(0, 2), 16)
-    g = parseInt(cleanHex.substring(2, 4), 16)
-    b = parseInt(cleanHex.substring(4, 6), 16)
-  } else {
-    return `rgba(0, 230, 118, ${alpha})`
-  }
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
 function normalizeName(name?: string | null) {
@@ -233,6 +215,18 @@ function calculateStandings(
   })
 }
 
+function formatDateTime(dateStr: string) {
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  return d.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+function formatTimeOnly(dateStr: string) {
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr'
+}
+
 export default function CleanPublicTeamPage() {
   const params = useParams()
   const router = useRouter()
@@ -260,7 +254,7 @@ export default function CleanPublicTeamPage() {
   const [paymentMessage, setPaymentMessage] = useState('')
   const [teamRulesPreview, setTeamRulesPreview] = useState<TeamRulesPreview | null>(null)
 
-  // STATI FÜR EDIT-MODE (NUR SPIELER-NAMEN BEARBEITEN)
+  // EDIT-MODE FÜR SPIELER-NAMEN
   const [isEditing, setIsEditing] = useState(false)
   const [editPlayer1, setEditPlayer1] = useState('')
   const [editPlayer2, setEditPlayer2] = useState('')
@@ -294,7 +288,7 @@ export default function CleanPublicTeamPage() {
       let loadedTeams: Team[] = []
       let loadedMatches: TournamentMatch[] = []
 
-      // 1. Versuche das Laden via Supabase RPC Function get_public_team_page
+      // 1. RPC Call
       try {
         const { data: rpcData } = await supabase.rpc('get_public_team_page', {
           p_token: teamIdOrToken,
@@ -314,9 +308,9 @@ export default function CleanPublicTeamPage() {
         console.warn('RPC Fallback get_public_team_page:', err)
       }
 
-      // 2. Fallback: Direktes Laden aus den Supabase Tabellen
+      // 2. Fallback Direct Selects
       if (!loadedTeam) {
-        let { data: tourneyData } = await supabase
+        const { data: tourneyData } = await supabase
           .from('tournaments')
           .select('*')
           .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
@@ -387,13 +381,11 @@ export default function CleanPublicTeamPage() {
       setMatches(loadedMatches)
       setError('')
 
-      // Formular-Felder initialisieren (nur falls nicht gerade editiert wird)
       if (!isEditing) {
         setEditPlayer1(loadedTeam.player1 || '')
         setEditPlayer2(loadedTeam.player2 || '')
       }
 
-      // 3. Turnier-Regeln Vorschau laden
       if (loadedTournament?.id) {
         const { data: rules } = await supabase
           .from('tournament_rules')
@@ -431,7 +423,6 @@ export default function CleanPublicTeamPage() {
     }
   }, [loadData])
 
-  // SPIELER-NAMEN SPEICHERN FUNCTION
   async function handleSaveDetails(e: React.FormEvent) {
     e.preventDefault()
     if (!team) return
@@ -444,24 +435,13 @@ export default function CleanPublicTeamPage() {
 
       const { error: updateErr } = await supabase
         .from('teams')
-        .update({
-          player1: finalP1,
-          player2: finalP2,
-        })
+        .update({ player1: finalP1, player2: finalP2 })
         .eq('id', team.id)
 
       if (updateErr) {
         setDetailsMessage('Fehler beim Speichern: ' + updateErr.message)
       } else {
-        setTeam((prev) =>
-          prev
-            ? {
-                ...prev,
-                player1: finalP1,
-                player2: finalP2,
-              }
-            : prev
-        )
+        setTeam((prev) => (prev ? { ...prev, player1: finalP1, player2: finalP2 } : prev))
         setDetailsMessage('✓ Spieler-Namen erfolgreich aktualisiert!')
         setIsEditing(false)
         await loadData(true)
@@ -584,17 +564,8 @@ export default function CleanPublicTeamPage() {
       const myNameNorm = normalizeName(team.name)
 
       const ignoredKeys = new Set([
-        'id',
-        'tournament_id',
-        'group_id',
-        'groupid',
-        'round',
-        'table_number',
-        'table',
-        'status',
-        'scheduled_time',
-        'created_at',
-        'updated_at',
+        'id', 'tournament_id', 'group_id', 'groupid', 'round',
+        'table_number', 'table', 'status', 'scheduled_time', 'created_at', 'updated_at',
       ])
 
       for (const [key, val] of Object.entries(m)) {
@@ -721,10 +692,7 @@ export default function CleanPublicTeamPage() {
     return String(winnerId) === String(team.id)
   }, [isTournamentFinished, matches, team])
 
-  const primaryColor = tournament?.primary_color || '#00e676'
-  const primaryRgba15 = hexToRgba(primaryColor, 0.15)
-  const primaryRgba25 = hexToRgba(primaryColor, 0.25)
-  const primaryRgba40 = hexToRgba(primaryColor, 0.40)
+  const primaryColor = tournament?.primary_color?.trim() || '#22c55e'
   const tournamentSlugParam = tournament?.slug || tournament?.id || rawSlug || '1'
 
   useEffect(() => {
@@ -738,34 +706,16 @@ export default function CleanPublicTeamPage() {
     }
   }, [isWinnerTeam, team?.id, tournament?.id, tournamentSlugParam, router])
 
-  const cardStyle = {
-    backgroundColor: 'rgba(5, 12, 8, 0.65)',
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    backdropFilter: 'blur(12px)',
-  }
-
-  const innerBoxStyle = {
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  }
-
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black text-white">
-        <div className="text-center space-y-3">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+        <div className="text-center">
           <div
-            className="w-10 h-10 rounded-full animate-spin mx-auto"
-            style={{
-              borderWidth: '4px',
-              borderStyle: 'solid',
-              borderRightColor: primaryColor,
-              borderBottomColor: primaryColor,
-              borderLeftColor: primaryColor,
-              borderTopColor: 'transparent',
-            }}
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
           />
-          <p className="text-sm font-bold uppercase tracking-wider" style={{ color: primaryColor }}>
-            Lade Team-Portal...
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+            Lade Team-Portal …
           </p>
         </div>
       </div>
@@ -774,28 +724,26 @@ export default function CleanPublicTeamPage() {
 
   if (error || !team) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black p-4 text-white">
-        <div className="max-w-md w-full rounded-[24px] p-8 text-center shadow-2xl border" style={cardStyle}>
-          <span className="text-4xl">⚠️</span>
-          <h1 className="text-xl font-black mt-4">Zugriff verweigert</h1>
-          <p className="text-slate-400 text-sm mt-2">{error || 'Team nicht gefunden.'}</p>
-          <button
-            onClick={() => void loadData(true)}
-            className="mt-6 w-full py-3 font-bold rounded-2xl transition text-sm text-black shadow-lg"
-            style={{ backgroundColor: primaryColor }}
-          >
-            Erneut versuchen
-          </button>
+      <div className="mx-auto max-w-lg rounded-3xl border border-red-500/30 bg-red-950/20 p-6 text-center backdrop-blur-md my-12">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-xl text-red-400">
+          ⚠️
         </div>
+        <h2 className="text-lg font-black text-slate-100">Zugriff verweigert</h2>
+        <p className="mt-1 text-xs font-semibold text-red-300">{error || 'Team nicht gefunden.'}</p>
+        <button
+          type="button"
+          onClick={() => void loadData(true)}
+          className="mt-6 w-full rounded-2xl py-3 text-xs font-black text-slate-950 transition shadow-lg"
+          style={{ backgroundColor: primaryColor }}
+        >
+          Erneut versuchen
+        </button>
       </div>
     )
   }
 
   return (
-    <main
-      className="min-h-screen text-slate-100 p-4 sm:p-6 relative selection:bg-emerald-500 selection:text-white"
-      style={{ background: tournament?.background_style || '#050c07' }}
-    >
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
       <style>{`
         body.hide-nav nav, body.hide-nav header, body.hide-nav .global-navigation-box {
           display: none !important;
@@ -812,7 +760,7 @@ export default function CleanPublicTeamPage() {
             src={tournament.logo_url}
             alt=""
             draggable={false}
-            className="select-none object-contain opacity-[0.06] grayscale filter"
+            className="select-none object-contain opacity-[0.05] grayscale filter"
             style={{ width: 'min(65vw, 750px)', maxHeight: '75vh' }}
           />
         ) : (
@@ -825,30 +773,31 @@ export default function CleanPublicTeamPage() {
         )}
       </div>
 
-      <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6 relative z-10">
-        
+      <div className="relative z-10 space-y-8">
         {/* GEWINNER BANNER */}
         {isWinnerTeam && (
-          <div className="rounded-[24px] p-6 sm:p-8 text-center bg-gradient-to-r from-amber-500/20 via-yellow-400/30 to-amber-500/20 border-2 border-amber-400/60 shadow-2xl backdrop-blur-md animate-pulse">
-            <span className="text-5xl">🏆 🥇 🏆</span>
-            <h2 className="text-2xl sm:text-4xl font-black text-amber-300 mt-2">Herzlichen Glückwunsch zum Turniersieg! 🎉</h2>
-            <p className="text-sm sm:text-base font-bold text-amber-100 mt-1">
+          <section className="rounded-[32px] border border-amber-500/30 bg-gradient-to-r from-amber-500/20 via-yellow-400/20 to-amber-500/20 p-6 sm:p-8 text-center shadow-2xl backdrop-blur-xl animate-pulse">
+            <span className="text-4xl sm:text-5xl">🏆 🥇 🏆</span>
+            <h2 className="mt-2 text-2xl sm:text-3xl font-black text-amber-300">
+              Herzlichen Glückwunsch zum Turniersieg! 🎉
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm font-bold text-amber-100">
               Ihr habt euch den 1. Platz gesichert!
             </p>
             <a
               href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/sieger`}
-              className="inline-block mt-4 px-6 py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-black rounded-xl text-xs uppercase tracking-wider transition shadow-lg"
+              className="mt-4 inline-block rounded-2xl bg-amber-400 px-6 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 transition shadow-lg hover:bg-amber-300"
             >
               Zur offiziellen Siegerseite →
             </a>
-          </div>
+          </section>
         )}
 
         {/* 1. KONTROLLZENTRUM BLOCK */}
-        <section className="rounded-[24px] border p-6 sm:p-8 shadow-xl" style={cardStyle}>
+        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-5 min-w-0 flex-1">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border flex items-center justify-center text-3xl shadow-inner overflow-hidden shrink-0" style={innerBoxStyle}>
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border border-white/10 bg-slate-950/60 flex items-center justify-center text-3xl shadow-inner overflow-hidden shrink-0">
                 {tournament?.logo_url ? (
                   <img src={tournament.logo_url} alt={tournament.name || 'Logo'} className="w-full h-full object-contain p-1.5" />
                 ) : (
@@ -856,14 +805,14 @@ export default function CleanPublicTeamPage() {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-[11px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
                   Kontrollzentrum
                 </span>
 
                 {!isEditing ? (
                   <>
                     <div className="flex items-center gap-3">
-                      <h1 className="text-2xl sm:text-4xl font-black tracking-tight mt-1 text-white truncate">{team.name}</h1>
+                      <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-0.5 text-white truncate">{team.name}</h1>
                       <button
                         type="button"
                         onClick={() => {
@@ -872,12 +821,12 @@ export default function CleanPublicTeamPage() {
                           setIsEditing(true)
                           setDetailsMessage('')
                         }}
-                        className="mt-1 px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-300 transition shrink-0"
+                        className="px-2.5 py-1 rounded-xl border border-white/10 bg-slate-950/60 hover:border-white/20 text-xs font-bold text-slate-300 transition shrink-0"
                       >
                         ✏️ Spieler bearbeiten
                       </button>
                     </div>
-                    <p className="text-sm font-semibold text-slate-300 mt-1">
+                    <p className="text-xs sm:text-sm font-medium text-slate-300 mt-1">
                       👤 Spieler: {team.player1 || 'Name offen'} &amp; {team.player2 || 'Name offen'}
                     </p>
                   </>
@@ -893,8 +842,7 @@ export default function CleanPublicTeamPage() {
                           value={editPlayer1}
                           onChange={(e) => setEditPlayer1(e.target.value)}
                           placeholder="Name Spieler 1"
-                          className="w-full px-3 py-2 rounded-xl border bg-black/60 text-white text-sm font-bold focus:outline-none focus:ring-2"
-                          style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+                          className="w-full px-3 py-2 rounded-xl border border-white/10 bg-slate-950/80 text-white text-xs font-bold focus:outline-none focus:border-white/30"
                         />
                       </div>
                       <div>
@@ -906,8 +854,7 @@ export default function CleanPublicTeamPage() {
                           value={editPlayer2}
                           onChange={(e) => setEditPlayer2(e.target.value)}
                           placeholder="Name Spieler 2"
-                          className="w-full px-3 py-2 rounded-xl border bg-black/60 text-white text-sm font-bold focus:outline-none focus:ring-2"
-                          style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+                          className="w-full px-3 py-2 rounded-xl border border-white/10 bg-slate-950/80 text-white text-xs font-bold focus:outline-none focus:border-white/30"
                         />
                       </div>
                     </div>
@@ -915,7 +862,7 @@ export default function CleanPublicTeamPage() {
                       <button
                         type="submit"
                         disabled={savingDetails}
-                        className="px-4 py-2 rounded-xl text-xs font-black text-black transition shadow"
+                        className="px-4 py-2 rounded-xl text-xs font-black text-slate-950 transition shadow"
                         style={{ backgroundColor: primaryColor }}
                       >
                         {savingDetails ? 'Speichere...' : '💾 Speichern'}
@@ -923,7 +870,7 @@ export default function CleanPublicTeamPage() {
                       <button
                         type="button"
                         onClick={() => setIsEditing(false)}
-                        className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 border border-white/10 bg-white/5 hover:bg-white/10 transition"
+                        className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 border border-white/10 bg-slate-950/60 hover:bg-white/5 transition"
                       >
                         Abbrechen
                       </button>
@@ -932,7 +879,7 @@ export default function CleanPublicTeamPage() {
                 )}
 
                 {detailsMessage && (
-                  <p className="text-xs font-bold mt-2 text-emerald-300">
+                  <p className="text-xs font-bold mt-2 text-emerald-400">
                     {detailsMessage}
                   </p>
                 )}
@@ -940,13 +887,13 @@ export default function CleanPublicTeamPage() {
             </div>
 
             <div className="flex flex-wrap md:flex-col gap-2 md:items-end">
-              <span className="px-3.5 py-1.5 border rounded-full text-xs font-bold text-slate-200 shadow-sm" style={innerBoxStyle}>
+              <span className="px-3.5 py-1.5 border border-white/10 bg-slate-950/60 rounded-full text-xs font-bold text-slate-200">
                 📌 {group?.name || 'Gruppe offen'}
               </span>
-              <span className={`px-3.5 py-1.5 rounded-full text-xs font-black shadow-sm ${isPaid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'}`}>
+              <span className={`px-3.5 py-1.5 rounded-full text-xs font-black ${isPaid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
                 {isPaid ? '🟢 Bezahlt' : '🟡 Zahlung offen'}
               </span>
-              <span className={`px-3.5 py-1.5 rounded-full text-xs font-black shadow-sm ${team.checkin_status ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'text-slate-400 border'}`} style={!team.checkin_status ? innerBoxStyle : undefined}>
+              <span className={`px-3.5 py-1.5 rounded-full text-xs font-black ${team.checkin_status ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-950/60 text-slate-400 border border-white/10'}`}>
                 {team.checkin_status ? '🟢 Eingecheckt' : '⚪ Nicht eingecheckt'}
               </span>
             </div>
@@ -956,36 +903,32 @@ export default function CleanPublicTeamPage() {
             <div className="flex flex-wrap gap-2">
               <a
                 href={`/turnier/${encodeURIComponent(tournamentSlugParam)}`}
-                className="px-3.5 py-2 border rounded-xl text-xs font-bold transition shadow-sm text-slate-200 hover:text-white"
-                style={innerBoxStyle}
+                className="px-3.5 py-2 border border-white/10 bg-slate-950/60 hover:border-white/20 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white"
               >
                 🌐 Hauptseite
               </a>
               <a
                 href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/live`}
-                className="px-3.5 py-2 border rounded-xl text-xs font-bold transition shadow-sm text-slate-200 hover:text-white"
-                style={innerBoxStyle}
+                className="px-3.5 py-2 border border-white/10 bg-slate-950/60 hover:border-white/20 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white"
               >
                 🔴 Live-Spielplan
               </a>
               <a
                 href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/regeln`}
-                className="px-3.5 py-2 border rounded-xl text-xs font-bold transition shadow-sm text-slate-200 hover:text-white"
-                style={innerBoxStyle}
+                className="px-3.5 py-2 border border-white/10 bg-slate-950/60 hover:border-white/20 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white"
               >
                 📜 Regeln
               </a>
               <a
                 href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/stats`}
-                className="px-3.5 py-2 border rounded-xl text-xs font-bold transition shadow-sm text-slate-200 hover:text-white"
-                style={innerBoxStyle}
+                className="px-3.5 py-2 border border-white/10 bg-slate-950/60 hover:border-white/20 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white"
               >
                 📊 Statistiken
               </a>
               {isTournamentFinished && (
                 <a
                   href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/sieger`}
-                  className="px-3.5 py-2 bg-amber-500/30 hover:bg-amber-500/40 border border-amber-500/50 rounded-xl text-xs font-black transition shadow-sm text-amber-200 animate-pulse"
+                  className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-xl text-xs font-black transition text-amber-300 animate-pulse"
                 >
                   🥇 Sieger &amp; Platzierungen
                 </a>
@@ -993,10 +936,10 @@ export default function CleanPublicTeamPage() {
             </div>
 
             <button
+              type="button"
               onClick={() => void loadData(true)}
               disabled={refreshing}
-              className="px-3.5 py-2 border rounded-xl text-xs font-bold transition disabled:opacity-50 text-slate-200 shadow-sm"
-              style={innerBoxStyle}
+              className="px-3.5 py-2 border border-white/10 bg-slate-950/60 hover:border-white/20 rounded-xl text-xs font-bold transition disabled:opacity-50 text-slate-300"
             >
               {refreshing ? '🔄 Lade...' : '🔄 Aktualisieren'}
             </button>
@@ -1004,73 +947,71 @@ export default function CleanPublicTeamPage() {
         </section>
 
         {/* 2. TABELLE (NUR EIGENE GRUPPE) */}
-        <section className="rounded-[24px] border p-6 shadow-xl" style={cardStyle}>
-          <div className="flex items-center justify-between mb-4">
+        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.15em]" style={{ color: primaryColor }}>{group?.name || 'Gruppe'}</p>
-              <h2 className="text-xl sm:text-2xl font-black mt-0.5 text-white">Tabelle</h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
+                {group?.name || 'Gruppe'}
+              </p>
+              <h2 className="text-xl sm:text-2xl font-black text-white">Tabelle</h2>
             </div>
             <span className="text-2xl">📈</span>
           </div>
 
           {group && standings.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs sm:text-sm border-collapse">
+              <table className="w-full text-left text-xs font-medium">
                 <thead>
-                  <tr className="border-b border-white/10 text-[11px] text-slate-400 uppercase tracking-wider">
-                    <th className="py-3 px-2 font-bold w-12">Pl.</th>
-                    <th className="py-3 px-3 font-bold">Team</th>
-                    <th className="py-3 px-2 text-center font-bold">Sp</th>
-                    <th className="py-3 px-2 text-center font-bold">S</th>
-                    <th className="py-3 px-2 text-center font-bold">U</th>
-                    <th className="py-3 px-2 text-center font-bold">N</th>
-                    <th className="py-3 px-2 text-center font-bold">T</th>
-                    <th className="py-3 px-2 text-center font-bold">GT</th>
-                    <th className="py-3 px-2 text-center font-bold">Diff</th>
-                    <th className="py-3 px-3 text-right font-bold w-16">Pkt.</th>
+                  <tr className="border-b border-white/10 text-[10px] font-black uppercase text-slate-400">
+                    <th className="py-2.5 px-2 text-center w-10">Pl.</th>
+                    <th className="py-2.5 px-3">Team</th>
+                    <th className="py-2.5 px-2 text-center">Sp</th>
+                    <th className="py-2.5 px-2 text-center text-emerald-400">S</th>
+                    <th className="py-2.5 px-2 text-center text-amber-400">U</th>
+                    <th className="py-2.5 px-2 text-center text-red-400">N</th>
+                    <th className="py-2.5 px-2 text-center">Tore</th>
+                    <th className="py-2.5 px-2 text-center">Diff</th>
+                    <th className="py-2.5 px-3 text-right font-black text-white w-16">Pkt.</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-white/10 font-bold text-slate-200">
                   {standings.map((st, idx) => {
                     const isMe = String(st.teamId) === String(team.id)
                     const diffText = st.goalDiff > 0 ? `+${st.goalDiff}` : `${st.goalDiff}`
                     return (
                       <tr
                         key={st.teamId}
-                        className="border-b border-white/5 last:border-0 transition-colors"
-                        style={
-                          isMe
-                            ? { backgroundColor: primaryRgba15, color: primaryColor, fontWeight: 800 }
-                            : { color: '#cbd5e1' }
-                        }
+                        className={`transition ${isMe ? 'bg-emerald-500/10 text-white' : ''}`}
                       >
-                        <td className="py-3 px-2">
+                        <td className="py-3 px-2 text-center">
                           <span
-                            className="inline-flex items-center justify-center w-6 h-6 rounded-md text-xs font-black"
-                            style={
+                            className={`inline-flex h-6 w-6 items-center justify-center rounded-md font-mono text-[10px] font-black ${
                               idx === 0
-                                ? { backgroundColor: 'rgba(234, 179, 8, 0.25)', color: '#fde047', border: '1px solid rgba(234, 179, 8, 0.4)' }
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                                 : isMe
-                                ? { backgroundColor: primaryRgba25, color: primaryColor, border: `1px solid ${primaryRgba40}` }
-                                : { backgroundColor: 'rgba(255, 255, 255, 0.08)', color: '#94a3b8' }
-                            }
+                                ? 'bg-emerald-500 text-slate-950'
+                                : 'bg-slate-950/60 text-slate-400 border border-white/10'
+                            }`}
                           >
                             {idx + 1}
                           </span>
                         </td>
-                        <td className="py-3 px-3 font-bold text-sm">
+                        <td className="py-3 px-3 font-extrabold text-white">
                           {st.teamName}
                         </td>
-                        <td className="py-3 px-2 text-center text-slate-300 font-semibold">{st.played}</td>
-                        <td className="py-3 px-2 text-center font-semibold" style={{ color: primaryColor }}>{st.wins}</td>
-                        <td className="py-3 px-2 text-center text-slate-300 font-semibold">{st.draws}</td>
-                        <td className="py-3 px-2 text-center text-[#ff3b5c] font-semibold">{st.losses}</td>
-                        <td className="py-3 px-2 text-center text-slate-300 font-semibold">{st.goalsFor}</td>
-                        <td className="py-3 px-2 text-center text-slate-400 font-semibold">{st.goalsAgainst}</td>
-                        <td className="py-3 px-2 text-center font-bold" style={{ color: st.goalDiff > 0 ? primaryColor : st.goalDiff < 0 ? '#ff3b5c' : '#94a3b8' }}>
-                          {diffText}
+                        <td className="py-3 px-2 text-center font-mono text-slate-400">{st.played}</td>
+                        <td className="py-3 px-2 text-center font-mono text-emerald-400">{st.wins}</td>
+                        <td className="py-3 px-2 text-center font-mono text-amber-400">{st.draws}</td>
+                        <td className="py-3 px-2 text-center font-mono text-red-400">{st.losses}</td>
+                        <td className="py-3 px-2 text-center font-mono text-slate-300">{st.goalsFor}:{st.goalsAgainst}</td>
+                        <td className="py-3 px-2 text-center font-mono font-black">
+                          <span className={st.goalDiff > 0 ? 'text-emerald-400' : st.goalDiff < 0 ? 'text-red-400' : 'text-slate-400'}>
+                            {diffText}
+                          </span>
                         </td>
-                        <td className="py-3 px-3 text-right font-black text-base text-white">{st.points}</td>
+                        <td className="py-3 px-3 text-right font-mono font-black text-sm" style={{ color: primaryColor }}>
+                          {st.points}
+                        </td>
                       </tr>
                     )
                   })}
@@ -1078,20 +1019,20 @@ export default function CleanPublicTeamPage() {
               </table>
             </div>
           ) : (
-            <div className="rounded-[16px] border p-6 text-center text-slate-400 text-sm" style={innerBoxStyle}>
-              Tabelle wird nach Auslosung angezeigt.
+            <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-6 text-center text-xs font-bold text-slate-400">
+              Tabelle wird nach der Auslosung angezeigt.
             </div>
           )}
         </section>
 
         {/* 3. HISTORIE & AUSBLICK */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* HISTORIE / ERGEBNISSE */}
-          <div className="rounded-[24px] border p-6 shadow-xl" style={cardStyle}>
-            <div className="flex items-center justify-between mb-4">
+          <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.15em]" style={{ color: primaryColor }}>Historie</p>
-                <h2 className="text-xl font-black mt-0.5 text-white">Ergebnisse</h2>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Historie</p>
+                <h2 className="text-xl font-black text-white">Ergebnisse</h2>
               </div>
               <span className="text-2xl">🏆</span>
             </div>
@@ -1104,32 +1045,31 @@ export default function CleanPublicTeamPage() {
                   const drawn = s1 !== null && s2 !== null && s1 === s2
                   const isKo = isKoPhaseMatch(m)
                   return (
-                    <div key={m.id} className="p-3.5 rounded-[16px] border space-y-2.5" style={innerBoxStyle}>
+                    <div key={m.id} className="p-4 rounded-2xl border border-white/10 bg-slate-950/60 space-y-2.5 backdrop-blur-md">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span
-                            className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs border shrink-0"
-                            style={
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs border shrink-0 ${
                               won
-                                ? { backgroundColor: primaryRgba15, color: primaryColor, borderColor: primaryRgba40 }
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                                 : drawn
-                                ? { backgroundColor: 'rgba(234, 179, 8, 0.2)', color: '#fde047', borderColor: 'rgba(234, 179, 8, 0.4)' }
-                                : { backgroundColor: 'rgba(255, 59, 92, 0.2)', color: '#ff3b5c', borderColor: 'rgba(255, 59, 92, 0.4)' }
-                            }
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                : 'bg-red-500/20 text-red-300 border-red-500/30'
+                            }`}
                           >
                             {won ? 'W' : drawn ? '=' : 'L'}
                           </span>
                           <div className="min-w-0">
-                            <p className="font-bold text-sm text-white truncate max-w-[150px]">{getOpponent(m)}</p>
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${isKo ? 'text-amber-300 font-extrabold' : 'text-slate-400'}`}>
+                            <p className="font-extrabold text-xs sm:text-sm text-white truncate max-w-[150px]">{getOpponent(m)}</p>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${isKo ? 'text-amber-400 font-black' : 'text-slate-400'}`}>
                               {isKo ? `⚡ ${m.phase || 'KO-Spiel'}` : 'Gruppenspiel'}
                             </span>
                           </div>
                         </div>
-                        <span className="font-black text-base text-white ml-2">{s1} : {s2}</span>
+                        <span className="font-mono font-black text-base text-white ml-2">{s1} : {s2}</span>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/5">
-                        <span>⏰ {m.scheduled_time ? formatDateTime(m.scheduled_time) : 'Zeit unbekannt'}</span>
+                      <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 pt-2 border-t border-white/10">
+                        <span>⏰ {m.scheduled_time ? formatDateTime(m.scheduled_time) : 'Zeit k.A.'}</span>
                         <span>🏓 {m.table_number ? `Tisch ${m.table_number}` : 'Tisch TBD'}</span>
                       </div>
                     </div>
@@ -1137,18 +1077,18 @@ export default function CleanPublicTeamPage() {
                 })}
               </div>
             ) : (
-              <div className="rounded-[16px] border p-6 text-center text-slate-400 text-sm" style={innerBoxStyle}>
+              <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-6 text-center text-xs font-bold text-slate-400">
                 Noch keine beendeten Spiele.
               </div>
             )}
-          </div>
+          </section>
 
           {/* AUSBLICK / KOMMENDE SPIELE */}
-          <div className="rounded-[24px] border p-6 shadow-xl" style={cardStyle}>
-            <div className="flex items-center justify-between mb-4">
+          <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.15em]" style={{ color: primaryColor }}>Ausblick</p>
-                <h2 className="text-xl font-black mt-0.5 text-white">Kommende Spiele</h2>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Ausblick</p>
+                <h2 className="text-xl font-black text-white">Kommende Spiele</h2>
               </div>
               <span className="text-2xl">📅</span>
             </div>
@@ -1160,64 +1100,62 @@ export default function CleanPublicTeamPage() {
                   return (
                     <div
                       key={m.id}
-                      className="p-3.5 rounded-[16px] border space-y-2.5"
-                      style={
+                      className={`p-4 rounded-2xl border space-y-2.5 backdrop-blur-md ${
                         isKo
-                          ? { backgroundColor: 'rgba(234, 179, 8, 0.12)', borderColor: 'rgba(234, 179, 8, 0.4)' }
-                          : innerBoxStyle
-                      }
+                          ? 'border-amber-500/30 bg-amber-500/10'
+                          : 'border-white/10 bg-slate-950/60'
+                      }`}
                     >
                       <div className="flex justify-between items-center text-xs">
                         <span
-                          className="px-2.5 py-0.5 font-black rounded-lg border text-[11px] uppercase tracking-wider"
-                          style={
+                          className={`px-2.5 py-0.5 font-black rounded-lg border text-[10px] uppercase tracking-wider ${
                             isKo
-                              ? { backgroundColor: 'rgba(234, 179, 8, 0.25)', color: '#fde047', borderColor: 'rgba(234, 179, 8, 0.5)' }
-                              : { backgroundColor: primaryRgba15, color: primaryColor, borderColor: primaryRgba40 }
-                          }
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                              : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                          }`}
                         >
                           {isKo ? `⚡ ${m.phase || 'Achtelfinale / KO-Runde'}` : 'Gruppenspiel'}
                         </span>
-                        <span className="text-slate-200 font-bold">
+                        <span className="text-slate-200 font-mono font-bold text-[10px]">
                           ⏰ {m.scheduled_time ? formatTimeOnly(m.scheduled_time) : 'Zeit offen'}
                         </span>
                       </div>
 
-                      <div className="flex justify-between items-center font-black text-sm text-white py-0.5">
+                      <div className="flex justify-between items-center font-black text-xs sm:text-sm text-white py-0.5">
                         <span className="truncate max-w-[130px]" style={{ color: primaryColor }}>{team.name}</span>
                         <span className="text-xs font-bold text-slate-500 px-2">VS</span>
                         <span className="truncate max-w-[130px] text-slate-200">{getOpponent(m)}</span>
                       </div>
 
-                      <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-white/5">
-                        <span>🏓 <strong className="text-slate-200">{m.table_number ? `Tisch ${m.table_number}` : 'Tisch noch nicht zugewiesen'}</strong></span>
-                        <span>⏰ Ansetzungszeit: <strong className="text-slate-200">{m.scheduled_time ? formatDateTime(m.scheduled_time) : 'Offen'}</strong></span>
+                      <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 pt-2 border-t border-white/10">
+                        <span>🏓 <strong className="text-slate-200">{m.table_number ? `Tisch ${m.table_number}` : 'Tisch TBD'}</strong></span>
+                        <span>⏰ <strong className="text-slate-200">{m.scheduled_time ? formatDateTime(m.scheduled_time) : 'Offen'}</strong></span>
                       </div>
                     </div>
                   )
                 })}
               </div>
             ) : (
-              <div className="rounded-[16px] border p-6 text-center text-slate-400 text-sm" style={innerBoxStyle}>
+              <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-6 text-center text-xs font-bold text-slate-400">
                 Keine weiteren Spiele ausstehend.
               </div>
             )}
-          </div>
+          </section>
         </div>
 
         {/* 4. REGELN VORSCHAU */}
-        <section className="rounded-[24px] border p-6 shadow-xl" style={cardStyle}>
+        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="text-xl">📜</span>
-                <p className="text-[11px] font-black uppercase tracking-[0.15em]" style={{ color: primaryColor }}>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
                   Wichtige Hinweise
                 </p>
               </div>
               <h2 className="text-xl font-black text-white">Turnierregeln &amp; Ablauf</h2>
-              <div className="mt-3 rounded-[16px] border p-4 space-y-2" style={innerBoxStyle}>
-                <ul className="space-y-1.5 text-sm text-slate-300">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 backdrop-blur-md">
+                <ul className="space-y-1.5 text-xs sm:text-sm text-slate-300 font-medium">
                   {teamRulesPreview?.team_summary ? (
                     teamRulesPreview.team_summary.split('\n').map((l, i) => <li key={i}>{l}</li>)
                   ) : (
@@ -1232,7 +1170,7 @@ export default function CleanPublicTeamPage() {
             </div>
             <a
               href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/regeln`}
-              className="px-5 py-3 rounded-xl text-xs font-black shadow transition text-black whitespace-nowrap self-start sm:self-center shrink-0"
+              className="px-5 py-3 rounded-2xl text-xs font-black shadow-lg transition text-slate-950 whitespace-nowrap self-start sm:self-center shrink-0"
               style={{ backgroundColor: primaryColor }}
             >
               Hier zu allen Regeln →
@@ -1242,11 +1180,11 @@ export default function CleanPublicTeamPage() {
 
         {/* 5. KO-PHASE OVERVIEW */}
         {allKoMatches.length > 0 && (
-          <section className="rounded-[24px] border p-6 shadow-xl" style={cardStyle}>
-            <div className="flex items-center justify-between mb-4">
+          <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.15em]" style={{ color: primaryColor }}>Finalrunde</p>
-                <h2 className="text-xl font-black mt-0.5 text-white">KO-Phase Übersicht</h2>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Finalrunde</p>
+                <h2 className="text-xl font-black text-white">KO-Phase Übersicht</h2>
               </div>
               <span className="text-2xl">⚡</span>
             </div>
@@ -1258,17 +1196,22 @@ export default function CleanPublicTeamPage() {
                 const t2 = m.team2_name || teams.find((t) => String(t.id) === String(m.team2_id))?.name || 'TBD'
 
                 return (
-                  <div key={m.id} className="p-4 rounded-[16px] border space-y-2" style={isMe ? { backgroundColor: primaryRgba15, borderColor: primaryRgba40 } : innerBoxStyle}>
+                  <div
+                    key={m.id}
+                    className={`p-4 rounded-2xl border space-y-2 backdrop-blur-md ${
+                      isMe ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-white/10 bg-slate-950/60'
+                    }`}
+                  >
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-bold uppercase" style={{ color: primaryColor }}>{m.phase || 'KO-Spiel'}</span>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-xs font-black uppercase" style={{ color: primaryColor }}>{m.phase || 'KO-Spiel'}</span>
+                      <span className="text-[10px] font-mono font-bold text-slate-400">
                         {m.scheduled_time ? formatTimeOnly(m.scheduled_time) : ''} {m.table_number ? `• Tisch ${m.table_number}` : ''}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center font-black text-sm text-white pt-1">
-                      <span style={isMe && (normalizeName(t1) === normalizeName(team.name) || rankPlaceholders.some((p) => normalizeName(t1).includes(p))) ? { color: primaryColor } : undefined}>{t1}</span>
-                      <span className="text-xs font-semibold text-slate-400 px-2">{m.team1_score ?? '-'} : {m.team2_score ?? '-'}</span>
-                      <span style={isMe && (normalizeName(t2) === normalizeName(team.name) || rankPlaceholders.some((p) => normalizeName(t2).includes(p))) ? { color: primaryColor } : undefined}>{t2}</span>
+                    <div className="flex justify-between items-center font-black text-xs sm:text-sm text-white pt-1">
+                      <span className={isMe && (normalizeName(t1) === normalizeName(team.name) || rankPlaceholders.some((p) => normalizeName(t1).includes(p))) ? 'text-emerald-400' : ''}>{t1}</span>
+                      <span className="text-xs font-mono font-bold text-slate-400 px-2">{m.team1_score ?? '-'} : {m.team2_score ?? '-'}</span>
+                      <span className={isMe && (normalizeName(t2) === normalizeName(team.name) || rankPlaceholders.some((p) => normalizeName(t2).includes(p))) ? 'text-emerald-400' : ''}>{t2}</span>
                     </div>
                   </div>
                 )
@@ -1278,11 +1221,11 @@ export default function CleanPublicTeamPage() {
         )}
 
         {/* 6. ZAHLUNG & CHECKOUT */}
-        <section className="rounded-[24px] border p-6 shadow-xl" style={cardStyle}>
+        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.15em]" style={{ color: primaryColor }}>Gebühr</p>
-              <h2 className="text-xl font-black mt-0.5 text-white">Zahlung</h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Gebühr</p>
+              <h2 className="text-xl font-black text-white">Zahlung</h2>
               {entryFee > 0 && (
                 <p className="text-xs font-semibold text-slate-300 mt-0.5">
                   {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(entryFee)} pro Team
@@ -1292,10 +1235,10 @@ export default function CleanPublicTeamPage() {
             <span className="text-2xl">💶</span>
           </div>
 
-          <div className="mt-4 rounded-[16px] border p-4 space-y-4" style={innerBoxStyle}>
+          <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 space-y-4 backdrop-blur-md">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-slate-400">Status</p>
+                <p className="text-[10px] font-black uppercase text-slate-400">Status</p>
                 <p className={`font-black text-sm mt-0.5 ${isPaid ? 'text-emerald-400' : 'text-amber-400'}`}>
                   {isPaid ? '🟢 Bezahlt' : '🟡 Zahlung ausstehend'}
                 </p>
@@ -1304,8 +1247,8 @@ export default function CleanPublicTeamPage() {
             </div>
 
             <div className="pt-3 border-t border-white/10">
-              <p className="text-xs font-bold text-slate-400">Gewählte Methode</p>
-              <p className="font-black text-sm mt-0.5 text-white">
+              <p className="text-[10px] font-black uppercase text-slate-400">Gewählte Methode</p>
+              <p className="font-extrabold text-xs sm:text-sm mt-0.5 text-white">
                 {team.payment_method === 'bar' ? '💶 Barzahlung vor Ort' : team.payment_method === 'paypal' ? '🅿️ PayPal' : team.payment_method === 'ueberweisung' ? '🏦 Banküberweisung' : 'Noch nicht gewählt'}
               </p>
             </div>
@@ -1316,27 +1259,30 @@ export default function CleanPublicTeamPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {tournament?.cash_enabled && (
                     <button
+                      type="button"
                       disabled={changingPayment}
                       onClick={() => void changePaymentMethod('bar')}
-                      className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition ${team.payment_method === 'bar' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300' : 'border-white/10 bg-black/40 hover:bg-white/10 text-slate-200'}`}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-black transition ${team.payment_method === 'bar' ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300' : 'border-white/10 bg-slate-900/60 hover:border-white/20 text-slate-300'}`}
                     >
                       Bar vor Ort
                     </button>
                   )}
                   {tournament?.bank_transfer_enabled && (
                     <button
+                      type="button"
                       disabled={changingPayment}
                       onClick={() => void changePaymentMethod('ueberweisung')}
-                      className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition ${team.payment_method === 'ueberweisung' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300' : 'border-white/10 bg-black/40 hover:bg-white/10 text-slate-200'}`}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-black transition ${team.payment_method === 'ueberweisung' ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300' : 'border-white/10 bg-slate-900/60 hover:border-white/20 text-slate-300'}`}
                     >
                       Überweisung
                     </button>
                   )}
                   {tournament?.paypal_enabled && (
                     <button
+                      type="button"
                       disabled={changingPayment}
                       onClick={() => void changePaymentMethod('paypal')}
-                      className={`py-2.5 px-3 rounded-xl border text-xs font-bold transition ${team.payment_method === 'paypal' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300' : 'border-white/10 bg-black/40 hover:bg-white/10 text-slate-200'}`}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-black transition ${team.payment_method === 'paypal' ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300' : 'border-white/10 bg-slate-900/60 hover:border-white/20 text-slate-300'}`}
                     >
                       PayPal
                     </button>
@@ -1365,7 +1311,7 @@ export default function CleanPublicTeamPage() {
             )}
 
             {paymentMessage && (
-              <p className="text-xs font-semibold p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+              <p className="text-xs font-bold p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
                 {paymentMessage}
               </p>
             )}
@@ -1373,23 +1319,10 @@ export default function CleanPublicTeamPage() {
         </section>
 
         {/* FOOTER */}
-        <footer className="py-6 text-center text-xs text-slate-500 font-semibold">
+        <footer className="py-6 text-center text-xs text-slate-500 font-medium">
           <p>{tournament?.name || 'Turnier-Portal'}</p>
         </footer>
-
       </div>
-    </main>
+    </div>
   )
-}
-
-function formatDateTime(dateStr: string) {
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return dateStr
-  return d.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-}
-
-function formatTimeOnly(dateStr: string) {
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return dateStr
-  return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr'
 }

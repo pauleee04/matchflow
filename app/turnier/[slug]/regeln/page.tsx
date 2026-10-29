@@ -92,7 +92,7 @@ export default function RulesPage() {
     }
   }, [tournament?.id, loadData])
 
-  const primaryColor = tournament?.primary_color?.trim() || '#2563eb'
+  const primaryColor = tournament?.primary_color?.trim() || '#22c55e'
 
   const activeRules = useMemo(() => {
     if (!tournament?.rules || !Array.isArray(tournament.rules)) return []
@@ -133,16 +133,24 @@ export default function RulesPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 pb-16 text-slate-100">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
       {/* SEITEN-KOPF */}
       <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
         <div className="flex items-center gap-4">
-          <span
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl font-black shadow-lg"
-            style={{ backgroundColor: primaryColor, color: '#ffffff' }}
-          >
-            📜
-          </span>
+          {tournament.logo_url ? (
+            <img
+              src={tournament.logo_url}
+              alt={tournament.name}
+              className="h-12 w-12 rounded-2xl object-contain bg-slate-950/60 p-1 border border-white/10"
+            />
+          ) : (
+            <span
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl font-black text-slate-950 shadow-lg"
+              style={{ backgroundColor: primaryColor }}
+            >
+              📜
+            </span>
+          )}
           <div>
             <span
               className="text-[10px] font-black uppercase tracking-[0.2em]"
@@ -166,27 +174,30 @@ export default function RulesPage() {
           <button
             type="button"
             onClick={() => setActiveCategory('all')}
-            className={`rounded-2xl px-4 py-2 text-xs font-black transition ${
+            className={`rounded-2xl px-4 py-2.5 text-xs font-black transition border ${
               activeCategory === 'all'
-                ? 'bg-white text-slate-950 shadow-md'
-                : 'bg-slate-900/60 text-slate-400 border border-white/10 hover:text-white'
+                ? 'bg-white text-slate-950 border-white shadow-lg'
+                : 'bg-slate-900/60 text-slate-400 border-white/10 hover:border-white/20 hover:text-white backdrop-blur-md'
             }`}
           >
             Alle Regeln ({activeRules.length})
           </button>
+
           {(['general', 'gameplay', 'scoring', 'penalties'] as RuleCategory[]).map((cat) => {
             const count = activeRules.filter((r) => r.category === cat).length
             if (count === 0) return null
             const info = CATEGORY_LABELS[cat]
+            const isActive = activeCategory === cat
+
             return (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setActiveCategory(cat)}
-                className={`rounded-2xl px-4 py-2 text-xs font-black transition flex items-center gap-1.5 ${
-                  activeCategory === cat
-                    ? 'bg-white text-slate-950 shadow-md'
-                    : 'bg-slate-900/60 text-slate-400 border border-white/10 hover:text-white'
+                className={`rounded-2xl px-4 py-2.5 text-xs font-black transition flex items-center gap-2 border ${
+                  isActive
+                    ? 'bg-white text-slate-950 border-white shadow-lg'
+                    : 'bg-slate-900/60 text-slate-400 border-white/10 hover:border-white/20 hover:text-white backdrop-blur-md'
                 }`}
               >
                 <span>{info.icon}</span>
@@ -205,19 +216,20 @@ export default function RulesPage() {
             return (
               <article
                 key={rule.id}
-                className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-xl backdrop-blur-xl space-y-2 transition hover:border-white/20"
+                className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-7 shadow-2xl backdrop-blur-xl space-y-3 transition hover:border-white/20"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{catInfo.icon}</span>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">{catInfo.icon}</span>
                     <h2 className="text-base font-black text-white">{rule.title}</h2>
                   </div>
-                  <span className="rounded-xl border border-white/10 bg-slate-950/60 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  <span className="self-start sm:self-auto rounded-xl border border-white/10 bg-slate-950/60 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
                     {catInfo.label}
                   </span>
                 </div>
+
                 {rule.description && (
-                  <p className="text-xs sm:text-sm font-medium leading-relaxed text-slate-300 whitespace-pre-wrap pl-7">
+                  <p className="text-xs sm:text-sm font-medium leading-relaxed text-slate-300 whitespace-pre-wrap sm:pl-8">
                     {rule.description}
                   </p>
                 )}
@@ -226,7 +238,7 @@ export default function RulesPage() {
           })}
         </div>
       ) : (
-        <div className="rounded-3xl border border-dashed border-white/10 bg-slate-900/40 p-12 text-center text-xs font-bold text-slate-400 backdrop-blur-xl">
+        <div className="rounded-[32px] border border-dashed border-white/10 bg-slate-900/40 p-12 text-center text-xs font-bold text-slate-400 backdrop-blur-xl">
           {activeRules.length === 0
             ? 'Für dieses Turnier wurden noch keine spezifischen Regeln veröffentlicht.'
             : 'Keine aktiven Regeln in dieser Kategorie vorhanden.'}

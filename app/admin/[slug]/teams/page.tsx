@@ -72,6 +72,9 @@ export default function AdminTeamsPage() {
     notes: '',
   })
 
+  const primaryColor = tournament?.primary_color || '#22c55e'
+  const activeSlug = tournament?.slug || slug
+
   useEffect(() => {
     void loadData()
   }, [slug, rawSlug])
@@ -324,21 +327,30 @@ export default function AdminTeamsPage() {
   const paidCount = teams.filter((t) => t.payment_status === 'paid' || t.payment_status === 'bezahlt' || t.payment_status === 'free').length
   const openPaymentCount = totalTeams - paidCount
 
-  const primaryColor = tournament?.primary_color || '#22c55e'
-  const activeSlug = tournament?.slug || slug
-
   if (loading) {
-    return <div className="p-8 text-center font-bold text-slate-400 text-xs">Lade Teamverwaltung …</div>
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+        <div className="text-center">
+          <div
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
+          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+            Lade Teamverwaltung …
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
       {statusMessage && (
         <div
-          className={`rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
+          className={`w-full rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
             statusMessage.type === 'success'
-              ? 'border-emerald-500/30 bg-emerald-500/20 text-emerald-300'
-              : 'border-red-500/30 bg-red-500/20 text-red-300'
+              ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
+              : 'border-red-500/30 bg-red-950/20 text-red-300'
           }`}
         >
           {statusMessage.text}
@@ -346,33 +358,35 @@ export default function AdminTeamsPage() {
       )}
 
       {/* METRIK CARDS */}
-      <section className="grid gap-4 sm:grid-cols-4">
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Teams Gesamt</p>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Teams Gesamt</p>
           <p className="mt-2 text-3xl font-black text-white">{totalTeams}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Anwesend (Check-in)</p>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Anwesend (Check-in)</p>
           <p className="mt-2 text-3xl font-black text-emerald-400">
-            {checkedInCount} <span className="text-xs text-slate-500">/ {totalTeams}</span>
+            {checkedInCount} <span className="text-xs text-slate-500 font-bold">/ {totalTeams}</span>
           </p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Bezahlt / Befreit</p>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Bezahlt / Befreit</p>
           <p className="mt-2 text-3xl font-black text-blue-400">{paidCount}</p>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-lg backdrop-blur-xl">
-          <p className="text-xs font-black uppercase text-slate-400">Zahlung Ausstehend</p>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Zahlung Ausstehend</p>
           <p className="mt-2 text-3xl font-black text-amber-400">{openPaymentCount}</p>
         </div>
       </section>
 
       {/* FILTER & AKTIONEN BAR */}
-      <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl space-y-4">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-xl font-black text-white">Teamliste &amp; Check-in</h2>
-            <p className="mt-1 text-xs text-slate-400">
+            <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
+              Teamliste &amp; Check-in
+            </h2>
+            <p className="mt-1 text-xs font-medium text-slate-300">
               Klicke direkt auf den Check-in- oder Zahlungs-Badge, um den Status schnell anzupassen.
             </p>
           </div>
@@ -381,7 +395,7 @@ export default function AdminTeamsPage() {
             type="button"
             onClick={openAddModal}
             disabled={!tournament}
-            className="rounded-xl px-5 py-3 text-xs font-black text-slate-950 shadow-md transition hover:opacity-90 shrink-0 disabled:opacity-40"
+            className="rounded-2xl px-5 py-3 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 shrink-0 disabled:opacity-40"
             style={{ backgroundColor: primaryColor }}
           >
             ➕ Team Manuell Hinzufügen
@@ -394,13 +408,13 @@ export default function AdminTeamsPage() {
             placeholder="🔍 Suche nach Team, Spielern oder E-Mail …"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-emerald-500"
+            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-white/30"
           />
 
           <select
             value={checkinFilter}
             onChange={(e) => setCheckinFilter(e.target.value)}
-            className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
+            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
           >
             <option value="all">Alle Check-in Status</option>
             <option value="checked_in">✓ Anwesend (Checked-in)</option>
@@ -410,7 +424,7 @@ export default function AdminTeamsPage() {
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
-            className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-bold text-white outline-none focus:border-emerald-500"
+            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
           >
             <option value="all">Alle Zahlungsstatus</option>
             <option value="paid">✓ Bezahlt</option>
@@ -420,136 +434,138 @@ export default function AdminTeamsPage() {
       </section>
 
       {/* TEAM TABLE */}
-      <section className="rounded-3xl border border-white/10 bg-slate-900/50 p-6 shadow-lg backdrop-blur-xl overflow-x-auto">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl overflow-x-auto">
         {filteredTeams.length === 0 ? (
-          <div className="py-8 text-center text-xs font-bold text-slate-500">
+          <div className="py-8 text-center text-xs font-bold text-slate-400">
             Keine Teams für die gewählte Filterkombination gefunden.
           </div>
         ) : (
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-white/10 text-[10px] font-black uppercase text-slate-400">
-                <th className="py-3 px-3">Teamname</th>
-                <th className="py-3 px-3">Spieler &amp; Kontakt</th>
-                <th className="py-3 px-3 text-center">Check-in Status</th>
-                <th className="py-3 px-3 text-center">Zahlungsstatus</th>
-                <th className="py-3 px-3 text-right">Aktionen</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5 font-bold">
-              {filteredTeams.map((team) => {
-                const isCheckedIn = isTeamCheckedIn(team.checkin_status)
-                const isPaid = team.payment_status === 'paid' || team.payment_status === 'bezahlt'
-                
-                const tokenValue = team.token || (team as any).access_token || team.id
-                const teamPortalUrl = `/turnier/${encodeURIComponent(activeSlug)}/team/${team.id}?t=${tokenValue}`
+          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/60">
+            <table className="w-full text-left text-xs min-w-[600px]">
+              <thead>
+                <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-950/80">
+                  <th className="py-3 px-4">Teamname</th>
+                  <th className="py-3 px-4">Spieler &amp; Kontakt</th>
+                  <th className="py-3 px-4 text-center">Check-in Status</th>
+                  <th className="py-3 px-4 text-center">Zahlungsstatus</th>
+                  <th className="py-3 px-4 text-right">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5 font-bold">
+                {filteredTeams.map((team) => {
+                  const isCheckedIn = isTeamCheckedIn(team.checkin_status)
+                  const isPaid = team.payment_status === 'paid' || team.payment_status === 'bezahlt'
 
-                return (
-                  <tr key={team.id} className="hover:bg-white/5 transition">
-                    <td className="py-3 px-3">
-                      <Link
-                        href={teamPortalUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-black text-white text-sm hover:text-emerald-400 hover:underline transition inline-flex items-center gap-1 group"
-                        title="Team-Portal in neuem Tab öffnen"
-                      >
-                        <span>{team.name}</span>
-                        <span className="text-xs text-slate-400 group-hover:text-emerald-400 transition-colors">↗</span>
-                      </Link>
-                      {team.notes && (
-                        <div className="text-[10px] text-slate-400 font-normal italic mt-0.5">
-                          Note: {team.notes}
-                        </div>
-                      )}
-                    </td>
+                  const tokenValue = team.token || (team as any).access_token || team.id
+                  const teamPortalUrl = `/turnier/${encodeURIComponent(activeSlug)}/team/${team.id}?t=${tokenValue}`
 
-                    <td className="py-3 px-3">
-                      <div className="text-slate-200">
-                        {[team.player1, team.player2].filter(Boolean).join(' & ') || 'Keine Spieler angegeben'}
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-mono">
-                        {[team.email, team.phone].filter(Boolean).join(' • ') || 'Keine Kontaktdaten'}
-                      </div>
-                    </td>
-
-                    <td className="py-3 px-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleCheckin(team.id, team.checkin_status)}
-                        className={`rounded-xl px-3 py-1.5 text-[10px] font-black transition border ${
-                          isCheckedIn
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
-                            : 'bg-slate-950 text-slate-400 border-white/10 hover:text-white'
-                        }`}
-                      >
-                        {isCheckedIn ? '✓ Anwesend' : '⏳ Ausstehend'}
-                      </button>
-                    </td>
-
-                    <td className="py-3 px-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePayment(team.id, team.payment_status)}
-                        className={`rounded-xl px-3 py-1.5 text-[10px] font-black transition border ${
-                          isPaid
-                            ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
-                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                        }`}
-                      >
-                        {isPaid ? '✓ Bezahlt' : '⏳ Offen'}
-                      </button>
-                    </td>
-
-                    <td className="py-3 px-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                  return (
+                    <tr key={team.id} className="hover:bg-white/5 transition">
+                      <td className="py-3.5 px-4">
                         <Link
                           href={teamPortalUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300 hover:bg-emerald-500/20 transition flex items-center gap-1"
-                          title="Team-Portal im neuen Tab öffnen"
+                          className="font-black text-white text-sm hover:text-emerald-400 hover:underline transition inline-flex items-center gap-1 group"
+                          title="Team-Portal in neuem Tab öffnen"
                         >
-                          <span>Team-Portal</span>
-                          <span>↗</span>
+                          <span>{team.name}</span>
+                          <span className="text-xs text-slate-400 group-hover:text-emerald-400 transition-colors">↗</span>
                         </Link>
+                        {team.notes && (
+                          <div className="text-[10px] text-slate-400 font-normal italic mt-0.5">
+                            Note: {team.notes}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="text-slate-200 font-bold">
+                          {[team.player1, team.player2].filter(Boolean).join(' & ') || 'Keine Spieler angegeben'}
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono">
+                          {[team.email, team.phone].filter(Boolean).join(' • ') || 'Keine Kontaktdaten'}
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-center">
                         <button
                           type="button"
-                          onClick={() => openEditModal(team)}
-                          className="rounded-lg border border-white/10 bg-slate-800 px-2.5 py-1 text-[10px] text-slate-200 hover:bg-white/10 transition"
+                          onClick={() => handleToggleCheckin(team.id, team.checkin_status)}
+                          className={`rounded-xl px-3 py-1.5 text-[10px] font-black transition border ${
+                            isCheckedIn
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                              : 'bg-slate-950 text-slate-400 border-white/10 hover:text-white'
+                          }`}
                         >
-                          Bearbeiten
+                          {isCheckedIn ? '✓ Anwesend' : '⏳ Ausstehend'}
                         </button>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-center">
                         <button
                           type="button"
-                          onClick={() => handleDeleteTeam(team.id, team.name)}
-                          className="rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] text-red-400 hover:bg-red-500/20 transition"
-                          title="Löschen"
+                          onClick={() => handleTogglePayment(team.id, team.payment_status)}
+                          className={`rounded-xl px-3 py-1.5 text-[10px] font-black transition border ${
+                            isPaid
+                              ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                              : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          }`}
                         >
-                          ✕
+                          {isPaid ? '✓ Bezahlt' : '⏳ Offen'}
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={teamPortalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-2.5 py-1 text-[10px] font-bold text-emerald-300 hover:bg-emerald-900/40 transition flex items-center gap-1"
+                            title="Team-Portal im neuen Tab öffnen"
+                          >
+                            <span>Team-Portal</span>
+                            <span>↗</span>
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(team)}
+                            className="rounded-xl border border-white/10 bg-slate-900/80 px-2.5 py-1 text-[10px] font-bold text-slate-200 hover:bg-slate-800 transition"
+                          >
+                            Bearbeiten
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTeam(team.id, team.name)}
+                            className="rounded-xl border border-red-500/30 bg-red-950/30 px-2 py-1 text-[10px] font-black text-red-300 hover:bg-red-900/40 transition"
+                            title="Löschen"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
       {/* TEAM EDIT / ADD MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-slate-900 p-6 shadow-2xl space-y-6">
+          <div className="w-full max-w-lg rounded-[32px] border border-white/10 bg-slate-900/90 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <h3 className="text-lg font-black text-white">
+              <h3 className="text-xl font-black text-white tracking-tight">
                 {editingTeam ? 'Team Bearbeiten' : 'Neues Team Hinzufügen'}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white font-bold"
+                className="text-slate-400 hover:text-white font-bold transition-colors"
               >
                 ✕
               </button>
@@ -557,7 +573,7 @@ export default function AdminTeamsPage() {
 
             <form onSubmit={handleSaveTeam} className="space-y-4 text-xs font-bold">
               <div>
-                <label className="block text-[10px] uppercase text-slate-400 mb-1">
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
                   Teamname *
                 </label>
                 <input
@@ -565,63 +581,63 @@ export default function AdminTeamsPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-white outline-none focus:border-emerald-500"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
                 />
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[10px] uppercase text-slate-400 mb-1">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
                     Spieler 1
                   </label>
                   <input
                     type="text"
                     value={formData.player1}
                     onChange={(e) => setFormData({ ...formData, player1: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-white outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase text-slate-400 mb-1">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
                     Spieler 2
                   </label>
                   <input
                     type="text"
                     value={formData.player2}
                     onChange={(e) => setFormData({ ...formData, player2: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-white outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
                   />
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[10px] uppercase text-slate-400 mb-1">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
                     E-Mail Adresse
                   </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-white outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase text-slate-400 mb-1">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
                     Telefon / Mobil
                   </label>
                   <input
                     type="text"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-white outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
                   />
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[10px] uppercase text-slate-400 mb-1">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
                     Check-in Status
                   </label>
                   <select
@@ -629,7 +645,7 @@ export default function AdminTeamsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, checkin_status: e.target.value as CheckinStatus })
                     }
-                    className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-white outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
                   >
                     <option value="pending">⏳ Ausstehend</option>
                     <option value="checked_in">✓ Anwesend (Checked-in)</option>
@@ -637,7 +653,7 @@ export default function AdminTeamsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase text-slate-400 mb-1">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
                     Zahlungsstatus
                   </label>
                   <select
@@ -645,7 +661,7 @@ export default function AdminTeamsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, payment_status: e.target.value })
                     }
-                    className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-white outline-none focus:border-emerald-500"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
                   >
                     <option value="open">⏳ Offen</option>
                     <option value="bezahlt">✓ Bezahlt</option>
@@ -654,14 +670,14 @@ export default function AdminTeamsPage() {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase text-slate-400 mb-1">
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
                   Notizen / Anmerkungen
                 </label>
                 <textarea
                   rows={2}
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-white outline-none focus:border-emerald-500"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
                 />
               </div>
 
@@ -669,14 +685,14 @@ export default function AdminTeamsPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-slate-300 hover:bg-white/10 transition"
+                  className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-300 hover:bg-slate-900 transition font-bold"
                 >
                   Abbrechen
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-xl px-5 py-2.5 text-slate-950 font-black shadow-md transition hover:opacity-90 disabled:opacity-40"
+                  className="rounded-2xl px-5 py-3 text-slate-950 font-black shadow-lg transition hover:opacity-90 disabled:opacity-40"
                   style={{ backgroundColor: primaryColor }}
                 >
                   {saving ? 'Speichere …' : 'Speichern'}

@@ -14,21 +14,33 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Turnier-Manager",
-    template: "%s · Turnier-Manager",
+    default: "MatchFlow.pro · Next-Gen Tournament Engine",
+    template: "%s · MatchFlow.pro",
   },
   description:
-    "Turniere online erstellen, verwalten und live verfolgen.",
+    "Das smarte Betriebssystem für jedes Turnier weltweit. Turniere in Echtzeit erstellen, verwalten und mit Beamer- & Live-Ticker-View verfolgen.",
+  keywords: [
+    "Turnier-Manager",
+    "Bierpong Turnier",
+    "MatchFlow",
+    "Spielplan Generator",
+    "Live Turnier Ticker",
+    "Turnier erstellen",
+  ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="de"
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       style={{ colorScheme: "dark" }}
     >
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100">
+      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 font-sans selection:bg-amber-500 selection:text-slate-950">
         {children}
       </body>
     </html>

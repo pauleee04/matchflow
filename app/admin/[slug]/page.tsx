@@ -137,38 +137,46 @@ export default function AdminTournamentDashboard() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center text-xs font-bold text-gray-400">
-        Lade Turnier-Dashboard …
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+        <div className="text-center">
+          <div
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
+          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+            Lade Turnier-Dashboard …
+          </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
       {/* KOPFZEILE UND SCHNELL-STATUS */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-3xl border border-gray-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-md dark:border-gray-800/80 dark:bg-gray-900/80">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <span
-              className="rounded-md px-2 py-0.5 text-[10px] font-black uppercase text-gray-950"
+              className="rounded-lg px-2.5 py-1 text-[10px] font-black uppercase text-slate-950 shadow-sm"
               style={{ backgroundColor: primaryColor }}
             >
               {sportConfig.emoji} {sportConfig.name}
             </span>
             <span
-              className={`rounded-md px-2 py-0.5 text-[10px] font-black uppercase ${
+              className={`rounded-lg px-2.5 py-1 text-[10px] font-black uppercase border ${
                 tournament?.status === 'active'
-                  ? 'bg-emerald-500/10 text-emerald-500'
-                  : 'bg-amber-500/10 text-amber-500'
+                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                  : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
               }`}
             >
               Status: {tournament?.status}
             </span>
           </div>
-          <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+          <h1 className="mt-2 text-2xl sm:text-3xl font-black tracking-tight text-white">
             {tournament?.name} Dashboard
-          </h2>
-          <p className="mt-0.5 text-xs text-gray-400 font-mono">URL-Slug: /turnier/{slug}</p>
+          </h1>
+          <p className="mt-1 text-xs font-mono text-slate-400">URL-Slug: /turnier/{slug}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -176,7 +184,7 @@ export default function AdminTournamentDashboard() {
             value={tournament?.status || 'active'}
             disabled={updatingStatus}
             onChange={(e) => changeTournamentStatus(e.target.value)}
-            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-bold shadow-sm dark:border-gray-700 dark:bg-gray-800"
+            className="rounded-2xl border border-white/10 bg-slate-950/80 px-3.5 py-2 text-xs font-bold text-white focus:border-white/30 focus:outline-none shadow-lg"
           >
             <option value="active">🟢 Status: Aktiv (Öffentlich)</option>
             <option value="draft">🟡 Status: Entwurf / Vorbereitung</option>
@@ -186,35 +194,35 @@ export default function AdminTournamentDashboard() {
           <Link
             href={publicBaseUrl}
             target="_blank"
-            className="rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:text-white backdrop-blur-md"
           >
             Öffentliche Seite ↗
           </Link>
         </div>
-      </div>
+      </section>
 
       {/* KPI KENNZAHLEN CARDS */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-200/80 bg-white/80 p-5 shadow-sm backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80">
-          <div className="flex items-center justify-between text-gray-400 text-xs font-bold">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
             <span>Angemeldete Teams</span>
             <span>👥</span>
           </div>
-          <div className="mt-2 text-3xl font-black">{teams.length}</div>
+          <div className="mt-2 text-3xl font-black text-white">{teams.length}</div>
           <Link
             href={`${adminBaseUrl}/teams`}
-            className="mt-2 inline-block text-[11px] font-bold text-amber-500 hover:underline"
+            className="mt-2 inline-block text-[11px] font-bold text-amber-400 hover:underline"
           >
             Teams verwalten →
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-gray-200/80 bg-white/80 p-5 shadow-sm backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80">
-          <div className="flex items-center justify-between text-gray-400 text-xs font-bold">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
             <span>Live auf den Tischen</span>
             <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
           </div>
-          <div className="mt-2 text-3xl font-black text-red-500">{liveMatches.length}</div>
+          <div className="mt-2 text-3xl font-black text-red-400">{liveMatches.length}</div>
           <Link
             href={`${adminBaseUrl}/spiele`}
             className="mt-2 inline-block text-[11px] font-bold text-red-400 hover:underline"
@@ -223,29 +231,29 @@ export default function AdminTournamentDashboard() {
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-gray-200/80 bg-white/80 p-5 shadow-sm backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80">
-          <div className="flex items-center justify-between text-gray-400 text-xs font-bold">
-            <span>Gespiele Matches</span>
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
+            <span>Gespielte Matches</span>
             <span>🏆</span>
           </div>
-          <div className="mt-2 text-3xl font-black">
-            {finishedMatches.length} <span className="text-sm text-gray-400">/ {totalMatchesCount}</span>
+          <div className="mt-2 text-3xl font-black text-white">
+            {finishedMatches.length} <span className="text-sm text-slate-400 font-normal">/ {totalMatchesCount}</span>
           </div>
           <Link
             href={`${adminBaseUrl}/tabelle`}
-            className="mt-2 inline-block text-[11px] font-bold text-amber-500 hover:underline"
+            className="mt-2 inline-block text-[11px] font-bold text-amber-400 hover:underline"
           >
             Tabelle ansehen →
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-gray-200/80 bg-white/80 p-5 shadow-sm backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80">
-          <div className="flex items-center justify-between text-gray-400 text-xs font-bold">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
             <span>Turnier-Fortschritt</span>
             <span>📊</span>
           </div>
-          <div className="mt-2 text-3xl font-black">{progressPercent}%</div>
-          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
+          <div className="mt-2 text-3xl font-black text-white">{progressPercent}%</div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-950/80 border border-white/10">
             <div
               className="h-full transition-all duration-500"
               style={{ width: `${progressPercent}%`, backgroundColor: primaryColor }}
@@ -257,138 +265,138 @@ export default function AdminTournamentDashboard() {
       {/* SCHNELL-AKTIONEN & BRANDING PREVIEW GRID */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* SCHNELL-AKTIONEN (2 SPALTEN) */}
-        <div className="lg:col-span-2 space-y-4 rounded-3xl border border-gray-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80">
-          <h3 className="text-base font-black tracking-tight">Schnellzugriff & Steuerung</h3>
+        <div className="lg:col-span-2 space-y-4 rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+          <h3 className="text-lg font-black tracking-tight text-white">Schnellzugriff &amp; Steuerung</h3>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <Link
               href={`${adminBaseUrl}/spiele`}
-              className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-amber-500 hover:bg-amber-500/5 dark:border-gray-800 dark:bg-gray-800/50"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4 transition hover:border-amber-500/40 hover:bg-white/5 backdrop-blur-md"
             >
               <div>
-                <div className="font-black text-sm">⚽ Spiele & Ergebnisse</div>
-                <div className="text-xs text-gray-400">Scores eintragen & Tische zuweisen</div>
+                <div className="font-black text-sm text-white">⚽ Spiele &amp; Ergebnisse</div>
+                <div className="text-xs text-slate-400 mt-0.5">Scores eintragen &amp; Tische zuweisen</div>
               </div>
-              <span className="text-gray-400">→</span>
+              <span className="text-slate-400">→</span>
             </Link>
 
             <Link
               href={`${adminBaseUrl}/gruppen`}
-              className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-amber-500 hover:bg-amber-500/5 dark:border-gray-800 dark:bg-gray-800/50"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4 transition hover:border-amber-500/40 hover:bg-white/5 backdrop-blur-md"
             >
               <div>
-                <div className="font-black text-sm">🔀 Gruppen & Auslosung</div>
-                <div className="text-xs text-gray-400">Teams auslosen & Spielplan erstellen</div>
+                <div className="font-black text-sm text-white">🔀 Gruppen &amp; Auslosung</div>
+                <div className="text-xs text-slate-400 mt-0.5">Teams auslosen &amp; Spielplan erstellen</div>
               </div>
-              <span className="text-gray-400">→</span>
+              <span className="text-slate-400">→</span>
             </Link>
 
             <Link
               href={`${adminBaseUrl}/ko`}
-              className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-amber-500 hover:bg-amber-500/5 dark:border-gray-800 dark:bg-gray-800/50"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4 transition hover:border-amber-500/40 hover:bg-white/5 backdrop-blur-md"
             >
               <div>
-                <div className="font-black text-sm">🏆 K.-o.-Baum Generator</div>
-                <div className="text-xs text-gray-400">Viertelfinale, Halbfinale & Finale</div>
+                <div className="font-black text-sm text-white">🏆 K.-o.-Baum Generator</div>
+                <div className="text-xs text-slate-400 mt-0.5">Viertelfinale, Halbfinale &amp; Finale</div>
               </div>
-              <span className="text-gray-400">→</span>
+              <span className="text-slate-400">→</span>
             </Link>
 
             <Link
               href={`${adminBaseUrl}/einstellungen`}
-              className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 p-4 transition hover:border-amber-500 hover:bg-amber-500/5 dark:border-gray-800 dark:bg-gray-800/50"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4 transition hover:border-amber-500/40 hover:bg-white/5 backdrop-blur-md"
             >
               <div>
-                <div className="font-black text-sm">⚙️ Design & Einstellungen</div>
-                <div className="text-xs text-gray-400">Farben, Logo-Wasserzeichen & Regeln</div>
+                <div className="font-black text-sm text-white">⚙️ Design &amp; Einstellungen</div>
+                <div className="text-xs text-slate-400 mt-0.5">Farben, Logo-Wasserzeichen &amp; Regeln</div>
               </div>
-              <span className="text-gray-400">→</span>
+              <span className="text-slate-400">→</span>
             </Link>
           </div>
         </div>
 
         {/* DESIGN & BRANDING CARD (1 SPALTE) */}
-        <div className="rounded-3xl border border-gray-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80 space-y-4">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-black tracking-tight">Aktuelles Branding</h3>
+            <h3 className="text-lg font-black tracking-tight text-white">Aktuelles Branding</h3>
             <Link
               href={`${adminBaseUrl}/einstellungen`}
-              className="text-xs font-extrabold text-amber-500 hover:underline"
+              className="text-xs font-extrabold text-amber-400 hover:underline"
             >
               Anpassen ⚙️
             </Link>
           </div>
 
-          <div className="space-y-3 text-xs">
-            <div className="flex items-center justify-between rounded-xl bg-gray-100 p-3 dark:bg-gray-800">
-              <span className="font-bold text-gray-400">Hauptfarbe:</span>
+          <div className="space-y-2.5 text-xs">
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-3">
+              <span className="font-bold text-slate-400">Hauptfarbe:</span>
               <div className="flex items-center gap-2">
                 <span
                   className="h-4 w-4 rounded-full border border-white/20 shadow-sm"
                   style={{ backgroundColor: primaryColor }}
                 />
-                <span className="font-mono font-bold">{primaryColor}</span>
+                <span className="font-mono font-bold text-white">{primaryColor}</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl bg-gray-100 p-3 dark:bg-gray-800">
-              <span className="font-bold text-gray-400">Hintergrund-Stil:</span>
-              <span className="font-bold uppercase">{tournament?.background_style || 'dark'}</span>
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-3">
+              <span className="font-bold text-slate-400">Hintergrund-Stil:</span>
+              <span className="font-bold uppercase text-white">{tournament?.background_style || 'dark'}</span>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl bg-gray-100 p-3 dark:bg-gray-800">
-              <span className="font-bold text-gray-400">Logo-Wasserzeichen:</span>
-              <span className="font-bold">{tournament?.logo_url ? 'Vorhanden ✓' : 'Keins hinterlegt'}</span>
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-3">
+              <span className="font-bold text-slate-400">Logo-Wasserzeichen:</span>
+              <span className="font-bold text-white">{tournament?.logo_url ? 'Vorhanden ✓' : 'Keins hinterlegt'}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* MONITOR AKTUELL LAUFENDE SPIELE */}
-      <div className="rounded-3xl border border-gray-200/80 bg-white/80 p-6 shadow-sm backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/80 space-y-4">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
-            <h3 className="text-base font-black tracking-tight">Tisch-Monitor (Aktuell Live)</h3>
+            <h3 className="text-lg font-black tracking-tight text-white">Tisch-Monitor (Aktuell Live)</h3>
           </div>
           <Link
             href={`${adminBaseUrl}/spiele`}
-            className="text-xs font-bold text-amber-500 hover:underline"
+            className="text-xs font-bold text-amber-400 hover:underline"
           >
             Alle Spiele verwalten →
           </Link>
         </div>
 
         {liveMatches.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-300 p-6 text-center text-xs font-bold text-gray-400 dark:border-gray-800">
-            Derzeit läuft kein Spiel live. Starte ein Spiel unter „Spiele & Ergebnisse“.
+          <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-8 text-center text-xs font-bold text-slate-400">
+            Derzeit läuft kein Spiel live. Starte ein Spiel unter „Spiele &amp; Ergebnisse“.
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {liveMatches.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center justify-between rounded-2xl border border-red-500/30 bg-red-500/5 p-4 text-xs font-bold shadow-sm"
+                className="flex items-center justify-between rounded-2xl border border-red-500/30 bg-red-950/20 p-4 text-xs font-bold shadow-lg backdrop-blur-md"
               >
                 <div>
-                  <span className="text-[10px] font-black uppercase text-red-500">
+                  <span className="text-[10px] font-black uppercase text-red-400">
                     {m.table_number ? `Tisch ${m.table_number}` : 'Tisch –'}
                   </span>
-                  <div className="mt-1 font-black text-sm">
+                  <div className="mt-1 font-black text-sm text-white">
                     {teamMap.get(m.team1_id ?? 0) ?? 'TBD'}{' '}
-                    <span className="text-gray-400 font-normal">vs.</span>{' '}
+                    <span className="text-slate-500 font-normal">vs.</span>{' '}
                     {teamMap.get(m.team2_id ?? 0) ?? 'TBD'}
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-white px-3 py-1.5 font-mono text-base font-black tabular-nums dark:bg-gray-800">
+                <div className="rounded-xl border border-white/10 bg-slate-950/80 px-3 py-1.5 font-mono text-base font-black tabular-nums text-white">
                   {m.team1_score ?? 0} : {m.team2_score ?? 0}
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   )
 }
