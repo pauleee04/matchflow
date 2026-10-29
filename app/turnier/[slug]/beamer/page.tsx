@@ -51,6 +51,42 @@ const BRACKET_CARD_HEIGHT = 100
 const BRACKET_ROW_HEIGHT = 62
 const BRACKET_HEADER_HEIGHT = 36
 
+// HILFSFUNKTION FÜR SICHERE RGBA-FARBUMWANDLUNG (AUCH BEI KURZ-HEX)
+function hexToRgba(hex: string | null | undefined, alpha: number, fallback: string = '#22c55e'): string {
+  let c = (hex || fallback).trim()
+  if (!c.startsWith('#')) return `rgba(34, 197, 94, ${alpha})`
+  if (c.length === 4) {
+    c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3]
+  }
+  if (c.length === 7) {
+    const r = parseInt(c.slice(1, 3), 16)
+    const g = parseInt(c.slice(3, 5), 16)
+    const b = parseInt(c.slice(5, 7), 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  return `rgba(34, 197, 94, ${alpha})`
+}
+
+// BERECHNET AUTOMATISCH WEISS ODER DUNKLE SCHRIFT FÜR BESTE LESBARKEIT
+function getContrastTextColor(hexColor: string | null | undefined): string {
+  if (!hexColor || !hexColor.startsWith('#')) return '#ffffff'
+  let hex = hexColor.replace('#', '')
+  if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('')
+  if (hex.length !== 6) return '#ffffff'
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000
+  return yiq >= 135 ? '#090d16' : '#ffffff'
+}
+
+// BERECHNET DEN DESIGN-HINTERGRUND MIT ATMOSPHÄRISCHEM GLOW
+function getBeamerBackgroundStyle(primary?: string | null, secondary?: string | null) {
+  const p1 = hexToRgba(primary, 0.35, '#22c55e')
+  const p2 = hexToRgba(secondary || primary, 0.18, '#10b981')
+  return `radial-gradient(circle at 50% 15%, ${p1} 0%, ${p2} 55%, #030712 95%)`
+}
+
 function isFinished(match: Match) {
   return (
     match.status === 'finished' ||
@@ -106,14 +142,7 @@ function getPreviousPhaseName(phase: string) {
   }
 }
 
-// BERECHNET DEN DESIGN-HINTERGRUND AUS ADMIN-FARBEN
-function getBeamerBackgroundStyle(primary?: string | null, secondary?: string | null) {
-  const p = primary || '#22c55e'
-  const s = secondary || '#10b981'
-  return `radial-gradient(circle at 50% 20%, ${p}25 0%, ${s}10 45%, #030712 90%)`
-}
-
-// ADAPTIVES AUTO-SCROLLING MIT DYNAMISCHER GESCHWINDIGKEIT
+// ADAPTIVES AUTO-SCROLLING
 function useSmoothAutoScroll(
   containerRef: React.RefObject<HTMLDivElement | null>,
   active: boolean,
@@ -145,8 +174,6 @@ function useSmoothAutoScroll(
       lastTimestamp = timestamp
 
       const maxScroll = currentEl.scrollHeight - currentEl.clientHeight
-
-      // Geschwindigkeitsberechnung basierend auf Scroll-Distanz
       const baseSpeed = maxScroll > 0 ? Math.max(25, Math.min(85, maxScroll / 5)) : 30
 
       if (maxScroll > 15 && !isPausedRef.current) {
@@ -434,8 +461,10 @@ export default function BeamerPage() {
     })
   }, [groups, members, matches, teamsById])
 
+  // FARBEN DES ADMINS BZW. FALLBACKS
   const primaryColor = tournament?.primary_color || '#22c55e'
   const secondaryColor = tournament?.secondary_color || '#10b981'
+  const primaryContrastText = getContrastTextColor(primaryColor)
   const pageBackground = getBeamerBackgroundStyle(primaryColor, secondaryColor)
 
   function getTeamName(teamId: number | null) {
@@ -525,13 +554,16 @@ export default function BeamerPage() {
               : isThirdPlace
               ? 'border-amber-600/50 bg-slate-900/90'
               : finished
-              ? 'border-emerald-500/40 bg-slate-900/90'
+              ? 'border-slate-700 bg-slate-900/90'
               : live
               ? 'border-red-500/60 bg-slate-900/95 animate-pulse'
               : match
               ? 'border-slate-700 bg-slate-900/85'
               : 'border-dashed border-slate-700/60 bg-slate-950/50',
           ].join(' ')}
+          style={{
+            borderColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.5) : undefined,
+          }}
         >
           <div
             className={[
@@ -541,11 +573,15 @@ export default function BeamerPage() {
                 : isThirdPlace
                 ? 'border-amber-600/30 bg-amber-600/10 text-amber-300'
                 : finished
-                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+                ? 'border-slate-800 text-white'
                 : live
                 ? 'border-red-500/20 bg-red-500/10 text-red-300'
                 : 'border-slate-800 bg-slate-800/80 text-slate-400',
             ].join(' ')}
+            style={{
+              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.15) : undefined,
+              color: finished && !isFinal && !isThirdPlace ? primaryColor : undefined,
+            }}
           >
             <span>{isThirdPlace ? 'Platz 3' : `Spiel #${position}`}</span>
             {live ? (
@@ -553,7 +589,7 @@ export default function BeamerPage() {
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" /> LIVE
               </span>
             ) : finished ? (
-              <span className="text-emerald-300 font-extrabold">✓ Fertig</span>
+              <span className="font-extrabold" style={{ color: primaryColor }}>✓ Fertig</span>
             ) : (
               <span>{getPhaseName(phase)}</span>
             )}
@@ -564,11 +600,20 @@ export default function BeamerPage() {
               className={[
                 'flex h-6 items-center justify-between gap-1.5 rounded-lg px-2 text-[10.5px]',
                 t1Winner
-                  ? 'bg-emerald-500/25 text-emerald-300 font-black ring-1 ring-emerald-500/30'
+                  ? 'font-black ring-1'
                   : match
                   ? 'bg-slate-800/70 text-slate-100 font-bold'
                   : 'bg-slate-900/40 text-slate-400 font-semibold',
               ].join(' ')}
+              style={
+                t1Winner
+                  ? {
+                      backgroundColor: hexToRgba(primaryColor, 0.25),
+                      color: '#ffffff',
+                      borderColor: hexToRgba(primaryColor, 0.5),
+                    }
+                  : undefined
+              }
             >
               <span title={t1Name} className="truncate min-w-0">{t1Name}</span>
               <span className="shrink-0 font-mono text-[11.5px] font-black tabular-nums">
@@ -580,11 +625,20 @@ export default function BeamerPage() {
               className={[
                 'flex h-6 items-center justify-between gap-1.5 rounded-lg px-2 text-[10.5px]',
                 t2Winner
-                  ? 'bg-emerald-500/25 text-emerald-300 font-black ring-1 ring-emerald-500/30'
+                  ? 'font-black ring-1'
                   : match
                   ? 'bg-slate-800/70 text-slate-100 font-bold'
                   : 'bg-slate-900/40 text-slate-400 font-semibold',
               ].join(' ')}
+              style={
+                t2Winner
+                  ? {
+                      backgroundColor: hexToRgba(primaryColor, 0.25),
+                      color: '#ffffff',
+                      borderColor: hexToRgba(primaryColor, 0.5),
+                    }
+                  : undefined
+              }
             >
               <span title={t2Name} className="truncate min-w-0">{t2Name}</span>
               <span className="shrink-0 font-mono text-[11.5px] font-black tabular-nums">
@@ -825,8 +879,8 @@ export default function BeamerPage() {
                 <div className="relative w-full">
                   <div className="absolute -top-6 left-0 right-0 flex justify-center">
                     <span
-                      className="rounded-lg px-3 py-0.5 text-[9px] font-black uppercase tracking-widest text-slate-950 shadow-md"
-                      style={{ backgroundColor: primaryColor }}
+                      className="rounded-lg px-3 py-0.5 text-[9px] font-black uppercase tracking-widest shadow-md"
+                      style={{ backgroundColor: primaryColor, color: primaryContrastText }}
                     >
                       🏆 FINALE
                     </span>
@@ -886,7 +940,6 @@ export default function BeamerPage() {
     return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4'
   }
 
-  // DYNAMISCHES RASTER FÜR SPIELE JE NACH ANZAHL
   const getMatchesGridClass = (matchCount: number) => {
     if (matchCount <= 4 || hasKOStarted) {
       return 'flex flex-wrap items-center justify-center gap-6 max-w-5xl mx-auto w-full py-2'
@@ -900,7 +953,6 @@ export default function BeamerPage() {
     if (matchCount <= 18) {
       return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 gap-2.5 w-full'
     }
-    // Für 24+ Spiele: 6 bis 8 Spalten für maximale Übersicht ohne Abschneiden
     return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 w-full'
   }
 
@@ -941,16 +993,16 @@ export default function BeamerPage() {
               <img src={tournament.logo_url} alt="Logo" className="h-12 w-12 rounded-2xl bg-white/10 p-1.5 object-contain" />
             ) : (
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-black text-slate-950 shadow-md"
-                style={{ backgroundColor: primaryColor }}
+                className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-black shadow-md"
+                style={{ backgroundColor: primaryColor, color: primaryContrastText }}
               >
                 🏆
               </div>
             )}
             <div>
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-red-400 animate-ping" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-300">
+                <span className="h-2.5 w-2.5 rounded-full animate-ping" style={{ backgroundColor: primaryColor }} />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
                   Live Beamer Screen
                 </span>
               </div>
@@ -960,7 +1012,9 @@ export default function BeamerPage() {
 
           <div className="flex items-center gap-6">
             <div className="text-right">
-              <p className="font-mono text-2xl font-black text-emerald-300 tracking-wider">{currentTime}</p>
+              <p className="font-mono text-2xl font-black tracking-wider" style={{ color: primaryColor }}>
+                {currentTime}
+              </p>
             </div>
             <button
               type="button"
@@ -980,7 +1034,14 @@ export default function BeamerPage() {
                 <h2 className="text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
                   <span>Spielrunde: {activeRound?.timeFormatted || 'Aktuelle Runde'}</span>
                   {activeRound && (
-                    <span className="text-xs font-bold text-amber-300 bg-amber-400/10 border border-amber-400/30 px-2 py-0.5 rounded-full">
+                    <span
+                      className="text-xs font-bold px-2.5 py-0.5 rounded-full border backdrop-blur-sm"
+                      style={{
+                        backgroundColor: hexToRgba(primaryColor, 0.15),
+                        borderColor: hexToRgba(primaryColor, 0.4),
+                        color: primaryColor,
+                      }}
+                    >
                       {activeRound.matches.filter(isFinished).length} / {activeRound.matches.length} Fertig
                     </span>
                   )}
@@ -988,7 +1049,7 @@ export default function BeamerPage() {
               </div>
               {nextRound && (
                 <div className="text-xs font-bold text-white/60">
-                  Nächste Runde: <span className="text-amber-300">{nextRound.timeFormatted}</span>
+                  Nächste Runde: <span style={{ color: primaryColor }}>{nextRound.timeFormatted}</span>
                 </div>
               )}
             </div>
@@ -1020,12 +1081,16 @@ export default function BeamerPage() {
                           live
                             ? 'border-red-400/80 bg-red-500/20 animate-pulse'
                             : finished
-                            ? 'border-emerald-500/30 bg-emerald-500/10'
+                            ? 'bg-slate-900/90'
                             : 'border-white/20 bg-slate-900/80'
                         }`}
+                        style={{
+                          borderColor: finished ? hexToRgba(primaryColor, 0.4) : undefined,
+                          backgroundColor: finished ? hexToRgba(primaryColor, 0.08) : undefined,
+                        }}
                       >
                         <div className="flex items-center justify-between border-b border-white/10 pb-1.5 text-[10px] font-black uppercase">
-                          <span className="text-amber-300 font-mono text-xs">
+                          <span className="font-mono text-xs" style={{ color: primaryColor }}>
                             {m.table_number ? `Tisch ${m.table_number}` : 'Tisch —'}
                           </span>
                           {live ? (
@@ -1033,7 +1098,7 @@ export default function BeamerPage() {
                               <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-ping" /> LIVE
                             </span>
                           ) : finished ? (
-                            <span className="text-emerald-300 font-extrabold">✓ Fertig</span>
+                            <span className="font-extrabold" style={{ color: primaryColor }}>✓ Fertig</span>
                           ) : (
                             <span className="text-white/60">{isKOMatch ? getPhaseName(m.phase) : 'Gruppe'}</span>
                           )}
@@ -1042,8 +1107,16 @@ export default function BeamerPage() {
                         <div className="my-2 space-y-1 text-xs font-black">
                           <div
                             className={`flex justify-between items-center rounded-lg px-2.5 py-1 ${
-                              t1Win ? 'bg-emerald-500/30 text-emerald-200' : 'bg-white/5 text-white'
+                              t1Win ? 'font-black' : 'bg-white/5 text-white'
                             }`}
+                            style={
+                              t1Win
+                                ? {
+                                    backgroundColor: hexToRgba(primaryColor, 0.25),
+                                    color: '#ffffff',
+                                  }
+                                : undefined
+                            }
                           >
                             <span className="truncate max-w-[120px]">{t1Name}</span>
                             <span className="font-mono text-sm ml-1.5">
@@ -1052,8 +1125,16 @@ export default function BeamerPage() {
                           </div>
                           <div
                             className={`flex justify-between items-center rounded-lg px-2.5 py-1 ${
-                              t2Win ? 'bg-emerald-500/30 text-emerald-200' : 'bg-white/5 text-white'
+                              t2Win ? 'font-black' : 'bg-white/5 text-white'
                             }`}
+                            style={
+                              t2Win
+                                ? {
+                                    backgroundColor: hexToRgba(primaryColor, 0.25),
+                                    color: '#ffffff',
+                                  }
+                                : undefined
+                            }
                           >
                             <span className="truncate max-w-[120px]">{t2Name}</span>
                             <span className="font-mono text-sm ml-1.5">
@@ -1096,11 +1177,20 @@ export default function BeamerPage() {
                     className="rounded-2xl border border-white/20 bg-slate-950/60 overflow-hidden shadow-xl backdrop-blur-md"
                   >
                     <div
-                      className="px-2.5 py-1 text-center text-xs font-black uppercase text-slate-950 flex items-center justify-between"
-                      style={{ backgroundColor: primaryColor }}
+                      className="px-2.5 py-1.5 text-center text-xs font-black uppercase flex items-center justify-between"
+                      style={{
+                        background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
+                        color: primaryContrastText,
+                      }}
                     >
                       <span className="truncate max-w-[120px]">{group.name}</span>
-                      <span className="text-[9px] font-bold bg-slate-950/20 px-1.5 py-0.5 rounded text-slate-950">
+                      <span
+                        className="text-[9px] font-bold px-1.5 py-0.5 rounded opacity-90"
+                        style={{
+                          backgroundColor: primaryContrastText === '#ffffff' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.3)',
+                          color: primaryContrastText,
+                        }}
+                      >
                         {standings.length} Teams
                       </span>
                     </div>
@@ -1112,7 +1202,7 @@ export default function BeamerPage() {
                             <th className="py-0.5 px-0.5 text-center">#</th>
                             <th className="py-0.5 px-0.5">Team</th>
                             <th className="py-0.5 px-0.5 text-center" title="Spiele">Sp</th>
-                            <th className="py-0.5 px-0.5 text-center text-emerald-300" title="Siege">S</th>
+                            <th className="py-0.5 px-0.5 text-center" style={{ color: primaryColor }} title="Siege">S</th>
                             <th className="py-0.5 px-0.5 text-center text-amber-300" title="Unentschieden">U</th>
                             <th className="py-0.5 px-0.5 text-center text-red-300" title="Niederlagen">N</th>
                             <th className="py-0.5 px-0.5 text-center" title="Tore">Tore</th>
@@ -1126,15 +1216,29 @@ export default function BeamerPage() {
                             return (
                               <tr
                                 key={st.team.id}
-                                className={`transition ${
-                                  isQualified ? 'bg-emerald-500/10 text-emerald-200' : 'text-white/80'
-                                }`}
+                                className="transition"
+                                style={
+                                  isQualified
+                                    ? {
+                                        backgroundColor: hexToRgba(primaryColor, 0.12),
+                                      }
+                                    : undefined
+                                }
                               >
                                 <td className="py-1 px-0.5 text-center font-mono">
                                   <span
-                                    className={`inline-flex h-4 w-4 items-center justify-center rounded text-[9px] font-black ${
-                                      isQualified ? 'bg-emerald-500 text-slate-950' : 'bg-white/10 text-white/70'
-                                    }`}
+                                    className="inline-flex h-4 w-4 items-center justify-center rounded text-[9px] font-black"
+                                    style={
+                                      isQualified
+                                        ? {
+                                            backgroundColor: primaryColor,
+                                            color: primaryContrastText,
+                                          }
+                                        : {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                            color: 'rgba(255, 255, 255, 0.7)',
+                                          }
+                                    }
                                   >
                                     {idx + 1}
                                   </span>
@@ -1143,7 +1247,9 @@ export default function BeamerPage() {
                                   {st.team.name}
                                 </td>
                                 <td className="py-1 px-0.5 text-center font-mono text-white/70">{st.played}</td>
-                                <td className="py-1 px-0.5 text-center font-mono text-emerald-300">{st.wins}</td>
+                                <td className="py-1 px-0.5 text-center font-mono" style={{ color: primaryColor }}>
+                                  {st.wins}
+                                </td>
                                 <td className="py-1 px-0.5 text-center font-mono text-amber-300">{st.draws}</td>
                                 <td className="py-1 px-0.5 text-center font-mono text-red-300">{st.losses}</td>
                                 <td className="py-1 px-0.5 text-center font-mono text-white/70">
@@ -1193,7 +1299,7 @@ export default function BeamerPage() {
             <span>
               Ansicht: {activeSlide === 'matches' ? 'Spiele & Ergebnisse' : activeSlide === 'standings' ? 'Gruppentabellen' : 'K.-o.-Baum'} (Auto-Wechsel)
             </span>
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
           </span>
         </footer>
       </div>
