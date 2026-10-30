@@ -80,13 +80,6 @@ function getContrastTextColor(hexColor: string | null | undefined): string {
   return yiq >= 135 ? '#090d16' : '#ffffff'
 }
 
-// BERECHNET DEN DESIGN-HINTERGRUND MIT ATMOSPHÄRISCHEM GLOW
-function getBeamerBackgroundStyle(primary?: string | null, secondary?: string | null) {
-  const p1 = hexToRgba(primary, 0.35, '#22c55e')
-  const p2 = hexToRgba(secondary || primary, 0.18, '#10b981')
-  return `radial-gradient(circle at 50% 15%, ${p1} 0%, ${p2} 55%, #030712 95%)`
-}
-
 function isFinished(match: Match) {
   return (
     match.status === 'finished' ||
@@ -532,7 +525,6 @@ export default function BeamerPage() {
   const primaryColor = tournament?.primary_color || '#22c55e'
   const secondaryColor = tournament?.secondary_color || '#10b981'
   const primaryContrastText = getContrastTextColor(primaryColor)
-  const pageBackground = getBeamerBackgroundStyle(primaryColor, secondaryColor)
 
   function getTeamName(teamId: number | null) {
     if (!teamId) return null
@@ -617,16 +609,16 @@ export default function BeamerPage() {
           className={[
             'h-full overflow-hidden rounded-xl border shadow-xl backdrop-blur-md transition flex flex-col justify-between',
             isFinal
-              ? 'border-amber-400/80 bg-slate-900/95 ring-2 ring-amber-400/30'
+              ? 'border-2 border-amber-400/80 bg-black/60 shadow-amber-500/10'
               : isThirdPlace
-              ? 'border-amber-600/50 bg-slate-900/90'
+              ? 'border border-amber-600/50 bg-black/60'
               : finished
-              ? 'border-slate-700 bg-slate-900/90'
+              ? 'border border-white/20 bg-black/50'
               : live
-              ? 'border-red-500/60 bg-slate-900/95 animate-pulse'
+              ? 'border-2 border-red-500/80 bg-red-950/30 animate-pulse'
               : match
-              ? 'border-slate-700 bg-slate-900/85'
-              : 'border-dashed border-slate-700/60 bg-slate-950/50',
+              ? 'border border-white/10 bg-black/40'
+              : 'border-dashed border-white/10 bg-black/20',
           ].join(' ')}
           style={{
             borderColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.5) : undefined,
@@ -636,17 +628,17 @@ export default function BeamerPage() {
             className={[
               'flex h-6 items-center justify-between border-b px-2.5 text-[8.5px] font-black uppercase tracking-wider',
               isFinal
-                ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                ? 'border-amber-500/30 bg-amber-500/20 text-amber-300'
                 : isThirdPlace
-                ? 'border-amber-600/30 bg-amber-600/10 text-amber-300'
+                ? 'border-amber-600/30 bg-amber-600/20 text-amber-300'
                 : finished
-                ? 'border-slate-800 text-white'
+                ? 'border-white/10 text-white'
                 : live
-                ? 'border-red-500/20 bg-red-500/10 text-red-300'
-                : 'border-slate-800 bg-slate-800/80 text-slate-400',
+                ? 'border-red-500/20 bg-red-500/20 text-red-300'
+                : 'border-white/10 bg-black/40 text-slate-400',
             ].join(' ')}
             style={{
-              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.15) : undefined,
+              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.2) : undefined,
               color: finished && !isFinal && !isThirdPlace ? primaryColor : undefined,
             }}
           >
@@ -669,8 +661,8 @@ export default function BeamerPage() {
                 t1Winner
                   ? 'font-black ring-1'
                   : match
-                  ? 'bg-slate-800/70 text-slate-100 font-bold'
-                  : 'bg-slate-900/40 text-slate-400 font-semibold',
+                  ? 'bg-black/50 text-slate-100 font-bold'
+                  : 'bg-black/30 text-slate-400 font-semibold',
               ].join(' ')}
               style={
                 t1Winner
@@ -694,8 +686,8 @@ export default function BeamerPage() {
                 t2Winner
                   ? 'font-black ring-1'
                   : match
-                  ? 'bg-slate-800/70 text-slate-100 font-bold'
-                  : 'bg-slate-900/40 text-slate-400 font-semibold',
+                  ? 'bg-black/50 text-slate-100 font-bold'
+                  : 'bg-black/30 text-slate-400 font-semibold',
               ].join(' ')}
               style={
                 t2Winner
@@ -714,7 +706,7 @@ export default function BeamerPage() {
             </div>
           </div>
 
-          <div className="flex h-4 items-center justify-between border-t border-slate-800/80 px-2.5 text-[8px] font-bold text-slate-400">
+          <div className="flex h-4 items-center justify-between border-t border-white/10 px-2.5 text-[8px] font-bold text-slate-400">
             <span>{match?.table_number ? `Tisch ${match.table_number}` : 'Tisch -'}</span>
             <span>{match && formatTime(match.scheduled_time)}</span>
           </div>
@@ -1009,8 +1001,11 @@ export default function BeamerPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-white bg-slate-950 [color-scheme:dark]">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-white" />
+      <div className="flex min-h-[50vh] items-center justify-center text-white [color-scheme:dark]">
+        <div
+          className="h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+          style={{ borderTopColor: primaryColor }}
+        />
       </div>
     )
   }
@@ -1021,34 +1016,26 @@ export default function BeamerPage() {
   return (
     <div
       ref={containerRef}
-      className={`relative w-full overflow-hidden text-white font-sans transition-all flex flex-col justify-between bg-slate-950 [color-scheme:dark] ${
+      className={`relative w-full overflow-hidden text-white font-sans transition-all flex flex-col justify-between [color-scheme:dark] ${
         isFullscreen
-          ? 'fixed inset-0 z-[99999] h-screen w-screen p-8 shadow-2xl'
-          : 'h-[calc(100vh-140px)] rounded-3xl p-6 border border-white/10 shadow-2xl'
+          ? 'fixed inset-0 z-[99999] h-screen w-screen p-8 shadow-2xl bg-black/80 backdrop-blur-2xl'
+          : 'rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl h-[calc(100vh-180px)] min-h-[600px]'
       }`}
-      style={{ background: pageBackground }}
     >
-      {/* WASSERZEICHEN */}
-      <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden opacity-10">
-        {tournament?.logo_url ? (
-          <img src={tournament.logo_url} alt="" className="h-[75vh] w-[75vw] object-contain grayscale" />
-        ) : (
-          <span className="text-[14rem] font-black uppercase tracking-widest" style={{ color: primaryColor }}>
-            BEAMER
-          </span>
-        )}
-      </div>
-
       <div className="relative z-10 flex flex-col h-full justify-between space-y-4">
         {/* HEADER BAR */}
         <header className="flex items-center justify-between border-b border-white/10 pb-4 shrink-0">
           <div className="flex items-center gap-4">
             {tournament?.logo_url ? (
-              <img src={tournament.logo_url} alt="Logo" className="h-12 w-12 rounded-2xl bg-white/10 p-1.5 object-contain" />
+              <img
+                src={tournament.logo_url}
+                alt="Logo"
+                className="h-12 w-12 rounded-2xl border border-white/10 bg-black/50 p-1.5 object-contain shadow-md"
+              />
             ) : (
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-black shadow-md"
-                style={{ backgroundColor: primaryColor, color: primaryContrastText }}
+                className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-black shadow-md text-slate-950"
+                style={{ backgroundColor: primaryColor }}
               >
                 🏆
               </div>
@@ -1073,9 +1060,13 @@ export default function BeamerPage() {
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="rounded-xl border border-white/20 bg-slate-900/80 px-4 py-2 text-xs font-black text-white hover:bg-slate-800 transition backdrop-blur-md"
+              className="inline-flex items-center gap-2 rounded-2xl border-2 border-white/30 px-5 py-2.5 text-xs font-black text-white shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+              style={{
+                backgroundColor: primaryColor,
+                boxShadow: `0 0 20px ${hexToRgba(primaryColor, 0.45)}`,
+              }}
             >
-              {isFullscreen ? 'Vollbild Beenden' : 'Vollbild'}
+              <span>{isFullscreen ? '📺 Vollbild Beenden' : '📺 Vollbild Mode'}</span>
             </button>
           </div>
         </header>
@@ -1102,7 +1093,7 @@ export default function BeamerPage() {
                 </h2>
               </div>
               {nextRound && (
-                <div className="text-xs font-bold text-white/60">
+                <div className="text-xs font-bold text-slate-300">
                   Nächste Runde: <span style={{ color: primaryColor }}>{nextRound.timeFormatted}</span>
                 </div>
               )}
@@ -1134,10 +1125,10 @@ export default function BeamerPage() {
                         key={m.id}
                         className={`rounded-2xl border shadow-xl backdrop-blur-md flex flex-col justify-between transition ${layoutConfig.cardPadding} ${
                           live
-                            ? 'border-red-400/80 bg-red-500/20 animate-pulse'
+                            ? 'border-2 border-red-500/80 bg-red-950/30 animate-pulse'
                             : finished
-                            ? 'bg-slate-900/90'
-                            : 'border-white/20 bg-slate-900/80'
+                            ? 'border-white/10 bg-black/40'
+                            : 'border-white/10 bg-black/30'
                         }`}
                         style={{
                           borderColor: finished ? hexToRgba(primaryColor, 0.4) : undefined,
@@ -1155,14 +1146,14 @@ export default function BeamerPage() {
                           ) : finished ? (
                             <span className="font-extrabold" style={{ color: primaryColor }}>✓ Fertig</span>
                           ) : (
-                            <span className="text-white/60 truncate max-w-[90px]">{matchLabel}</span>
+                            <span className="text-slate-400 truncate max-w-[90px]">{matchLabel}</span>
                           )}
                         </div>
 
                         <div className={`my-1.5 space-y-1 font-black ${layoutConfig.fontSize}`}>
                           <div
                             className={`flex justify-between items-center rounded-lg px-2 py-0.5 ${
-                              t1Win ? 'font-black' : 'bg-white/5 text-white'
+                              t1Win ? 'font-black' : 'bg-black/30 text-white'
                             }`}
                             style={
                               t1Win
@@ -1182,7 +1173,7 @@ export default function BeamerPage() {
                           </div>
                           <div
                             className={`flex justify-between items-center rounded-lg px-2 py-0.5 ${
-                              t2Win ? 'font-black' : 'bg-white/5 text-white'
+                              t2Win ? 'font-black' : 'bg-black/30 text-white'
                             }`}
                             style={
                               t2Win
@@ -1202,7 +1193,7 @@ export default function BeamerPage() {
                           </div>
                         </div>
 
-                        <div className="text-right text-[8.5px] font-mono font-bold text-white/50 border-t border-white/5 pt-0.5">
+                        <div className="text-right text-[8.5px] font-mono font-bold text-slate-400 border-t border-white/5 pt-0.5">
                           {formatTime(m.scheduled_time)}
                         </div>
                       </div>
@@ -1211,7 +1202,7 @@ export default function BeamerPage() {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-xs text-white/60">
+              <div className="flex-1 flex items-center justify-center text-xs text-slate-400">
                 Keine Spiele für die aktuelle Runde angesetzt.
               </div>
             )}
@@ -1221,7 +1212,7 @@ export default function BeamerPage() {
         {/* SLIDE 2: GRUPPENTABELLEN */}
         {activeSlide === 'standings' && (
           <main className="flex-1 min-h-0 space-y-2 overflow-hidden flex flex-col">
-            <h2 className="text-xs font-black uppercase tracking-wider text-white/80 shrink-0">
+            <h2 className="text-xs font-black uppercase tracking-wider text-slate-300 shrink-0">
               Gruppentabellen ({groups.length} Gruppen)
             </h2>
 
@@ -1233,7 +1224,7 @@ export default function BeamerPage() {
                 {groupStandings.map(({ group, standings }) => (
                   <div
                     key={group.id}
-                    className="rounded-2xl border border-white/20 bg-slate-950/60 overflow-hidden shadow-xl backdrop-blur-md"
+                    className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden shadow-2xl backdrop-blur-md"
                   >
                     <div
                       className="px-2.5 py-1.5 text-center text-xs font-black uppercase flex items-center justify-between"
@@ -1257,7 +1248,7 @@ export default function BeamerPage() {
                     <div className="p-2">
                       <table className="w-full text-left text-[11px]">
                         <thead>
-                          <tr className="border-b border-white/10 text-[8px] font-black uppercase text-white/60">
+                          <tr className="border-b border-white/10 text-[8px] font-black uppercase text-slate-400">
                             <th className="py-0.5 px-0.5 text-center">#</th>
                             <th className="py-0.5 px-0.5">Team</th>
                             <th className="py-0.5 px-0.5 text-center" title="Spiele">Sp</th>
@@ -1269,7 +1260,7 @@ export default function BeamerPage() {
                             <th className="py-0.5 px-0.5 text-right font-black text-white" title="Punkte">Pkt</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5 font-bold">
+                        <tbody className="divide-y divide-white/10 font-bold">
                           {standings.map((st, idx) => {
                             const isQualified = idx < 2
                             return (
@@ -1305,19 +1296,19 @@ export default function BeamerPage() {
                                 <td className="py-1 px-0.5 truncate max-w-[85px] font-extrabold text-white">
                                   {st.team.name}
                                 </td>
-                                <td className="py-1 px-0.5 text-center font-mono text-white/70">{st.played}</td>
+                                <td className="py-1 px-0.5 text-center font-mono text-slate-300">{st.played}</td>
                                 <td className="py-1 px-0.5 text-center font-mono" style={{ color: primaryColor }}>
                                   {st.wins}
                                 </td>
                                 <td className="py-1 px-0.5 text-center font-mono text-amber-300">{st.draws}</td>
                                 <td className="py-1 px-0.5 text-center font-mono text-red-300">{st.losses}</td>
-                                <td className="py-1 px-0.5 text-center font-mono text-white/70">
+                                <td className="py-1 px-0.5 text-center font-mono text-slate-300">
                                   {st.goalsFor}:{st.goalsAgainst}
                                 </td>
                                 <td className="py-1 px-0.5 text-center font-mono font-black">
                                   <span
                                     className={
-                                      st.diff > 0 ? 'text-emerald-400' : st.diff < 0 ? 'text-red-400' : 'text-white/50'
+                                      st.diff > 0 ? 'text-emerald-400' : st.diff < 0 ? 'text-red-400' : 'text-slate-400'
                                     }
                                   >
                                     {st.diff > 0 ? `+${st.diff}` : st.diff}
@@ -1342,17 +1333,17 @@ export default function BeamerPage() {
         {/* SLIDE 3: KO-BRACKET */}
         {activeSlide === 'bracket' && (
           <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
-            <h2 className="text-xs font-black uppercase tracking-wider text-white/80 mb-2">
+            <h2 className="text-xs font-black uppercase tracking-wider text-slate-300 mb-2">
               K.-o.-Phase Bracket
             </h2>
-            <div className="flex-1 min-h-0 overflow-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none] border border-white/15 rounded-2xl bg-slate-950/70 p-4 sm:p-6 backdrop-blur-md flex items-center justify-center">
+            <div className="flex-1 min-h-0 overflow-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none] border border-white/10 rounded-2xl bg-black/40 p-4 sm:p-6 backdrop-blur-md flex items-center justify-center">
               <KnockoutBracket />
             </div>
           </main>
         )}
 
         {/* FOOTER BAR */}
-        <footer className="border-t border-white/10 pt-3 flex justify-between items-center text-[10px] font-bold text-white/60 shrink-0">
+        <footer className="border-t border-white/10 pt-3 flex justify-between items-center text-[10px] font-bold text-slate-400 shrink-0">
           <span>{tournament?.name || 'Bierpong Tournament'} Beamer Live Screen</span>
           <span className="flex items-center gap-1.5">
             <span>

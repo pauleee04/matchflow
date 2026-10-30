@@ -12,7 +12,8 @@ type TournamentData = {
   logo_url: string | null
   primary_color: string | null
   secondary_color: string | null
-  background_style: string | null
+  tertiary_color: string | null
+  background_color: string | null
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -27,18 +28,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!slug) return
     async function loadTournament() {
-      try {
-        const { data } = await publicSupabase
-          .from('tournaments')
-          .select('id, name, slug, logo_url, primary_color, secondary_color, background_style')
-          .or(`slug.eq.${slug},slug.eq.${rawSlug}`)
-          .maybeSingle()
+      const { data } = await publicSupabase
+        .from('tournaments')
+        .select('id, name, slug, logo_url, primary_color, secondary_color, tertiary_color, background_color')
+        .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
+        .maybeSingle()
 
-        if (data) {
-          setTournament(data as TournamentData)
-        }
-      } catch (err) {
-        console.error('Fehler beim Laden des Admin-Layouts:', err)
+      if (data) {
+        setTournament(data as TournamentData)
       }
     }
     void loadTournament()
@@ -55,9 +52,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     window.location.reload()
   }
 
-  // Dynamische Admin-Farben mit grünem Fallback
+  // Standard-Farben für Biergartengrün
   const primaryColor = tournament?.primary_color || '#22c55e'
   const secondaryColor = tournament?.secondary_color || '#10b981'
+  const tertiaryColor = tournament?.tertiary_color || '#081c10'
+  const backgroundColor = tournament?.background_color || '#020a05'
 
   const adminLinks = [
     { href: `/admin/${encodeURIComponent(slug)}`, label: '📊 Dashboard', exact: true },
@@ -82,25 +81,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div
-      className="relative min-h-screen p-4 sm:p-6 lg:p-8 space-y-8 text-slate-100 transition-colors duration-500 bg-slate-950 [color-scheme:dark]"
+      className="relative min-h-screen p-4 sm:p-6 lg:p-8 space-y-6 text-slate-100 transition-colors duration-500"
       style={{
-        background:
-          tournament?.background_style ||
-          `radial-gradient(circle at 50% 0%, ${primaryColor}20 0%, transparent 70%), radial-gradient(circle at 100% 100%, ${secondaryColor}15 0%, transparent 60%)`,
+        backgroundColor: backgroundColor,
+        backgroundImage: `radial-gradient(circle at 50% 0%, ${primaryColor}30 0%, transparent 75%), radial-gradient(circle at 100% 100%, ${secondaryColor}20 0%, transparent 60%)`,
       }}
     >
-      {/* 1. GROSSES ZENTRALES WASSERZEICHEN IM SEITENHINTERGRUND */}
+      {/* HOHER GLAS-EFFEKT: ~20% DECKKRAFT FÜR OPTIMALE PERFORATION DES WASSERZEICHENS */}
+      <style>{`
+        main section, 
+        main .rounded-3xl, 
+        main .rounded-2xl {
+          background-color: ${tertiaryColor}35 !important;
+          backdrop-filter: blur(10px) !important;
+          -webkit-backdrop-filter: blur(10px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+      `}</style>
+
+      {/* 1. WASSERZEICHEN IM SEITENHINTERGRUND (FARBIG & KLAR DURCHSCHIMMERND) */}
       <div className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden select-none">
         {tournament?.logo_url ? (
           <img
             src={tournament.logo_url}
             alt=""
             draggable={false}
-            className="h-[650px] w-[650px] max-w-[80vw] max-h-[80vh] object-contain opacity-10 filter grayscale blur-[0.5px]"
+            className="h-[680px] w-[680px] max-w-[85vw] max-h-[85vh] object-contain opacity-35"
           />
         ) : (
           <span
-            className="select-none text-center font-black uppercase tracking-[0.12em] text-7xl sm:text-9xl opacity-5"
+            className="select-none text-center font-black uppercase tracking-[0.12em] text-7xl sm:text-9xl opacity-10"
             style={{ color: primaryColor, lineHeight: 1 }}
           >
             {tournament?.name || 'ADMIN'}
@@ -108,16 +118,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         )}
       </div>
 
-      {/* 2. ADMIN CONTROL PANEL HEADER */}
-      <header className="relative z-10 overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
-        {/* TOP ROW: LOGO, TITEL & BUTTON */}
+      {/* 2. GLÄSERNER HEADER */}
+      <header
+        className="relative z-10 overflow-hidden rounded-[32px] border border-white/10 p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6"
+        style={{ backgroundColor: `${tertiaryColor}35` }}
+      >
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4 min-w-0">
             {tournament?.logo_url ? (
               <img
                 src={tournament.logo_url}
                 alt={tournament.name || 'Logo'}
-                className="h-16 w-16 rounded-2xl border border-white/10 bg-slate-950/80 object-contain p-1.5 shadow-lg sm:h-20 sm:w-20 shrink-0"
+                className="h-16 w-16 rounded-2xl border border-white/10 bg-black/50 object-contain p-1.5 shadow-lg sm:h-20 sm:w-20 shrink-0"
               />
             ) : (
               <div
@@ -148,27 +160,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/admin"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-slate-300 shadow-lg backdrop-blur-md transition hover:border-white/20 hover:text-white"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/50 px-4 py-2.5 text-xs font-bold text-slate-300 shadow-lg backdrop-blur-md transition hover:border-white/20 hover:text-white"
             >
               ← Meine Turniere
             </Link>
           </div>
         </div>
 
-        {/* DREIZEILIGE NAVIGATION */}
+        {/* NAVIGATION */}
         <div className="relative z-10 flex flex-col gap-4 border-t border-white/10 pt-5">
-          {/* REIHE 1: ADMIN SEITEN */}
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className="mr-1 text-[10px] font-black uppercase tracking-wider"
-              style={{ color: primaryColor }}
-            >
+            <span className="mr-1 text-[10px] font-black uppercase tracking-wider" style={{ color: primaryColor }}>
               Admin:
             </span>
             {adminLinks.map((link) => {
               const decodedPath = decodeURIComponent(pathname)
               const decodedHref = decodeURIComponent(link.href)
-
               const isActive = link.exact
                 ? decodedPath === decodedHref
                 : decodedPath.startsWith(decodedHref)
@@ -179,11 +186,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   href={link.href}
                   className="inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-black transition-all shadow-md"
                   style={{
-                    backgroundColor: isActive ? primaryColor : 'rgba(2, 6, 23, 0.8)',
-                    color: isActive ? '#020617' : '#e2e8f0',
-                    border: isActive
-                      ? `1px solid ${primaryColor}`
-                      : '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundColor: isActive ? primaryColor : 'rgba(0, 0, 0, 0.5)',
+                    color: isActive ? '#022c22' : '#e2e8f0',
+                    border: isActive ? `1px solid ${primaryColor}` : '1px solid rgba(255, 255, 255, 0.1)',
                   }}
                 >
                   {link.label}
@@ -192,12 +197,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             })}
           </div>
 
-          {/* REIHE 2: ÖFFENTLICHE SEITEN */}
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className="mr-1 text-[10px] font-black uppercase tracking-wider"
-              style={{ color: secondaryColor }}
-            >
+            <span className="mr-1 text-[10px] font-black uppercase tracking-wider" style={{ color: secondaryColor }}>
               Öffentlich:
             </span>
             {publicLinks.map((link) => (
@@ -217,12 +218,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ))}
           </div>
 
-          {/* REIHE 3: SYSTEM AKTIONEN */}
           <div className="flex items-center justify-end border-t border-white/10 pt-3">
             <button
               type="button"
               onClick={triggerBroadcast}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2 text-xs font-extrabold text-slate-300 shadow-md backdrop-blur-md hover:border-white/20 hover:text-white transition"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/50 px-4 py-2 text-xs font-extrabold text-slate-300 shadow-md backdrop-blur-md hover:border-white/20 hover:text-white transition"
             >
               🔄 Live-Sync / Aktualisieren
             </button>
@@ -230,8 +230,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </header>
 
-      {/* HAUPTINHALT ALLER UNTERSEITEN */}
-      <main className="relative z-10">{children}</main>
+      {/* HAUPTINHALT */}
+      <main className="relative z-10 space-y-6">{children}</main>
     </div>
   )
 }

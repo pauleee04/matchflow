@@ -393,7 +393,7 @@ export default function AdminRegelnPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -408,13 +408,13 @@ export default function AdminRegelnPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 bg-slate-950 [color-scheme:dark]">
+    <div className="mx-auto w-full space-y-8 pb-16 text-slate-100 [color-scheme:dark]">
       {statusMessage && (
         <div
           className={`w-full rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
             statusMessage.type === 'success'
-              ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
-              : 'border-red-500/30 bg-red-950/20 text-red-300'
+              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+              : 'border-red-500/30 bg-red-500/10 text-red-300'
           }`}
         >
           {statusMessage.text}
@@ -422,7 +422,7 @@ export default function AdminRegelnPage() {
       )}
 
       {/* REGEL-VORLAGEN SCHNELL-SELEKTOR */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
         <div className="border-b border-white/10 pb-4">
           <span
             className="text-[10px] font-black uppercase tracking-wider"
@@ -442,7 +442,7 @@ export default function AdminRegelnPage() {
           <select
             value={selectedPresetKey}
             onChange={(e) => setSelectedPresetKey(e.target.value)}
-            className="flex-1 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-extrabold text-white outline-none focus:border-white/30"
+            className="flex-1 rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-extrabold text-white outline-none focus:border-white/30"
           >
             {Object.entries(PRESETS).map(([key, val]) => (
               <option key={key} value={key}>
@@ -455,14 +455,14 @@ export default function AdminRegelnPage() {
             <button
               type="button"
               onClick={() => handleApplyPreset('replace')}
-              className="rounded-2xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-xs font-black text-red-300 hover:bg-red-900/40 transition"
+              className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs font-black text-red-300 hover:bg-red-500/20 transition"
             >
               🔄 Ersetzen
             </button>
             <button
               type="button"
               onClick={() => handleApplyPreset('append')}
-              className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-black text-white hover:bg-slate-900 transition"
+              className="rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-black text-white hover:bg-black/70 transition"
             >
               ➕ Hinzufügen
             </button>
@@ -471,7 +471,7 @@ export default function AdminRegelnPage() {
       </section>
 
       {/* KATEGORIE FILTER & AKTUELLES REGELWERK */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-4">
           <div>
             <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
@@ -486,24 +486,23 @@ export default function AdminRegelnPage() {
             type="button"
             onClick={handleSave}
             disabled={saving || !tournament}
-            className="rounded-2xl px-5 py-3 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 disabled:opacity-40 shrink-0"
+            className="rounded-2xl px-5 py-3 text-xs font-black text-white shadow-lg transition hover:opacity-90 disabled:opacity-40 shrink-0 border border-white/20"
             style={{ backgroundColor: primaryColor }}
           >
             {saving ? 'Speichere …' : '💾 Regelwerk Speichern'}
           </button>
         </div>
 
-        {/* HOCH-KONTRAST TABS (PERFEKT LESBAR AUF ALLEN SCREEN-TYPEN) */}
+        {/* TABS MIT DURCHGEHEND WEISSER SCHRIFT */}
         <div className="flex flex-wrap gap-2.5">
           <button
             type="button"
             onClick={() => setActiveTab('all')}
-            className={`rounded-2xl px-4 py-2.5 text-xs font-black transition-all border ${
+            className={`rounded-2xl px-4 py-2.5 text-xs font-black transition-all border text-white ${
               activeTab === 'all'
-                ? 'text-slate-950 shadow-lg scale-105 border-transparent'
-                : 'bg-slate-950/90 text-slate-100 border-white/20 hover:bg-slate-900 hover:border-white/40'
+                ? 'bg-white/20 border-white/60 shadow-lg scale-105 ring-1 ring-white/30'
+                : 'bg-black/50 border-white/10 opacity-70 hover:opacity-100 hover:bg-black/70 hover:border-white/30'
             }`}
-            style={activeTab === 'all' ? { backgroundColor: primaryColor } : {}}
           >
             Alle ({rules.length})
           </button>
@@ -517,12 +516,11 @@ export default function AdminRegelnPage() {
                   key={cat}
                   type="button"
                   onClick={() => setActiveTab(cat)}
-                  className={`rounded-2xl px-4 py-2.5 text-xs font-black transition-all border ${
+                  className={`rounded-2xl px-4 py-2.5 text-xs font-black transition-all border text-white ${
                     isActive
-                      ? 'text-slate-950 shadow-lg scale-105 border-transparent'
-                      : 'bg-slate-950/90 text-slate-100 border-white/20 hover:bg-slate-900 hover:border-white/40'
+                      ? 'bg-white/20 border-white/60 shadow-lg scale-105 ring-1 ring-white/30'
+                      : 'bg-black/50 border-white/10 opacity-70 hover:opacity-100 hover:bg-black/70 hover:border-white/30'
                   }`}
-                  style={isActive ? { backgroundColor: primaryColor } : {}}
                 >
                   {categoryLabels[cat]} ({count})
                 </button>
@@ -533,7 +531,7 @@ export default function AdminRegelnPage() {
 
         {/* REGELN LISTE */}
         {filteredRules.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-8 text-center text-xs font-bold text-slate-400">
+          <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-8 text-center text-xs font-bold text-slate-400">
             Keine Regeln in dieser Kategorie vorhanden.
           </div>
         ) : (
@@ -541,15 +539,15 @@ export default function AdminRegelnPage() {
             {filteredRules.map((rule) => (
               <div
                 key={rule.id}
-                className={`rounded-2xl border p-4 sm:p-5 shadow-lg transition ${
+                className={`rounded-2xl border p-4 sm:p-5 shadow-lg backdrop-blur-md transition ${
                   rule.enabled
-                    ? 'border-white/10 bg-slate-950/80'
-                    : 'border-white/5 bg-slate-950/30 opacity-50'
+                    ? 'border-white/10 bg-black/40'
+                    : 'border-white/5 bg-black/20 opacity-50'
                 }`}
               >
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="rounded-lg bg-slate-900 border border-white/10 px-2.5 py-1 text-[10px] font-black text-slate-200">
+                    <span className="rounded-lg bg-black/60 border border-white/15 px-2.5 py-1 text-[10px] font-black text-slate-200">
                       {categoryLabels[rule.category]}
                     </span>
 
@@ -560,7 +558,7 @@ export default function AdminRegelnPage() {
                         className={`rounded-xl px-3 py-1 text-[10px] font-black transition ${
                           rule.enabled
                             ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                            : 'bg-slate-800 text-slate-400 border border-white/5'
+                            : 'bg-black/40 text-slate-400 border border-white/10'
                         }`}
                       >
                         {rule.enabled ? 'Aktiv' : 'Deaktiviert'}
@@ -569,7 +567,7 @@ export default function AdminRegelnPage() {
                       <button
                         type="button"
                         onClick={() => deleteRule(rule.id)}
-                        className="rounded-xl border border-red-500/30 bg-red-950/30 px-2.5 py-1 text-red-300 hover:bg-red-900/40 transition font-black text-xs"
+                        className="rounded-xl border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-red-300 hover:bg-red-500/20 transition font-black text-xs"
                         title="Regel löschen"
                       >
                         ✕
@@ -583,7 +581,7 @@ export default function AdminRegelnPage() {
                     onChange={(e) =>
                       updateRuleContent(rule.id, 'title', e.target.value)
                     }
-                    className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-3.5 py-2 text-sm font-black text-white outline-none focus:border-white/30"
+                    className="w-full rounded-xl border border-white/10 bg-black/50 px-3.5 py-2 text-sm font-black text-white outline-none focus:border-white/30"
                     placeholder="Regel-Titel"
                   />
 
@@ -593,7 +591,7 @@ export default function AdminRegelnPage() {
                     onChange={(e) =>
                       updateRuleContent(rule.id, 'description', e.target.value)
                     }
-                    className="w-full rounded-xl border border-white/10 bg-slate-900/80 px-3.5 py-2 text-xs font-medium text-slate-200 outline-none focus:border-white/30"
+                    className="w-full rounded-xl border border-white/10 bg-black/50 px-3.5 py-2 text-xs font-medium text-slate-200 outline-none focus:border-white/30"
                     placeholder="Detaillierte Beschreibung der Regel …"
                   />
                 </div>
@@ -604,7 +602,7 @@ export default function AdminRegelnPage() {
       </section>
 
       {/* CUSTOM REGEL CREATOR */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
         <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
           Eigene Regel hinzufügen
         </h2>
@@ -619,7 +617,7 @@ export default function AdminRegelnPage() {
               onChange={(e) =>
                 setNewCategory(e.target.value as RuleCategory)
               }
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
+              className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
             >
               {Object.entries(categoryLabels).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -638,7 +636,7 @@ export default function AdminRegelnPage() {
               placeholder="z. B. Zeitlimit pro Spielzug"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-white/30"
+              className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-white/30"
             />
           </div>
         </div>
@@ -652,14 +650,14 @@ export default function AdminRegelnPage() {
             placeholder="Erkläre die Regel verständlich für Teilnehmer und Schiedsrichter …"
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
-            className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-white/30"
+            className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-white/30"
           />
         </div>
 
         <button
           type="button"
           onClick={handleAddCustomRule}
-          className="rounded-2xl border border-white/10 bg-slate-950/80 px-5 py-3 text-xs font-black text-white hover:bg-slate-900 transition"
+          className="rounded-2xl border border-white/10 bg-black/50 px-5 py-3 text-xs font-black text-white hover:bg-black/70 transition"
         >
           ➕ Regel zum Regelwerk hinzufügen
         </button>

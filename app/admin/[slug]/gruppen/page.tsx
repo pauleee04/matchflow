@@ -74,7 +74,6 @@ type Tournament = {
   logo_url: string | null
 }
 
-// INTELLIGENTE VOREINSTELLUNG (IMMER SAUBERE 2ER-POTENZEN OHNE 3. PLÄTZE)
 function getSmartDefaultConfiguration(teamCount: number): Configuration {
   if (teamCount < 4) {
     return {
@@ -105,7 +104,6 @@ function getSmartDefaultConfiguration(teamCount: number): Configuration {
   }
 }
 
-// ALGORITHMUS FÜR BINDENDE GRUPPENVORGABEN (UNION-FIND + BACKTRACKING)
 function generateConstrainedGroupAssignment(
   teams: Team[],
   groupCount: number,
@@ -287,7 +285,6 @@ export default function AdminGruppenPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  // SUCHFUNKTION STATE
   const [groupSearchQuery, setGroupSearchQuery] = useState('')
 
   const [configuration, setConfiguration] = useState<Configuration>({
@@ -302,7 +299,6 @@ export default function AdminGruppenPage() {
   const [selectedConstraintTeamIds, setSelectedConstraintTeamIds] = useState<string[]>(['', ''])
   const [constraintType, setConstraintType] = useState<'together' | 'separate'>('separate')
 
-  // STATE FÜR SPIELFREI & TEAM-SWAP
   const [firstByeTeamMap, setFirstByeTeamMap] = useState<Record<number, number>>({})
   const [swapSourceMember, setSwapSourceMember] = useState<{ memberId: number; teamId: number; groupId: number } | null>(null)
   const [swapTargetMemberId, setSwapTargetMemberId] = useState<string>('')
@@ -419,7 +415,6 @@ export default function AdminGruppenPage() {
     void loadData()
   }, [loadData])
 
-  // REALTIME SYNC
   useEffect(() => {
     if (!tournament?.id) return
 
@@ -985,7 +980,7 @@ export default function AdminGruppenPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -1000,35 +995,35 @@ export default function AdminGruppenPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 bg-slate-950 [color-scheme:dark]">
+    <div className="mx-auto w-full space-y-8 pb-16 text-slate-100 [color-scheme:dark]">
       {/* ERROR & SUCCESS MESSAGES */}
       {error && (
-        <div className="rounded-2xl border border-red-500/30 bg-red-950/20 p-4 text-xs font-extrabold text-red-300 backdrop-blur-md">
+        <div className="rounded-xl border border-red-500/30 bg-red-950/30 p-4 text-xs font-extrabold text-red-300 backdrop-blur-md">
           <div className="font-bold uppercase tracking-wider">Fehler</div>
           <div className="mt-1 whitespace-pre-wrap">{error}</div>
         </div>
       )}
       {success && (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4 text-xs font-extrabold text-emerald-300 backdrop-blur-md">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-4 text-xs font-extrabold text-emerald-300 backdrop-blur-md">
           {success}
         </div>
       )}
 
-      {/* TEAM OVERVIEW CARDS */}
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 w-full">
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl">
+      {/* STATS KACHELN: EINZELNE GLASS-KACHELN MIT RAHMEN */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 w-full">
+        <div className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Angemeldete Teams</p>
           <p className="mt-2 text-3xl font-black text-white">{teams.length}</p>
         </div>
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Aktuelle Gruppen</p>
           <p className="mt-2 text-3xl font-black text-white">{groups.length}</p>
         </div>
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Zugeordnet</p>
           <p className="mt-2 text-3xl font-black text-white">{members.length}</p>
         </div>
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ohne Gruppe</p>
           <p
             className="mt-2 text-3xl font-black"
@@ -1037,10 +1032,10 @@ export default function AdminGruppenPage() {
             {teamsWithoutGroup.length}
           </p>
         </div>
-      </section>
+      </div>
 
       {/* INDIVIDUELLE VORGABEN */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-white/10 pb-4">
           <div>
             <span
@@ -1074,13 +1069,13 @@ export default function AdminGruppenPage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {selectedConstraintTeamIds.map((selectedId, idx) => (
               <div key={idx} className="flex items-center gap-2">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-950/80 font-mono text-xs font-black text-slate-400 border border-white/10">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black/40 font-mono text-xs font-black text-slate-400 border border-white/10">
                   #{idx + 1}
                 </span>
                 <select
                   value={selectedId}
                   onChange={(e) => handleConstraintTeamChange(idx, e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
                 >
                   <option value="">Team auswählen ...</option>
                   {teams.map((team) => (
@@ -1100,7 +1095,7 @@ export default function AdminGruppenPage() {
                   <button
                     type="button"
                     onClick={() => removeTeamSelectField(idx)}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-red-500/30 bg-red-950/20 text-red-400 hover:bg-red-900/30 transition font-black"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-950/30 text-red-400 hover:bg-red-900/50 transition font-black"
                     title="Entfernen"
                   >
                     ✕
@@ -1112,7 +1107,7 @@ export default function AdminGruppenPage() {
           <button
             type="button"
             onClick={addTeamSelectField}
-            className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-black text-slate-300 transition hover:border-white/20 hover:text-white"
+            className="rounded-xl border border-white/10 bg-black/40 px-4 py-2 text-xs font-black text-slate-300 transition hover:border-white/20 hover:text-white"
           >
             + Weiteres Team-Feld
           </button>
@@ -1126,7 +1121,7 @@ export default function AdminGruppenPage() {
             <select
               value={constraintType}
               onChange={(e) => setConstraintType(e.target.value as 'together' | 'separate')}
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
             >
               <option value="separate">
                 → Alle ausgewählten Teams gegenseitig getrennt halten
@@ -1144,7 +1139,7 @@ export default function AdminGruppenPage() {
               teams.length < 2 ||
               selectedConstraintTeamIds.filter(Boolean).length < 2
             }
-            className="rounded-2xl px-5 py-3.5 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 disabled:opacity-40"
+            className="rounded-xl px-5 py-3.5 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 disabled:opacity-40"
             style={{ backgroundColor: primaryColor }}
           >
             {constraintSaving ? 'Speichere ...' : 'Vorgabe speichern'}
@@ -1159,7 +1154,7 @@ export default function AdminGruppenPage() {
             </h3>
           </div>
           {groupConstraints.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-5 text-center text-xs font-bold text-slate-400">
+            <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-5 text-center text-xs font-bold text-slate-400">
               Noch keine individuellen Vorgaben gespeichert.
             </div>
           ) : (
@@ -1169,7 +1164,7 @@ export default function AdminGruppenPage() {
                 return (
                   <div
                     key={constraint.id}
-                    className={`flex items-center justify-between rounded-2xl border p-3 text-xs font-bold backdrop-blur-md ${
+                    className={`flex items-center justify-between rounded-xl border p-3 text-xs font-bold backdrop-blur-md ${
                       together
                         ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
                         : 'border-amber-500/30 bg-amber-950/20 text-amber-300'
@@ -1230,7 +1225,7 @@ export default function AdminGruppenPage() {
               <button
                 type="button"
                 onClick={applyRecommendation}
-                className="rounded-2xl px-4 py-2 text-xs font-black text-slate-950 transition hover:opacity-90 shadow-lg"
+                className="rounded-xl px-4 py-2 text-xs font-black text-slate-950 transition hover:opacity-90 shadow-lg"
                 style={{ backgroundColor: primaryColor }}
               >
                 Übernehmen
@@ -1238,7 +1233,7 @@ export default function AdminGruppenPage() {
               <button
                 type="button"
                 onClick={() => setShowRecommendation(false)}
-                className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-bold text-slate-300 hover:border-white/20 hover:text-white"
+                className="rounded-xl border border-white/10 bg-black/40 px-4 py-2 text-xs font-bold text-slate-300 hover:border-white/20 hover:text-white"
               >
                 Ausblenden
               </button>
@@ -1248,7 +1243,7 @@ export default function AdminGruppenPage() {
       )}
 
       {/* TURNIERKONFIGURATION */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
         <div className="border-b border-white/10 pb-4">
           <h2 className="text-xl font-black text-white tracking-tight">Turnierkonfiguration</h2>
           <p className="mt-1 text-xs font-medium text-slate-300">
@@ -1267,7 +1262,7 @@ export default function AdminGruppenPage() {
               max={teams.length || 1}
               value={configuration.groupCount}
               onChange={(e) => updateConfiguration('groupCount', Number(e.target.value))}
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
             />
           </div>
           <div>
@@ -1277,7 +1272,7 @@ export default function AdminGruppenPage() {
             <select
               value={configuration.koSize}
               onChange={(e) => updateConfiguration('koSize', Number(e.target.value))}
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
             >
               {[4, 8, 16, 32, 64].map((size) => (
                 <option key={size} value={size}>
@@ -1296,7 +1291,7 @@ export default function AdminGruppenPage() {
               max={configuration.koSize}
               value={configuration.directQualifiers}
               onChange={(e) => updateConfiguration('directQualifiers', Number(e.target.value))}
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
             />
           </div>
           <div>
@@ -1309,14 +1304,14 @@ export default function AdminGruppenPage() {
               max={configuration.koSize}
               value={configuration.additionalQualifiers}
               onChange={(e) => updateConfiguration('additionalQualifiers', Number(e.target.value))}
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-xs font-black text-white focus:border-white/30 focus:outline-none"
             />
           </div>
         </div>
       </section>
 
       {/* PRÜFUNG / VALIDATION GRID */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
         <h2 className="text-xl font-black text-white tracking-tight">Voraussetzungen &amp; Prüfung</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ValidationItem
@@ -1362,10 +1357,9 @@ export default function AdminGruppenPage() {
         </div>
       </section>
 
-      {/* AKTUELLE GRUPPEN MIT VOLLER HÖHE UND KOMPAKTER TEAM-DARSTELLUNG */}
+      {/* AKTUELLE GRUPPEN */}
       {groups.length > 0 && (
-        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
-          {/* HEADER MIT SUCHLEISTE & AUFLÖSEN-BUTTON */}
+        <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-white/10 pb-5">
             <div>
               <div className="flex items-center gap-3">
@@ -1386,7 +1380,7 @@ export default function AdminGruppenPage() {
                   placeholder="🔍 Gruppe oder Team suchen ..."
                   value={groupSearchQuery}
                   onChange={(e) => setGroupSearchQuery(e.target.value)}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-semibold text-white placeholder-slate-500 focus:border-white/30 focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-2.5 text-xs font-semibold text-white placeholder-slate-500 focus:border-white/30 focus:outline-none"
                 />
                 {groupSearchQuery && (
                   <button
@@ -1402,7 +1396,7 @@ export default function AdminGruppenPage() {
                 type="button"
                 onClick={resetGroupsAndMatches}
                 disabled={saving}
-                className="rounded-2xl border border-red-500/30 bg-red-950/20 px-4 py-2.5 text-xs font-black text-red-300 hover:bg-red-900/30 transition disabled:opacity-40 shrink-0"
+                className="rounded-xl border border-red-500/30 bg-red-950/20 px-4 py-2.5 text-xs font-black text-red-300 hover:bg-red-900/30 transition disabled:opacity-40 shrink-0"
               >
                 🗑️ Gruppen &amp; Spiele auflösen
               </button>
@@ -1410,7 +1404,7 @@ export default function AdminGruppenPage() {
           </div>
 
           {filteredGroups.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-8 text-center text-xs font-bold text-slate-400">
+            <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-8 text-center text-xs font-bold text-slate-400">
               Keine Gruppen oder Teams gefunden für &quot;{groupSearchQuery}&quot;.
             </div>
           )}
@@ -1424,7 +1418,7 @@ export default function AdminGruppenPage() {
               return (
                 <div
                   key={group.id}
-                  className="rounded-2xl border border-white/10 bg-slate-950/80 p-4 space-y-3.5 flex flex-col justify-between shadow-xl hover:border-white/20 transition-all"
+                  className="rounded-2xl border border-white/10 bg-black/40 p-4 space-y-3.5 flex flex-col justify-between shadow-xl transition-all"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
@@ -1434,13 +1428,13 @@ export default function AdminGruppenPage() {
                         </span>
                         <h3 className="font-black text-white text-base tracking-wide">{group.name}</h3>
                       </div>
-                      <span className="rounded-full bg-slate-900 border border-white/10 px-2.5 py-0.5 text-[10px] font-black text-slate-300">
+                      <span className="rounded-full bg-black/40 border border-white/10 px-2.5 py-0.5 text-[10px] font-black text-slate-300">
                         {groupItems.length} Teams
                       </span>
                     </div>
 
                     {isOdd && (
-                      <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-2.5 space-y-1.5">
+                      <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-2.5 space-y-1.5">
                         <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-amber-300">
                           <span>⏸️ Ungerade ({groupItems.length} Teams)</span>
                         </div>
@@ -1455,7 +1449,7 @@ export default function AdminGruppenPage() {
                               [group.id]: Number(e.target.value),
                             }))
                           }
-                          className="w-full rounded-xl border border-amber-500/40 bg-slate-950/90 px-2 py-1.5 text-[10px] font-extrabold text-amber-200 focus:outline-none"
+                          className="w-full rounded-lg border border-amber-500/40 bg-black/80 px-2 py-1.5 text-[10px] font-extrabold text-amber-200 focus:outline-none"
                         >
                           {groupItems.map(({ team }) => (
                             <option key={team.id} value={team.id}>
@@ -1477,10 +1471,10 @@ export default function AdminGruppenPage() {
                           return (
                             <div
                               key={team.id}
-                              className={`rounded-2xl border p-2.5 space-y-2 transition-all ${
+                              className={`rounded-xl border p-2.5 space-y-2 transition-all ${
                                 isBeingSwapped
                                   ? 'border-amber-400 bg-amber-500/20 ring-2 ring-amber-400/50'
-                                  : 'border-white/10 bg-slate-900/80 hover:bg-slate-900'
+                                  : 'border-white/10 bg-black/30 hover:bg-black/50'
                               }`}
                             >
                               <div className="flex items-center justify-between gap-2">
@@ -1505,7 +1499,7 @@ export default function AdminGruppenPage() {
                                     }
                                   }}
                                   disabled={saving}
-                                  className="w-1/2 rounded-xl border border-white/10 bg-slate-950/80 px-2 py-1 text-[9px] font-bold text-slate-300 outline-none hover:border-white/30 truncate"
+                                  className="w-1/2 rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-[9px] font-bold text-slate-300 outline-none hover:border-white/30 truncate"
                                 >
                                   <option value="" disabled>In Gruppe ...</option>
                                   {groups
@@ -1528,10 +1522,10 @@ export default function AdminGruppenPage() {
                                     }
                                   }}
                                   disabled={saving}
-                                  className={`w-1/2 rounded-xl border px-2 py-1 text-[9px] font-black transition ${
+                                  className={`w-1/2 rounded-lg border px-2 py-1 text-[9px] font-black transition ${
                                     isBeingSwapped
                                       ? 'border-amber-400 bg-amber-400 text-slate-950'
-                                      : 'border-white/10 bg-slate-950/60 text-slate-300 hover:text-white'
+                                      : 'border-white/10 bg-black/40 text-slate-300 hover:text-white'
                                   }`}
                                 >
                                   {isBeingSwapped ? 'Abbrechen' : '⇄ Tauschen'}
@@ -1550,7 +1544,7 @@ export default function AdminGruppenPage() {
 
           {/* SWAP CONFIRM MODAL / BANNER */}
           {swapSourceMember && (
-            <div className="rounded-2xl border border-amber-400/50 bg-amber-950/30 p-4 backdrop-blur-md space-y-3">
+            <div className="rounded-xl border border-amber-400/50 bg-amber-950/30 p-4 backdrop-blur-md space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase text-amber-300">
                   🔄 Team-Tausch aktiv für:{' '}
@@ -1570,7 +1564,7 @@ export default function AdminGruppenPage() {
                 <select
                   value={swapTargetMemberId}
                   onChange={(e) => setSwapTargetMemberId(e.target.value)}
-                  className="w-full sm:w-auto flex-1 rounded-2xl border border-white/20 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-white focus:outline-none"
+                  className="w-full sm:w-auto flex-1 rounded-xl border border-white/20 bg-black/80 px-4 py-2.5 text-xs font-bold text-white focus:outline-none"
                 >
                   <option value="">Wähle ein Tausch-Partner-Team ...</option>
                   {members
@@ -1600,7 +1594,7 @@ export default function AdminGruppenPage() {
                       )
                     }
                   }}
-                  className="w-full sm:w-auto rounded-2xl px-5 py-2.5 text-xs font-black text-slate-950 transition hover:opacity-90 disabled:opacity-40 shrink-0 shadow-lg"
+                  className="w-full sm:w-auto rounded-xl px-5 py-2.5 text-xs font-black text-slate-950 transition hover:opacity-90 disabled:opacity-40 shrink-0 shadow-lg"
                   style={{ backgroundColor: primaryColor }}
                 >
                   Jetzt tauschen
@@ -1612,7 +1606,7 @@ export default function AdminGruppenPage() {
       )}
 
       {/* VERTEILUNGSÜBERSICHT & STATISTIK */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
         <h2 className="text-xl font-black text-white tracking-tight">Verteilungsübersicht</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <InfoBox
@@ -1626,7 +1620,7 @@ export default function AdminGruppenPage() {
       </section>
 
       {/* SYSTEM AKTIONEN */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-5 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-5 w-full">
         <div>
           <h2 className="text-xl font-black text-white tracking-tight">Aktionen</h2>
           <p className="mt-1 text-xs font-medium text-slate-300">
@@ -1639,7 +1633,7 @@ export default function AdminGruppenPage() {
             type="button"
             onClick={saveSettings}
             disabled={saving || !configurationIsValid}
-            className="rounded-2xl border border-white/10 bg-slate-950/60 px-5 py-3.5 text-xs font-black text-white hover:border-white/20 transition disabled:opacity-40"
+            className="rounded-xl border border-white/10 bg-black/40 px-5 py-3.5 text-xs font-black text-white hover:border-white/20 transition disabled:opacity-40"
           >
             {saving ? 'Speichere ...' : 'Konfiguration speichern'}
           </button>
@@ -1647,7 +1641,7 @@ export default function AdminGruppenPage() {
             type="button"
             onClick={createGroups}
             disabled={saving || !configurationIsValid}
-            className="rounded-2xl px-5 py-3.5 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 disabled:opacity-40"
+            className="rounded-xl px-5 py-3.5 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 disabled:opacity-40"
             style={{ backgroundColor: primaryColor }}
           >
             {saving ? 'Erstelle...' : 'Gruppen neu auslosen & erstellen'}
@@ -1669,7 +1663,7 @@ function ValidationItem({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 backdrop-blur-md ${
+      className={`rounded-xl border p-4 backdrop-blur-md ${
         valid
           ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
           : 'border-red-500/30 bg-red-950/20 text-red-300'
@@ -1694,7 +1688,7 @@ function ValidationItem({
 
 function InfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+    <div className="rounded-xl border border-white/10 bg-black/40 p-4 backdrop-blur-md">
       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</p>
       <p className="mt-1 text-2xl font-black text-white">{value}</p>
     </div>

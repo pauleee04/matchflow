@@ -329,7 +329,7 @@ export default function AdminTeamsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -344,7 +344,7 @@ export default function AdminTeamsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 bg-slate-950 [color-scheme:dark]">
+    <div className="mx-auto w-full max-w-7xl space-y-8 px-2 sm:px-4 pb-16 text-slate-100 [color-scheme:dark]">
       {statusMessage && (
         <div
           className={`w-full rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
@@ -357,30 +357,30 @@ export default function AdminTeamsPage() {
         </div>
       )}
 
-      {/* METRIK CARDS */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Teams Gesamt</p>
+      {/* FREIGELEGTE METRIK-KACHELN AUF VOLLER BREITE (TRANSPARENTES GLAS) */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6 lg:gap-8 w-full">
+        <div className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl backdrop-blur-md flex flex-col justify-between transition hover:bg-white/10">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-200">Teams Gesamt</p>
           <p className="mt-2 text-3xl font-black text-white">{totalTeams}</p>
         </div>
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Anwesend (Check-in)</p>
+        <div className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl backdrop-blur-md flex flex-col justify-between transition hover:bg-white/10">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-200">Anwesend (Check-in)</p>
           <p className="mt-2 text-3xl font-black text-emerald-400">
-            {checkedInCount} <span className="text-xs text-slate-500 font-bold">/ {totalTeams}</span>
+            {checkedInCount} <span className="text-xs text-slate-400 font-bold">/ {totalTeams}</span>
           </p>
         </div>
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Bezahlt / Befreit</p>
+        <div className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl backdrop-blur-md flex flex-col justify-between transition hover:bg-white/10">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-200">Bezahlt / Befreit</p>
           <p className="mt-2 text-3xl font-black text-blue-400">{paidCount}</p>
         </div>
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Zahlung Ausstehend</p>
+        <div className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl backdrop-blur-md flex flex-col justify-between transition hover:bg-white/10">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-200">Zahlung Ausstehend</p>
           <p className="mt-2 text-3xl font-black text-amber-400">{openPaymentCount}</p>
         </div>
       </section>
 
       {/* FILTER & AKTIONEN BAR */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
+      <section className="rounded-3xl border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
@@ -395,7 +395,7 @@ export default function AdminTeamsPage() {
             type="button"
             onClick={openAddModal}
             disabled={!tournament}
-            className="rounded-2xl px-5 py-3 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 shrink-0 disabled:opacity-40"
+            className="rounded-2xl border border-white/20 px-5 py-3 text-xs font-black text-white shadow-xl transition hover:opacity-90 shrink-0 disabled:opacity-40"
             style={{ backgroundColor: primaryColor }}
           >
             ➕ Team Manuell Hinzufügen
@@ -408,13 +408,13 @@ export default function AdminTeamsPage() {
             placeholder="🔍 Suche nach Team, Spielern oder E-Mail …"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-white/30"
+            className="rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-bold text-white placeholder-slate-400 outline-none focus:border-white/30"
           />
 
           <select
             value={checkinFilter}
             onChange={(e) => setCheckinFilter(e.target.value)}
-            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
+            className="rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
           >
             <option value="all">Alle Check-in Status</option>
             <option value="checked_in">✓ Anwesend (Checked-in)</option>
@@ -424,7 +424,7 @@ export default function AdminTeamsPage() {
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
-            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
+            className="rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
           >
             <option value="all">Alle Zahlungsstatus</option>
             <option value="paid">✓ Bezahlt</option>
@@ -434,16 +434,16 @@ export default function AdminTeamsPage() {
       </section>
 
       {/* TEAM TABLE */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl overflow-hidden w-full">
+      <section className="rounded-3xl border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl overflow-hidden w-full">
         {filteredTeams.length === 0 ? (
-          <div className="py-8 text-center text-xs font-bold text-slate-400">
+          <div className="py-8 text-center text-xs font-bold text-slate-300">
             Keine Teams für die gewählte Filterkombination gefunden.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/80 shadow-inner">
+          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-black/40 shadow-inner">
             <table className="w-full text-left text-xs min-w-[600px]">
               <thead>
-                <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-950/90">
+                <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-400 bg-black/60">
                   <th className="py-3.5 px-4">Teamname</th>
                   <th className="py-3.5 px-4">Spieler &amp; Kontakt</th>
                   <th className="py-3.5 px-4 text-center">Check-in Status</th>
@@ -495,7 +495,7 @@ export default function AdminTeamsPage() {
                           className={`rounded-xl px-3 py-1.5 text-[10px] font-black transition border ${
                             isCheckedIn
                               ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
-                              : 'bg-slate-950 text-slate-400 border-white/10 hover:text-white'
+                              : 'bg-black/60 text-slate-400 border-white/10 hover:text-white'
                           }`}
                         >
                           {isCheckedIn ? '✓ Anwesend' : '⏳ Ausstehend'}
@@ -531,7 +531,7 @@ export default function AdminTeamsPage() {
                           <button
                             type="button"
                             onClick={() => openEditModal(team)}
-                            className="rounded-xl border border-white/10 bg-slate-900/80 px-2.5 py-1 text-[10px] font-bold text-slate-200 hover:bg-slate-800 transition"
+                            className="rounded-xl border border-white/10 bg-black/60 px-2.5 py-1 text-[10px] font-bold text-slate-200 hover:bg-black/80 transition"
                           >
                             Bearbeiten
                           </button>
@@ -556,8 +556,8 @@ export default function AdminTeamsPage() {
 
       {/* TEAM EDIT / ADD MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[32px] border border-white/10 bg-slate-900/95 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 bg-black/90 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <h3 className="text-xl font-black text-white tracking-tight">
                 {editingTeam ? 'Team Bearbeiten' : 'Neues Team Hinzufügen'}
@@ -573,7 +573,7 @@ export default function AdminTeamsPage() {
 
             <form onSubmit={handleSaveTeam} className="space-y-4 text-xs font-bold">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-1.5">
                   Teamname *
                 </label>
                 <input
@@ -581,63 +581,63 @@ export default function AdminTeamsPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
+                  className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-white/30"
                 />
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-1.5">
                     Spieler 1
                   </label>
                   <input
                     type="text"
                     value={formData.player1}
                     onChange={(e) => setFormData({ ...formData, player1: e.target.value })}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
+                    className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-white/30"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-1.5">
                     Spieler 2
                   </label>
                   <input
                     type="text"
                     value={formData.player2}
                     onChange={(e) => setFormData({ ...formData, player2: e.target.value })}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
+                    className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-white/30"
                   />
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-1.5">
                     E-Mail Adresse
                   </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
+                    className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-white/30"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-1.5">
                     Telefon / Mobil
                   </label>
                   <input
                     type="text"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
+                    className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-white/30"
                   />
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-1.5">
                     Check-in Status
                   </label>
                   <select
@@ -645,7 +645,7 @@ export default function AdminTeamsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, checkin_status: e.target.value as CheckinStatus })
                     }
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
+                    className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-white/30"
                   >
                     <option value="pending">⏳ Ausstehend</option>
                     <option value="checked_in">✓ Anwesend (Checked-in)</option>
@@ -653,7 +653,7 @@ export default function AdminTeamsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-1.5">
                     Zahlungsstatus
                   </label>
                   <select
@@ -661,7 +661,7 @@ export default function AdminTeamsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, payment_status: e.target.value })
                     }
-                    className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
+                    className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-white/30"
                   >
                     <option value="open">⏳ Offen</option>
                     <option value="bezahlt">✓ Bezahlt</option>
@@ -670,14 +670,14 @@ export default function AdminTeamsPage() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-1.5">
                   Notizen / Anmerkungen
                 </label>
                 <textarea
                   rows={2}
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-white/30"
+                  className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-white outline-none focus:border-white/30"
                 />
               </div>
 
@@ -685,14 +685,14 @@ export default function AdminTeamsPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-slate-300 hover:bg-slate-900 transition font-bold"
+                  className="rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-slate-300 hover:bg-black/80 transition font-bold"
                 >
                   Abbrechen
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-2xl px-5 py-3 text-slate-950 font-black shadow-lg transition hover:opacity-90 disabled:opacity-40"
+                  className="rounded-2xl border border-white/20 px-5 py-3 text-xs text-white font-black shadow-lg transition hover:opacity-90 disabled:opacity-40"
                   style={{ backgroundColor: primaryColor }}
                 >
                   {saving ? 'Speichere …' : 'Speichern'}

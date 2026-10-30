@@ -31,6 +31,7 @@ type TournamentInfo = {
   logo_url: string | null
   primary_color: string | null
   secondary_color?: string | null
+  tertiary_color?: string | null
   background_style: string | null
   status?: string | null
   event_date?: string | null
@@ -39,10 +40,9 @@ type TournamentInfo = {
   max_teams?: number | null
 }
 
-// HELPER FÜR FARBANPASSUNGEN UND KONTRASTE
-function hexToRgba(hex: string | null | undefined, alpha: number, fallback: string = '#2563eb'): string {
+function hexToRgba(hex: string | null | undefined, alpha: number, fallback: string = '#22c55e'): string {
   let c = (hex || fallback).trim()
-  if (!c.startsWith('#')) return `rgba(37, 99, 235, ${alpha})`
+  if (!c.startsWith('#')) return `rgba(34, 197, 94, ${alpha})`
   if (c.length === 4) {
     c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3]
   }
@@ -52,25 +52,7 @@ function hexToRgba(hex: string | null | undefined, alpha: number, fallback: stri
     const b = parseInt(c.slice(5, 7), 16)
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
   }
-  return `rgba(37, 99, 235, ${alpha})`
-}
-
-function getContrastTextColor(hexColor: string | null | undefined): string {
-  if (!hexColor || !hexColor.startsWith('#')) return '#ffffff'
-  let hex = hexColor.replace('#', '')
-  if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('')
-  if (hex.length !== 6) return '#ffffff'
-  const r = parseInt(hex.substring(0, 2), 16)
-  const g = parseInt(hex.substring(2, 4), 16)
-  const b = parseInt(hex.substring(4, 6), 16)
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000
-  return yiq >= 135 ? '#090d16' : '#ffffff'
-}
-
-function getPageBackgroundStyle(primary?: string | null, secondary?: string | null) {
-  const p1 = hexToRgba(primary, 0.22, '#2563eb')
-  const p2 = hexToRgba(secondary || primary, 0.1, '#10b981')
-  return `radial-gradient(circle at 50% 5%, ${p1} 0%, ${p2} 45%, #030712 90%)`
+  return `rgba(34, 197, 94, ${alpha})`
 }
 
 function isMatchFinished(match: TournamentMatch): boolean {
@@ -194,9 +176,7 @@ export default function TournamentPage() {
     [matches]
   )
 
-  const primaryColor = tournament?.primary_color?.trim() || '#2563eb'
-  const secondaryColor = tournament?.secondary_color?.trim() || '#10b981'
-  const primaryContrastText = getContrastTextColor(primaryColor)
+  const primaryColor = tournament?.primary_color || '#22c55e'
 
   const maxTeams = tournament?.max_teams ?? null
   const isMaxTeamsReached = maxTeams ? teams.length >= maxTeams : false
@@ -209,16 +189,13 @@ export default function TournamentPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 [color-scheme:dark]">
         <div className="text-center">
-          <div className="relative mx-auto mb-4 h-12 w-12">
-            <div className="absolute inset-0 rounded-full border-4 border-slate-800" />
-            <div
-              className="absolute inset-0 rounded-full border-4 border-t-transparent animate-spin"
-              style={{ borderColor: `${primaryColor} transparent transparent transparent` }}
-            />
-          </div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+          <div
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
+          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
             Lade Portal …
           </p>
         </div>
@@ -228,8 +205,8 @@ export default function TournamentPage() {
 
   if (error || !tournament) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-6 bg-slate-950 [color-scheme:dark]">
-        <div className="mx-auto max-w-lg rounded-3xl border border-red-500/30 bg-red-950/20 p-8 text-center backdrop-blur-xl">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 [color-scheme:dark]">
+        <div className="mx-auto max-w-lg rounded-[32px] border border-red-500/30 bg-black/40 p-8 text-center backdrop-blur-xl">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-2xl text-red-400">
             ⚠️
           </div>
@@ -243,248 +220,238 @@ export default function TournamentPage() {
   }
 
   return (
-    <div
-      className="min-h-screen w-full bg-slate-950 text-slate-100 [color-scheme:dark] px-4 py-6 sm:px-8 sm:py-10"
-      style={{ background: getPageBackgroundStyle(primaryColor, secondaryColor) }}
-    >
-      <div className="relative mx-auto w-full max-w-6xl space-y-10 pb-24">
-        {/* DYNAMIC AMBIENT GLOW BACKGROUND */}
-        <div
-          className="pointer-events-none absolute -top-28 left-1/2 -z-10 h-[550px] w-[800px] -translate-x-1/2 rounded-full opacity-30 blur-[140px] transition-all duration-1000"
-          style={{ backgroundColor: primaryColor }}
-        />
-
-        {/* 1. REGISTRIERUNG */}
-        <section className="relative overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/80 p-8 shadow-2xl backdrop-blur-xl sm:p-10">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-            <div className="space-y-3 text-center lg:text-left flex-1">
-              <span
-                className="text-[10px] font-black uppercase tracking-[0.2em]"
-                style={{ color: primaryColor }}
-              >
-                Startplatz Sichern
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white">
-                {isRegistrationOpen
-                  ? 'Melde dich jetzt an und spiele gegen die Besten!'
-                  : isMaxTeamsReached
-                  ? 'Das Turnier ist vollständig ausgebucht!'
-                  : 'Die Anmeldung ist derzeit geschlossen.'}
-              </h2>
-              <p className="max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-300 font-medium">
-                {isRegistrationOpen
-                  ? tournament.description ||
-                    'Sichere dir und deinem Partner rechtzeitig einen Startplatz. Nach der Registrierung seid ihr direkt in der Auslosung dabei.'
-                  : 'Alle Startplätze sind derzeit vergeben oder die Registrierungsphase wurde beendet.'}
-              </p>
-
-              {/* BAR NUR ANZEIGEN WENN MAX TEAMS GEGEBEN IST */}
-              {maxTeams && spotsProgress !== null && (
-                <div className="pt-2 max-w-md mx-auto lg:mx-0 space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-slate-400">Auslastung Startplätze</span>
-                    <span className="font-mono" style={{ color: primaryColor }}>
-                      {teams.length} / {maxTeams} Teams ({spotsProgress}%)
-                    </span>
-                  </div>
-                  <div className="h-3 w-full rounded-full bg-slate-950 p-0.5 border border-white/10">
-                    <div
-                      className="h-full rounded-full transition-all duration-500 shadow-lg"
-                      style={{
-                        width: `${spotsProgress}%`,
-                        backgroundColor: primaryColor,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="shrink-0">
-              {isRegistrationOpen ? (
-                <Link
-                  href={`/turnier/${slug}/anmeldung`}
-                  className="inline-flex items-center gap-3 rounded-2xl px-8 py-4 text-xs sm:text-sm font-black shadow-xl transition-all hover:scale-105 active:scale-95"
-                  style={{ backgroundColor: primaryColor, color: primaryContrastText }}
-                >
-                  <span>Jetzt Team Anmelden</span>
-                  <span>&rarr;</span>
-                </Link>
-              ) : (
-                <span className="inline-block rounded-2xl border border-white/10 bg-slate-950/70 px-7 py-3.5 text-xs font-bold text-slate-400">
-                  Anmeldung Geschlossen
-                </span>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* 2. VORSCHAU: LIVE & MATCH-CENTER */}
-        <section className="rounded-[32px] border border-white/10 bg-slate-900/80 p-8 shadow-2xl backdrop-blur-xl sm:p-10 space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                Matchday Arena
-              </span>
-              <h2 className="text-2xl font-black text-white">Live &amp; Anstehende Duelle</h2>
-            </div>
-            <Link
-              href={`/turnier/${slug}/live`}
-              className="rounded-2xl border border-white/15 bg-slate-800/80 px-6 py-3 text-xs sm:text-sm font-black text-white hover:bg-slate-700 transition backdrop-blur-md shadow-md"
+    <div className="mx-auto w-full space-y-8 pb-16 text-slate-100 [color-scheme:dark]">
+      {/* 1. REGISTRIERUNGS-HERO */}
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+          <div className="space-y-3 text-center lg:text-left flex-1">
+            <span
+              className="inline-block rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-widest"
+              style={{
+                backgroundColor: `${primaryColor}20`,
+                color: primaryColor,
+                border: `1px solid ${primaryColor}40`,
+              }}
             >
-              Zur Live Arena &rarr;
-            </Link>
-          </div>
+              Startplatz Sichern
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-white">
+              {isRegistrationOpen
+                ? 'Melde dich jetzt an und spiele gegen die Besten!'
+                : isMaxTeamsReached
+                ? 'Das Turnier ist vollständig ausgebucht!'
+                : 'Die Anmeldung ist derzeit geschlossen.'}
+            </h2>
+            <p className="max-w-3xl text-xs sm:text-sm leading-relaxed text-slate-300 font-medium">
+              {isRegistrationOpen
+                ? tournament.description ||
+                  'Sichere dir und deinem Partner rechtzeitig einen Startplatz. Nach der Registrierung seid ihr direkt in der Auslosung dabei.'
+                : 'Alle Startplätze sind derzeit vergeben oder die Registrierungsphase wurde beendet.'}
+            </p>
 
-          <div>
-            {liveMatches.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {liveMatches.slice(0, 4).map((m) => (
+            {maxTeams && spotsProgress !== null && (
+              <div className="pt-2 max-w-md mx-auto lg:mx-0 space-y-1.5">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-300">Auslastung Startplätze</span>
+                  <span className="font-mono" style={{ color: primaryColor }}>
+                    {teams.length} / {maxTeams} Teams ({spotsProgress}%)
+                  </span>
+                </div>
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/50 border border-white/10">
                   <div
-                    key={m.id}
-                    className="rounded-3xl border border-red-500/40 bg-red-950/30 p-5 backdrop-blur-md shadow-xl"
-                  >
-                    <div className="flex justify-between text-[11px] font-bold border-b border-red-500/20 pb-2.5 mb-3">
-                      <span className="text-red-400 font-black flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping" />
-                        LIVE MATCH
-                      </span>
-                      {m.table_number && (
-                        <span className="font-mono text-amber-400">Tisch {m.table_number}</span>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-center text-sm font-black text-white">
-                      <span className="truncate max-w-[42%]">{getTeamName(m.team1_id)}</span>
-                      <span
-                        className="font-mono text-base font-black px-4 py-1 rounded-xl border border-white/20"
-                        style={{
-                          backgroundColor: hexToRgba(primaryColor, 0.35),
-                          color: '#ffffff',
-                        }}
-                      >
-                        {m.team1_score ?? 0} : {m.team2_score ?? 0}
-                      </span>
-                      <span className="truncate max-w-[42%] text-right">{getTeamName(m.team2_id)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : upcomingMatches.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {upcomingMatches.slice(0, 3).map((m) => (
-                  <div
-                    key={m.id}
-                    className="rounded-3xl border border-white/10 bg-slate-950/60 p-5 text-xs font-bold transition-all hover:border-white/20"
-                  >
-                    <div className="flex justify-between text-[10px] text-slate-400 border-b border-white/10 pb-2 mb-3">
-                      <span>{m.phase || 'Gruppe'}</span>
-                      <span className="font-mono text-amber-400">{formatTime(m.scheduled_time)}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-white">
-                      <span className="truncate max-w-[40%] font-black text-sm">{getTeamName(m.team1_id)}</span>
-                      <span className="text-[10px] text-slate-500 font-black">VS</span>
-                      <span className="truncate max-w-[40%] text-right font-black text-sm">{getTeamName(m.team2_id)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-3xl border border-white/10 bg-slate-950/50 p-8 text-center text-xs sm:text-sm font-bold text-slate-300">
-                Derzeit keine aktiven Ansetzungen. Der Spielplan wird bald veröffentlicht.
+                    className="h-full transition-all duration-500"
+                    style={{
+                      width: `${spotsProgress}%`,
+                      backgroundColor: primaryColor,
+                    }}
+                  />
+                </div>
               </div>
             )}
           </div>
-        </section>
 
-        {/* 3. VORSCHAU: REGELWERK */}
-        <section className="rounded-[32px] border border-white/10 bg-slate-900/80 p-8 shadow-2xl backdrop-blur-xl sm:p-10 space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                Regeln &amp; Modus
-              </span>
-              <h2 className="text-2xl font-black text-white">Offizielle Turnierregeln</h2>
-            </div>
-            <Link
-              href={`/turnier/${slug}/regeln`}
-              className="rounded-2xl border border-white/15 bg-slate-800/80 px-6 py-3 text-xs sm:text-sm font-black text-white hover:bg-slate-700 transition backdrop-blur-md shadow-md"
-            >
-              Alle Regeln ansehen &rarr;
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold text-slate-300">
-            <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6 space-y-2">
-              <span className="text-3xl block mb-2">🍺</span>
-              <h3 className="text-sm sm:text-base font-black text-white">10 Becher Aufstellung</h3>
-              <p className="text-slate-300 font-medium leading-relaxed">
-                Klassischer Pyramiden-Aufbau zu Beginn jedes Matches mit offiziellem Distanz-Standard.
-              </p>
-            </div>
-            <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6 space-y-2">
-              <span className="text-3xl block mb-2">🎯</span>
-              <h3 className="text-sm sm:text-base font-black text-white">Bringback &amp; Double</h3>
-              <p className="text-slate-300 font-medium leading-relaxed">
-                Treffen beide Spieler in derselben Runde, bekommt das Team die Bälle sofort zurück.
-              </p>
-            </div>
-            <div className="rounded-3xl border border-white/10 bg-slate-950/60 p-6 space-y-2">
-              <span className="text-3xl block mb-2">🤝</span>
-              <h3 className="text-sm sm:text-base font-black text-white">Fairplay &amp; Respect</h3>
-              <p className="text-slate-300 font-medium leading-relaxed">
-                Sportlicher Anstand an den Tischen steht an oberster Stelle. Entscheidungen der Schiris gelten.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* 4. VORSCHAU: STATISTIKEN */}
-        <section className="rounded-[32px] border border-white/10 bg-slate-900/80 p-8 shadow-2xl backdrop-blur-xl sm:p-10 space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                Leaderboards
-              </span>
-              <h2 className="text-2xl font-black text-white">Statistiken &amp; Rekorde</h2>
-            </div>
-            <Link
-              href={`/turnier/${slug}/stats`}
-              className="rounded-2xl border border-white/15 bg-slate-800/80 px-6 py-3 text-xs sm:text-sm font-black text-white hover:bg-slate-700 transition backdrop-blur-md shadow-md"
-            >
-              Zu den Statistiken &rarr;
-            </Link>
-          </div>
-
-          <p className="text-xs sm:text-sm leading-relaxed text-slate-300 font-medium">
-            Wer hat die meisten Treffer versenkt? Verfolge die torreichsten Begegnungen, die stärksten Offensiv-Teams und welche Verteidigung unüberwindbar bleibt.
-          </p>
-        </section>
-
-        {/* 5. SIEGER (FALLS BEENDET) */}
-        {isTournamentFinished && (
-          <section className="relative overflow-hidden rounded-[32px] border border-amber-500/40 bg-gradient-to-r from-amber-950/50 via-slate-900/90 to-slate-900/90 p-8 shadow-2xl backdrop-blur-xl sm:p-10 space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-amber-500/20 pb-6">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">
-                  Hall of Fame
-                </span>
-                <h2 className="text-2xl font-black text-white">Turniersieger &amp; Podium</h2>
-              </div>
+          <div className="shrink-0">
+            {isRegistrationOpen ? (
               <Link
-                href={`/turnier/${slug}/sieger`}
-                className="rounded-2xl bg-amber-500 px-6 py-3.5 text-xs sm:text-sm font-black text-slate-950 shadow-lg hover:bg-amber-400 transition"
+                href={`/turnier/${slug}/anmeldung`}
+                className="inline-flex items-center gap-3 rounded-2xl border-2 border-white/30 px-8 py-4 text-xs sm:text-sm font-black text-white shadow-2xl transition-all duration-300 hover:scale-105 hover:border-white/60 active:scale-95"
+                style={{
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 0 25px ${hexToRgba(primaryColor, 0.55)}`,
+                }}
               >
-                Zum Sieger-Podium &rarr;
+                <span className="drop-shadow-md">Jetzt Team Anmelden</span>
+                <span className="text-base font-bold">&rarr;</span>
               </Link>
-            </div>
+            ) : (
+              <span className="inline-block rounded-2xl border border-white/10 bg-black/50 px-7 py-3.5 text-xs font-bold text-slate-400">
+                Anmeldung Geschlossen
+              </span>
+            )}
+          </div>
+        </div>
+      </section>
 
-            <div className="flex items-center gap-4 text-xs sm:text-sm font-bold text-amber-200">
-              <span className="text-4xl">🥇</span>
-              <span>Das Turnier ist offiziell beendet! Schau dir jetzt die Gewinner und das finale Ranking an.</span>
+      {/* 2. MATCHDAY ARENA */}
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Matchday Arena
+            </span>
+            <h2 className="text-2xl font-black text-white">Live &amp; Anstehende Duelle</h2>
+          </div>
+          <Link
+            href={`/turnier/${slug}/live`}
+            className="rounded-2xl border border-white/10 bg-black/50 px-4 py-2.5 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:text-white backdrop-blur-md shadow-lg"
+          >
+            Zur Live Arena &rarr;
+          </Link>
+        </div>
+
+        <div>
+          {liveMatches.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {liveMatches.slice(0, 4).map((m) => (
+                <div
+                  key={m.id}
+                  className="flex items-center justify-between rounded-xl border border-red-500/30 bg-red-950/20 p-4 text-xs font-bold shadow-lg backdrop-blur-md"
+                >
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-red-400 flex items-center gap-1.5">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                      LIVE {m.table_number ? `• Tisch ${m.table_number}` : ''}
+                    </span>
+                    <div className="mt-1 font-black text-sm text-white">
+                      {getTeamName(m.team1_id)}{' '}
+                      <span className="text-slate-500 font-normal">vs.</span>{' '}
+                      {getTeamName(m.team2_id)}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/50 px-3 py-1.5 font-mono text-base font-black tabular-nums text-white">
+                    {m.team1_score ?? 0} : {m.team2_score ?? 0}
+                  </div>
+                </div>
+              ))}
             </div>
-          </section>
-        )}
-      </div>
+          ) : upcomingMatches.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {upcomingMatches.slice(0, 3).map((m) => (
+                <div
+                  key={m.id}
+                  className="flex items-center justify-between rounded-xl border border-white/10 bg-black/40 p-4 transition hover:border-white/30 hover:bg-black/60 backdrop-blur-md text-xs font-bold"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                      <span className="font-bold text-slate-300">{m.phase || 'Gruppe'}</span>
+                      <span>•</span>
+                      <span className="font-mono text-amber-400">{formatTime(m.scheduled_time)}</span>
+                    </div>
+                    <div className="mt-1 font-black text-sm text-white">
+                      {getTeamName(m.team1_id)}{' '}
+                      <span className="text-slate-500 font-normal">vs.</span>{' '}
+                      {getTeamName(m.team2_id)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-8 text-center text-xs font-bold text-slate-400">
+              Derzeit keine aktiven Ansetzungen. Der Spielplan wird bald veröffentlicht.
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 3. VORSCHAU: REGELWERK */}
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Regeln &amp; Modus
+            </span>
+            <h2 className="text-2xl font-black text-white">Offizielle Turnierregeln</h2>
+          </div>
+          <Link
+            href={`/turnier/${slug}/regeln`}
+            className="rounded-2xl border border-white/10 bg-black/50 px-4 py-2.5 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:text-white backdrop-blur-md shadow-lg"
+          >
+            Alle Regeln ansehen &rarr;
+          </Link>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="rounded-xl border border-white/10 bg-black/40 p-5 space-y-2 backdrop-blur-md">
+            <span className="text-2xl block mb-1">🍺</span>
+            <h3 className="text-sm font-black text-white">10 Becher Aufstellung</h3>
+            <p className="text-xs text-slate-300 leading-relaxed font-medium">
+              Klassischer Pyramiden-Aufbau zu Beginn jedes Matches mit offiziellem Distanz-Standard.
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-black/40 p-5 space-y-2 backdrop-blur-md">
+            <span className="text-2xl block mb-1">🎯</span>
+            <h3 className="text-sm font-black text-white">Bringback &amp; Double</h3>
+            <p className="text-xs text-slate-300 leading-relaxed font-medium">
+              Treffen beide Spieler in derselben Runde, bekommt das Team die Bälle sofort zurück.
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/10 bg-black/40 p-5 space-y-2 backdrop-blur-md">
+            <span className="text-2xl block mb-1">🤝</span>
+            <h3 className="text-sm font-black text-white">Fairplay &amp; Respect</h3>
+            <p className="text-xs text-slate-300 leading-relaxed font-medium">
+              Sportlicher Anstand an den Tischen steht an oberster Stelle. Entscheidungen der Schiris gelten.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. VORSCHAU: STATISTIKEN */}
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Leaderboards
+            </span>
+            <h2 className="text-2xl font-black text-white">Statistiken &amp; Rekorde</h2>
+          </div>
+          <Link
+            href={`/turnier/${slug}/stats`}
+            className="rounded-2xl border border-white/10 bg-black/50 px-4 py-2.5 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:text-white backdrop-blur-md shadow-lg"
+          >
+            Zu den Statistiken &rarr;
+          </Link>
+        </div>
+
+        <p className="text-xs sm:text-sm leading-relaxed text-slate-300 font-medium">
+          Wer hat die meisten Treffer versenkt? Verfolge die torreichsten Begegnungen, die stärksten Offensiv-Teams und welche Verteidigung unüberwindbar bleibt.
+        </p>
+      </section>
+
+      {/* 5. SIEGER (FALLS BEENDET) */}
+      {isTournamentFinished && (
+        <section className="rounded-[32px] border border-amber-500/30 bg-amber-950/20 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-amber-500/20 pb-6">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                Hall of Fame
+              </span>
+              <h2 className="text-2xl font-black text-white">Turniersieger &amp; Podium</h2>
+            </div>
+            <Link
+              href={`/turnier/${slug}/sieger`}
+              className="rounded-2xl border border-amber-500/30 bg-amber-500 px-4 py-2.5 text-xs font-black text-slate-950 shadow-md hover:bg-amber-400 transition"
+            >
+              Zum Sieger-Podium &rarr;
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs sm:text-sm font-bold text-amber-200">
+            <span className="text-4xl">🥇</span>
+            <span>Das Turnier ist offiziell beendet! Schau dir jetzt die Gewinner und das finale Ranking an.</span>
+          </div>
+        </section>
+      )}
     </div>
   )
 }

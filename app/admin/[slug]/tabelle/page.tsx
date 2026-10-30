@@ -279,7 +279,7 @@ export default function AdminTabellePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -294,36 +294,36 @@ export default function AdminTabellePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 bg-slate-950 [color-scheme:dark]">
+    <div className="mx-auto w-full max-w-7xl space-y-8 px-2 sm:px-4 pb-16 text-slate-100 [color-scheme:dark]">
       {error && (
         <div className="w-full rounded-2xl border border-red-500/30 bg-red-950/20 p-4 text-xs font-extrabold text-red-300 backdrop-blur-md">
           {error}
         </div>
       )}
 
-      {/* METRIK CARDS */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3 w-full">
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Gruppen Gesamt</p>
+      {/* FREIGELEGTE METRIK-KACHELN AUF VOLLER BREITE (TRANSPARENTES GLAS) */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6 lg:gap-8 w-full">
+        <div className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl backdrop-blur-md flex flex-col justify-between transition hover:bg-white/10">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-200">Gruppen Gesamt</p>
           <p className="mt-2 text-3xl font-black text-white">{groups.length}</p>
         </div>
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Absolvierte Gruppenspiele</p>
+        <div className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl backdrop-blur-md flex flex-col justify-between transition hover:bg-white/10">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-200">Absolvierte Gruppenspiele</p>
           <p className="mt-2 text-3xl font-black text-emerald-400">
-            {totalFinishedGroupGames} <span className="text-xs text-slate-500 font-bold">/ {totalGroupGames}</span>
+            {totalFinishedGroupGames} <span className="text-xs text-slate-400 font-bold">/ {totalGroupGames}</span>
           </p>
         </div>
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Qualifikation pro Gruppe</p>
-          <p className="mt-2 text-3xl font-black" style={{ color: primaryColor }}>
-            Top {qualifiersPerGroup} <span className="text-xs text-slate-400 font-bold">K.-o.-Einzug</span>
+        <div className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl backdrop-blur-md flex flex-col justify-between transition hover:bg-white/10">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-200">Qualifikation pro Gruppe</p>
+          <p className="mt-2 text-3xl font-black text-emerald-400">
+            Top {qualifiersPerGroup} <span className="text-xs text-slate-300 font-bold">K.-o.-Einzug</span>
           </p>
         </div>
       </section>
 
       {/* GRUPPENTABELLEN GRID */}
       {groupStandings.length === 0 ? (
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-8 text-center text-xs font-bold text-slate-400 backdrop-blur-xl">
+        <div className="rounded-3xl border border-white/10 bg-black/30 p-8 text-center text-xs font-bold text-slate-300 backdrop-blur-xl">
           Noch keine Gruppen oder Teams zugewiesen.
         </div>
       ) : (
@@ -331,20 +331,20 @@ export default function AdminTabellePage() {
           {groupStandings.map(({ group, standings }) => (
             <div
               key={group.id}
-              className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 overflow-hidden w-full"
+              className="rounded-3xl border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 overflow-hidden w-full"
             >
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <h3 className="text-xl font-black text-white tracking-tight">{group.name}</h3>
-                <span className="rounded-full bg-slate-950 px-3 py-1 text-[10px] font-black text-slate-400 border border-white/10">
+                <span className="rounded-full bg-black/60 px-3 py-1 text-[10px] font-black text-slate-300 border border-white/10">
                   {standings.length} Teams
                 </span>
               </div>
 
               {/* HORIZONTALE SCROLLBAR FÜR MOBILE GERÄTE */}
-              <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/80 shadow-inner">
+              <div className="overflow-x-auto rounded-2xl border border-white/10 bg-black/40 shadow-inner">
                 <table className="w-full text-left text-xs min-w-[500px]">
                   <thead>
-                    <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-950/90">
+                    <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-400 whitespace-nowrap bg-black/60">
                       <th className="py-3 px-2 text-center w-8">#</th>
                       <th className="py-3 px-3">Team</th>
                       <th className="py-3 px-2 text-center w-10" title="Spiele">Sp</th>
@@ -359,7 +359,7 @@ export default function AdminTabellePage() {
                   <tbody className="divide-y divide-white/5 font-bold whitespace-nowrap">
                     {standings.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="py-6 text-center text-slate-500 font-medium">
+                        <td colSpan={9} className="py-6 text-center text-slate-400 font-medium">
                           Keine Teams in dieser Gruppe.
                         </td>
                       </tr>
@@ -381,7 +381,7 @@ export default function AdminTabellePage() {
                                 className={`inline-flex h-6 w-6 items-center justify-center rounded-lg text-[10px] font-black ${
                                   isQualified
                                     ? 'bg-emerald-500 text-slate-950 shadow-md'
-                                    : 'bg-slate-950 text-slate-400 border border-white/10'
+                                    : 'bg-black/60 text-slate-400 border border-white/10'
                                 }`}
                               >
                                 {idx + 1}
@@ -439,7 +439,7 @@ export default function AdminTabellePage() {
                 </table>
               </div>
 
-              <div className="pt-2 text-[10px] text-slate-400 font-bold flex items-center gap-2">
+              <div className="pt-2 text-[10px] text-slate-300 font-bold flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0"></span>
                 <span>Grüne Ränge = Qualifikation für K.-o.-Phase</span>
               </div>

@@ -135,7 +135,7 @@ function MatchScoreEditor({
           onChange={(event) =>
             setScore1(Math.min(10, Math.max(0, Number(event.target.value) || 0)))
           }
-          className="h-9 w-12 rounded-xl border border-white/10 bg-slate-950/80 text-center text-xs font-black text-white outline-none focus:border-white/30"
+          className="h-9 w-12 rounded-xl border border-white/10 bg-black/50 text-center text-xs font-black text-white outline-none focus:border-white/30"
         />
         <span className="font-black text-slate-500">:</span>
         <input
@@ -146,7 +146,7 @@ function MatchScoreEditor({
           onChange={(event) =>
             setScore2(Math.min(10, Math.max(0, Number(event.target.value) || 0)))
           }
-          className="h-9 w-12 rounded-xl border border-white/10 bg-slate-950/80 text-center text-xs font-black text-white outline-none focus:border-white/30"
+          className="h-9 w-12 rounded-xl border border-white/10 bg-black/50 text-center text-xs font-black text-white outline-none focus:border-white/30"
         />
         <button
           type="button"
@@ -1138,12 +1138,12 @@ export default function AdminKOPage() {
           className={[
             'h-full overflow-hidden rounded-2xl border shadow-lg backdrop-blur-md transition',
             finished
-              ? 'border-emerald-500/40 bg-slate-950/90'
+              ? 'border-emerald-500/40 bg-black/60'
               : live
-              ? 'border-red-500/50 bg-slate-950/90'
+              ? 'border-red-500/50 bg-black/60'
               : match
-              ? 'border-white/10 bg-slate-950/80'
-              : 'border-dashed border-white/10 bg-slate-950/40',
+              ? 'border-white/10 bg-black/50'
+              : 'border-dashed border-white/10 bg-black/20',
           ].join(' ')}
         >
           <div
@@ -1153,7 +1153,7 @@ export default function AdminKOPage() {
                 ? 'border-emerald-500/20 bg-emerald-500/10'
                 : live
                 ? 'border-red-500/20 bg-red-500/10'
-                : 'border-white/10 bg-slate-900/80',
+                : 'border-white/10 bg-black/40',
             ].join(' ')}
           >
             <span className="truncate text-[7px] font-black uppercase tracking-[0.1em] text-slate-400">
@@ -1185,7 +1185,7 @@ export default function AdminKOPage() {
                 'flex h-5 items-center justify-between gap-1 rounded-lg px-1.5',
                 team1Winner
                   ? 'bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/40'
-                  : 'bg-slate-900/60',
+                  : 'bg-black/40',
               ].join(' ')}
             >
               <span
@@ -1216,7 +1216,7 @@ export default function AdminKOPage() {
                 'flex h-5 items-center justify-between gap-1 rounded-lg px-1.5',
                 team2Winner
                   ? 'bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/40'
-                  : 'bg-slate-900/60',
+                  : 'bg-black/40',
               ].join(' ')}
             >
               <span
@@ -1555,8 +1555,8 @@ export default function AdminKOPage() {
                     <BracketMatchCard phase="final" position={1} side="center" />
                   </div>
                 ) : (
-                  <div className="w-full rounded-2xl border border-dashed border-white/10 bg-slate-950/40 px-1 py-3 text-center sm:px-2 sm:py-4">
-                    <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-sm sm:h-9 sm:w-9 border border-white/10">
+                  <div className="w-full rounded-2xl border border-dashed border-white/10 bg-black/20 px-1 py-3 text-center sm:px-2 sm:py-4">
+                    <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl bg-black/40 text-sm sm:h-9 sm:w-9 border border-white/10">
                       🏆
                     </div>
                     <p className="mt-3 text-xs font-black text-slate-300">Finale</p>
@@ -1576,7 +1576,7 @@ export default function AdminKOPage() {
                     {thirdPlaceMatch ? (
                       <BracketMatchCard phase="third_place" position={1} side="center" />
                     ) : (
-                      <div className="w-full rounded-2xl border border-dashed border-white/10 bg-slate-950/40 px-1 py-2 text-center">
+                      <div className="w-full rounded-2xl border border-dashed border-white/10 bg-black/20 px-1 py-2 text-center">
                         <p className="text-[10px] font-bold text-slate-500">Spiel um Platz 3 (folgt)</p>
                       </div>
                     )}
@@ -1621,7 +1621,7 @@ export default function AdminKOPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -1636,42 +1636,63 @@ export default function AdminKOPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 bg-slate-950 [color-scheme:dark]">
+    <div className="mx-auto w-full space-y-8 pb-16 text-slate-100 [color-scheme:dark]">
       {statusMessage && (
         <div
           className={`w-full rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
             statusMessage.type === 'success'
-              ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
-              : 'border-red-500/30 bg-red-950/20 text-red-300'
+              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+              : 'border-red-500/30 bg-red-500/10 text-red-300'
           }`}
         >
           {statusMessage.text}
         </div>
       )}
 
-      {/* STATUS CARDS */}
-      <section className="grid gap-4 sm:grid-cols-3 w-full">
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">KO-Größe</p>
-          <p className="mt-2 text-3xl font-black text-white">{getKOSize()} Teams</p>
+      {/* FREISTEHENDE KPI STATS CARDS */}
+      <div className="grid gap-4 sm:grid-cols-3 w-full">
+        <div className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
+            <span>KO-Größe</span>
+            <span>👥</span>
+          </div>
+          <div className="mt-2 text-3xl font-black text-white">{getKOSize()} Teams</div>
+          <div className="mt-2 text-[11px] font-bold text-slate-400">
+            Qualifizierte K.-o.-Teilnehmer
+          </div>
         </div>
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Spiele Beendet</p>
-          <p className="mt-2 text-3xl font-black text-white">
-            {finishedKO} / {totalKO}
-          </p>
+
+        <div className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
+            <span>Spiele Beendet</span>
+            <span>🏆</span>
+          </div>
+          <div className="mt-2 text-3xl font-black text-white">
+            {finishedKO} <span className="text-sm text-slate-400 font-normal">/ {totalKO}</span>
+          </div>
+          <div className="mt-2 text-[11px] font-bold text-slate-400">
+            Absolvierte K.-o.-Matches
+          </div>
         </div>
-        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl">
-          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Fortschritt</p>
-          <p className="mt-2 text-3xl font-black" style={{ color: primaryColor }}>
-            {progressPercent}%
-          </p>
+
+        <div className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
+            <span>Fortschritt</span>
+            <span>📊</span>
+          </div>
+          <div className="mt-2 text-3xl font-black text-white">{progressPercent}%</div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-black/50 border border-white/10">
+            <div
+              className="h-full transition-all duration-500"
+              style={{ width: `${progressPercent}%`, backgroundColor: primaryColor }}
+            />
+          </div>
         </div>
-      </section>
+      </div>
 
       {/* SETUP & RUNDENPLANUNG */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between border-b border-white/10 pb-6">
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-2">
               <span
@@ -1693,7 +1714,7 @@ export default function AdminKOPage() {
               <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 Rundenabstand
               </label>
-              <div className="flex min-h-12 items-center rounded-2xl border border-white/10 bg-slate-950/80 p-1.5">
+              <div className="flex min-h-12 items-center rounded-2xl border border-white/10 bg-black/50 p-1.5">
                 <input
                   type="number"
                   min="0"
@@ -1705,27 +1726,17 @@ export default function AdminKOPage() {
                 <span className="pr-2 text-xs font-bold text-slate-400">Min.</span>
               </div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5">
+            <div className="rounded-2xl border border-white/10 bg-black/50 px-4 py-2.5">
               <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tische</p>
               <p className="text-xl font-black text-white">{availableTables}</p>
             </div>
           </div>
         </div>
-
-        <div className="h-2 overflow-hidden rounded-full bg-slate-950/80">
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${progressPercent}%`,
-              backgroundColor: primaryColor,
-            }}
-          />
-        </div>
       </section>
 
       {/* BRACKET VIEW */}
       {knockoutMatches.length > 0 && (
-        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
+        <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
           <div className="border-b border-white/10 pb-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -1736,7 +1747,7 @@ export default function AdminKOPage() {
                 <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">Der Weg ins Finale</h2>
               </div>
               <div
-                className="w-fit rounded-full px-3 py-1.5 text-xs font-black border border-white/10 bg-slate-950/80"
+                className="w-fit rounded-full px-3 py-1.5 text-xs font-black border border-white/10 bg-black/50"
                 style={{ color: primaryColor }}
               >
                 {existingPhases.length} {existingPhases.length === 1 ? 'Runde' : 'Runden'} vorhanden
@@ -1749,7 +1760,7 @@ export default function AdminKOPage() {
       )}
 
       {/* QUALIFIED TEAMS POOL */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
+      <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-4">
           <div>
             <h2 className="text-xl font-black text-white tracking-tight">Qualifizierte Teams</h2>
@@ -1767,7 +1778,7 @@ export default function AdminKOPage() {
           {qualifiedTeams.map((team, index) => (
             <div
               key={team.teamId}
-              className="rounded-2xl border border-white/10 bg-slate-950/80 p-4 shadow-lg"
+              className="rounded-2xl border border-white/10 bg-black/40 p-4 shadow-lg backdrop-blur-md"
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="text-xs font-black text-slate-500">#{index + 1}</span>
@@ -1783,7 +1794,7 @@ export default function AdminKOPage() {
           ))}
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-slate-950/80 p-5 text-white shadow-xl">
+        <div className="rounded-2xl border border-white/10 bg-black/50 p-5 text-white shadow-xl backdrop-blur-md">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-black text-sm">K.-o.-Phase starten / auslosen</p>
@@ -1815,7 +1826,7 @@ export default function AdminKOPage() {
 
       {/* MATCH CENTER */}
       {knockoutMatches.length > 0 && (
-        <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
+        <section className="rounded-[32px] border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-4">
             <div>
               <h2 className="text-xl font-black text-white tracking-tight">K.-o.-Spiele &amp; Live-Ergebnisse</h2>
@@ -1843,8 +1854,8 @@ export default function AdminKOPage() {
                       <div
                         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-black border ${
                           allFinished
-                            ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
-                            : 'border-amber-500/30 bg-amber-950/20 text-amber-300'
+                            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                            : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
                         }`}
                       >
                         {allFinished ? '✓' : getRoundNumber(phase)}
@@ -1870,7 +1881,7 @@ export default function AdminKOPage() {
                                 [phase]: event.target.value,
                               }))
                             }
-                            className="h-10 rounded-2xl border border-white/10 bg-slate-950/80 px-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
+                            className="h-10 rounded-2xl border border-white/10 bg-black/50 px-3 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
                           />
                           <button
                             type="button"
@@ -1884,7 +1895,7 @@ export default function AdminKOPage() {
                           <button
                             type="button"
                             onClick={() => setEditingRound(null)}
-                            className="h-10 rounded-2xl border border-white/10 bg-slate-950/60 px-4 text-xs font-bold text-slate-300 hover:text-white"
+                            className="h-10 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs font-bold text-slate-300 hover:text-white"
                           >
                             Abbrechen
                           </button>
@@ -1900,7 +1911,7 @@ export default function AdminKOPage() {
                               }))
                               setEditingRound(phase)
                             }}
-                            className="h-10 rounded-2xl border border-white/10 bg-slate-950/60 px-4 text-xs font-bold text-slate-300 hover:text-white transition"
+                            className="h-10 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs font-bold text-slate-300 hover:text-white transition"
                           >
                             ⏰ Zeit ändern
                           </button>
@@ -1927,7 +1938,7 @@ export default function AdminKOPage() {
                         return (
                           <div
                             key={match.id}
-                            className="rounded-2xl border border-white/10 bg-slate-950/80 p-4 space-y-2.5 shadow-lg"
+                            className="rounded-2xl border border-white/10 bg-black/40 p-4 space-y-2.5 shadow-lg backdrop-blur-md"
                           >
                             <div className="flex items-center justify-between text-[10px] font-black text-slate-400">
                               <span>
@@ -1938,8 +1949,8 @@ export default function AdminKOPage() {
                               <span
                                 className={`rounded-full px-2 py-0.5 text-[8px] font-black border ${
                                   match.status === 'finished'
-                                    ? 'border-emerald-500/30 bg-emerald-950/20 text-emerald-300'
-                                    : 'border-amber-500/30 bg-amber-950/20 text-amber-300'
+                                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                                    : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
                                 }`}
                               >
                                 {match.status === 'finished' ? 'FERTIG' : 'OFFEN'}
@@ -1951,7 +1962,7 @@ export default function AdminKOPage() {
                                 className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold ${
                                   winner === match.team1_id
                                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                    : 'bg-slate-900/80 text-white border border-white/5'
+                                    : 'bg-black/50 text-white border border-white/5'
                                 }`}
                               >
                                 <span className="truncate">{getTeamName(match.team1_id)}</span>
@@ -1962,7 +1973,7 @@ export default function AdminKOPage() {
                                 className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold ${
                                   winner === match.team2_id
                                     ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                                    : 'bg-slate-900/80 text-white border border-white/5'
+                                    : 'bg-black/50 text-white border border-white/5'
                                 }`}
                               >
                                 <span className="truncate">{getTeamName(match.team2_id)}</span>
