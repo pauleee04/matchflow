@@ -560,8 +560,8 @@ export default function AdminSpielePage() {
         </div>
       )}
 
-      {/* METRIK-KACHELN IM EINHEITLICHEN GLAS-DESIGN */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
+      {/* METRIK-KACHELN: FREISTEHEND OHNE ÄUSSEREN RAHMEN */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
         <div className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-xs font-black uppercase tracking-wider text-slate-300">Spiele Gesamt</p>
           <p className="mt-2 text-3xl font-black text-white">{totalMatches}</p>
@@ -578,7 +578,7 @@ export default function AdminSpielePage() {
           <p className="text-xs font-black uppercase tracking-wider text-slate-300">Beendet</p>
           <p className="mt-2 text-3xl font-black text-emerald-400">{finishedMatches}</p>
         </div>
-      </section>
+      </div>
 
       {/* AUTOMATISCHER SPIELPLAN GENERATOR */}
       <section className="rounded-3xl border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">

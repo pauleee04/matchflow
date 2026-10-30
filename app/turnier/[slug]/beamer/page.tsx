@@ -296,10 +296,6 @@ export default function BeamerPage() {
   const [currentTime, setCurrentTime] = useState('')
   const [activeSlide, setActiveSlide] = useState<'matches' | 'standings' | 'bracket'>('matches')
 
-  // Helligkeits-Steuerung (100% ist Standard, geht von 60% bis 180%)
-  const [brightness, setBrightness] = useState<number>(100)
-  const [isLightBg, setIsLightBg] = useState<boolean>(false)
-
   useEffect(() => {
     const updateClock = () => {
       setCurrentTime(
@@ -518,12 +514,6 @@ export default function BeamerPage() {
   const primaryContrastText = getContrastTextColor(primaryColor)
 
   const bgStyle = useMemo(() => {
-    if (isLightBg) {
-      return {
-        background: `radial-gradient(circle at 50% 20%, ${hexToRgba(primaryColor, 0.22)} 0%, transparent 65%), #0f172a`,
-      }
-    }
-
     if (tournament?.background_style?.startsWith('http') || tournament?.background_style?.startsWith('url')) {
       return {
         backgroundImage: tournament.background_style.startsWith('url') ? tournament.background_style : `url(${tournament.background_style})`,
@@ -537,7 +527,7 @@ export default function BeamerPage() {
     return {
       background: `radial-gradient(circle at 50% 20%, ${hexToRgba(primaryColor, 0.4)} 0%, transparent 65%), radial-gradient(circle at 85% 85%, ${hexToRgba(secondaryColor, 0.25)} 0%, transparent 55%), #090d16`,
     }
-  }, [tournament?.background_style, primaryColor, secondaryColor, isLightBg])
+  }, [tournament?.background_style, primaryColor, secondaryColor])
 
   function getTeamName(teamId: number | null) {
     if (!teamId) return null
@@ -1029,14 +1019,11 @@ export default function BeamerPage() {
   return (
     <div
       ref={containerRef}
-      style={{
-        ...bgStyle,
-        filter: `brightness(${brightness}%)`,
-      }}
+      style={bgStyle}
       className={`relative w-full overflow-hidden text-white font-sans transition-all flex flex-col justify-between [color-scheme:dark] ${
         isFullscreen
-          ? 'fixed inset-0 z-[99999] h-screen w-screen p-8 shadow-2xl backdrop-blur-2xl'
-          : 'rounded-[32px] border border-white/20 p-6 sm:p-8 shadow-2xl backdrop-blur-xl h-[calc(100vh-180px)] min-h-[600px]'
+          ? 'fixed inset-0 z-[99999] h-screen w-screen p-6 sm:p-8 shadow-2xl'
+          : 'rounded-[32px] border border-white/20 p-6 sm:p-8 shadow-2xl h-[calc(100vh-180px)] min-h-[600px]'
       }`}
     >
       {/* GROSSES LOGO-WASSERZEICHEN IN DER MITTE DES HINTERGRUNDS */}
@@ -1083,34 +1070,6 @@ export default function BeamerPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-            {/* HELLIGKEITS- & DESIGN-STEUERUNG (NUR WENN NICHT VOLLBILD) */}
-            {!isFullscreen && (
-              <div className="flex items-center gap-3 bg-black/70 border border-white/15 px-3 py-1.5 rounded-xl text-xs backdrop-blur-md">
-                <span className="font-extrabold text-slate-300 flex items-center gap-1.5">
-                  ☀️ <span>Helligkeit:</span>
-                </span>
-                <input
-                  type="range"
-                  min="70"
-                  max="160"
-                  value={brightness}
-                  onChange={(e) => setBrightness(Number(e.target.value))}
-                  className="w-20 cursor-pointer"
-                  style={{ accentColor: primaryColor }}
-                  title="Helligkeit anpassen"
-                />
-                <span className="font-mono text-[11px] font-black w-9 text-right">{brightness}%</span>
-
-                <button
-                  type="button"
-                  onClick={() => setIsLightBg((prev) => !prev)}
-                  className="ml-1 px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-[10px] font-bold transition border border-white/10"
-                >
-                  {isLightBg ? ' Dunkles Theme' : ' Helleres Theme'}
-                </button>
-              </div>
-            )}
-
             <div className="text-right">
               <p className="font-mono text-2xl font-black tracking-wider" style={{ color: primaryColor }}>
                 {currentTime}
