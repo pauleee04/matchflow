@@ -512,13 +512,15 @@ export default function BeamerPage() {
         backgroundImage: tournament.background_style.startsWith('url') ? tournament.background_style : `url(${tournament.background_style})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        backgroundColor: '#090d16',
       }
     }
     if (tournament?.background_style) {
-      return { background: tournament.background_style }
+      return { background: tournament.background_style, backgroundColor: '#090d16' }
     }
     return {
-      background: `radial-gradient(circle at 50% 20%, ${hexToRgba(primaryColor, 0.3)} 0%, transparent 70%), radial-gradient(circle at 85% 85%, ${hexToRgba(secondaryColor, 0.2)} 0%, transparent 60%), #0d1322`,
+      background: `radial-gradient(circle at 50% 35%, ${hexToRgba(primaryColor, 0.45)} 0%, ${hexToRgba(primaryColor, 0.15)} 45%, transparent 75%), radial-gradient(circle at 85% 85%, ${hexToRgba(secondaryColor, 0.25)} 0%, transparent 60%), #090d16`,
+      backgroundColor: '#090d16',
     }
   }, [tournament?.background_style, primaryColor, secondaryColor])
 
@@ -1015,26 +1017,30 @@ export default function BeamerPage() {
       style={bgStyle}
       className={`relative w-full overflow-hidden text-white font-sans transition-all flex flex-col justify-between [color-scheme:dark] ${
         isFullscreen
-          ? 'fixed inset-0 z-[99999] h-screen w-screen p-6 sm:p-8 shadow-2xl'
+          ? 'fixed inset-0 z-[99999] h-screen w-screen p-6 sm:p-8 shadow-2xl rounded-none border-none'
           : 'rounded-[32px] border border-white/20 p-6 sm:p-8 shadow-2xl h-[calc(100vh-180px)] min-h-[600px]'
       }`}
     >
-      {/* GROSSES LOGO-WASSERZEICHEN IN DER MITTE DES HINTERGRUNDS */}
-      {tournament?.logo_url && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-0">
+      {/* ZENTRALER SPOTLIGHT & LOGO-WASSERZEICHEN */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-0">
+        <div
+          className="absolute w-[45vw] max-w-[550px] h-[45vw] max-h-[550px] rounded-full blur-[110px] opacity-45"
+          style={{ backgroundColor: primaryColor }}
+        />
+        {tournament?.logo_url && (
           <img
             src={tournament.logo_url}
             alt="Watermark Logo"
-            className="w-[55vw] max-w-[650px] h-auto object-contain opacity-[0.14] filter blur-[0.5px] select-none"
+            className="w-[50vw] max-w-[620px] h-auto object-contain opacity-25 filter blur-[0.5px] select-none relative z-10"
           />
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="relative z-10 flex flex-col h-full justify-between space-y-4">
         {/* HEADER BAR */}
         <header
-          className="flex flex-wrap items-center justify-between border border-white/15 pb-4 shrink-0 p-4 rounded-2xl backdrop-blur-md gap-4 shadow-xl"
-          style={{ backgroundColor: hexToRgba(primaryColor, 0.15) }}
+          className="flex flex-wrap items-center justify-between border border-white/20 pb-4 shrink-0 p-4 rounded-2xl backdrop-blur-md gap-4 shadow-xl"
+          style={{ backgroundColor: hexToRgba(primaryColor, 0.18) }}
         >
           <div className="flex items-center gap-4">
             {tournament?.logo_url ? (
@@ -1095,8 +1101,8 @@ export default function BeamerPage() {
                     <span
                       className="text-xs font-semibold px-2.5 py-0.5 rounded-full border backdrop-blur-sm"
                       style={{
-                        backgroundColor: hexToRgba(primaryColor, 0.2),
-                        borderColor: hexToRgba(primaryColor, 0.4),
+                        backgroundColor: hexToRgba(primaryColor, 0.25),
+                        borderColor: hexToRgba(primaryColor, 0.45),
                         color: primaryColor,
                       }}
                     >
@@ -1144,7 +1150,7 @@ export default function BeamerPage() {
                         }`}
                         style={{
                           borderColor: finished ? hexToRgba(primaryColor, 0.5) : undefined,
-                          backgroundColor: finished ? hexToRgba(primaryColor, 0.15) : undefined,
+                          backgroundColor: finished ? hexToRgba(primaryColor, 0.18) : undefined,
                         }}
                       >
                         <div className="flex items-center justify-between border-b border-white/10 pb-1.5 text-[10px] font-bold uppercase">
@@ -1357,7 +1363,7 @@ export default function BeamerPage() {
         {/* FOOTER BAR */}
         <footer
           className="border border-white/15 pt-3 flex justify-between items-center text-[10.5px] font-semibold text-slate-300 shrink-0 p-3 rounded-2xl backdrop-blur-md shadow-lg"
-          style={{ backgroundColor: hexToRgba(primaryColor, 0.12) }}
+          style={{ backgroundColor: hexToRgba(primaryColor, 0.15) }}
         >
           <span>{tournament?.name || 'Bierpong Tournament'} Beamer Live Screen</span>
           <span className="flex items-center gap-2">
