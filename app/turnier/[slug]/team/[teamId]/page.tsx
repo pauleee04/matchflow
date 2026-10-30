@@ -86,11 +86,6 @@ type PublicTeamPage = {
   matches?: TournamentMatch[] | null
 }
 
-type TeamRulesPreview = {
-  show_on_team_page: boolean
-  rules_text: string | null
-}
-
 // HELPER FÜR FARBANPASSUNGEN UND KONTRASTE
 function hexToRgba(hex: string | null | undefined, alpha: number, fallback: string = '#22c55e'): string {
   let c = (hex || fallback).trim()
@@ -352,7 +347,6 @@ export default function CleanPublicTeamPage() {
   const [payingWithPayPal, setPayingWithPayPal] = useState(false)
   const [error, setError] = useState('')
   const [paymentMessage, setPaymentMessage] = useState('')
-  const [teamRulesPreview, setTeamRulesPreview] = useState<TeamRulesPreview | null>(null)
 
   // EDIT-MODE FÜR SPIELER-NAMEN
   const [isEditing, setIsEditing] = useState(false)
@@ -511,30 +505,6 @@ export default function CleanPublicTeamPage() {
         if (!isEditing) {
           setEditPlayer1(loadedTeam.player1 || '')
           setEditPlayer2(loadedTeam.player2 || '')
-        }
-
-        // 3. Echte Turnier-Regeln direkt aus tournament_rules abrufen
-        if (loadedTournament?.id) {
-          const { data: rulesData } = await supabase
-            .from('tournament_rules')
-            .select('*')
-            .eq('tournament_id', loadedTournament.id)
-            .maybeSingle()
-
-          if (rulesData) {
-            const rulesText =
-              rulesData.team_summary ||
-              rulesData.rules_summary ||
-              rulesData.rules ||
-              rulesData.rules_text ||
-              rulesData.content ||
-              ''
-
-            setTeamRulesPreview({
-              show_on_team_page: rulesData.show_on_team_page ?? true,
-              rules_text: typeof rulesText === 'string' ? rulesText : '',
-            })
-          }
         }
       } catch (err) {
         console.error(err)
@@ -817,14 +787,6 @@ export default function CleanPublicTeamPage() {
   )
 
   const allKoMatches = useMemo(() => matches.filter((m) => isKoPhaseMatch(m)), [matches])
-
-  const rulesList = useMemo(() => {
-    if (!teamRulesPreview?.rules_text) return null
-    return teamRulesPreview.rules_text
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0)
-  }, [teamRulesPreview])
 
   const entryFee = Number(tournament?.entry_fee ?? 0)
   const isPaid = team?.payment_status === 'bezahlt'
@@ -1324,42 +1286,6 @@ export default function CleanPublicTeamPage() {
           )}
         </section>
       </div>
-
-      {/* 4. REGELN VORSCHAU (ECHTE TURNIERREGELN) */}
-      <section className="rounded-[32px] border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-md sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">📜</span>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
-                Wichtige Hinweise
-              </p>
-            </div>
-            <h2 className="text-xl font-black text-white">Turnierregeln &amp; Ablauf</h2>
-            <div className="rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-md">
-              {rulesList && rulesList.length > 0 ? (
-                <ul className="list-inside list-disc space-y-2 text-xs font-medium text-slate-300 sm:text-sm">
-                  {rulesList.map((line, i) => {
-                    const cleanLine = line.replace(/^[•\-\*]\s*/, '')
-                    return <li key={i}>{cleanLine}</li>
-                  })}
-                </ul>
-              ) : (
-                <p className="text-xs font-medium italic text-slate-400 sm:text-sm">
-                  Für dieses Turnier wurden noch keine spezifischen Regel-Hinweise hinterlegt.
-                </p>
-              )}
-            </div>
-          </div>
-          <a
-            href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/regeln`}
-            className="shrink-0 self-start whitespace-nowrap rounded-2xl px-5 py-3 text-xs font-black transition shadow-lg sm:self-center sm:text-sm"
-            style={{ backgroundColor: primaryColor, color: primaryContrastText }}
-          >
-            Hier zu allen Regeln →
-          </a>
-        </div>
-      </section>
 
       {/* 5. KO-PHASE OVERVIEW */}
       {allKoMatches.length > 0 && (
