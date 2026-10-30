@@ -188,7 +188,6 @@ export default function AdminEinstellungenPage() {
       setSecondaryColor(t.secondary_color || '#10b981')
       setLogoUrl(t.logo_url || '')
 
-      // Prüfen, ob die geladenen Farben einem Preset entsprechen
       const matchedPreset = DESIGN_PRESETS.find(
         (p) => p.primary === t.primary_color && p.secondary === t.secondary_color
       )
@@ -199,7 +198,6 @@ export default function AdminEinstellungenPage() {
         setDesignMode('custom')
       }
 
-      // Zahlungsdaten
       setEntryFee(t.entry_fee ?? 0)
       setCashEnabled(t.cash_enabled ?? true)
       setBankTransferEnabled(t.bank_transfer_enabled ?? false)
@@ -209,7 +207,6 @@ export default function AdminEinstellungenPage() {
       setPaypalEnabled(t.paypal_enabled ?? false)
       setPaypalPaymentLink(t.paypal_payment_link || '')
 
-      // Einstellungen aus tournament_settings laden
       const { data: settingsData } = await supabase
         .from('tournament_settings')
         .select('*')
@@ -233,7 +230,6 @@ export default function AdminEinstellungenPage() {
     }
   }
 
-  // LOGO UPLOAD HANDLER FÜR SUPABASE STORAGE
   async function handleLogoFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !tournament?.id) return
@@ -246,7 +242,6 @@ export default function AdminEinstellungenPage() {
       const fileName = `${tournament.id}_${Date.now()}.${fileExt}`
       const filePath = `logos/${fileName}`
 
-      // Versuche das Bild in den Supabase Bucket 'tournament-logos' hochzuladen
       const { error: uploadError } = await supabase.storage
         .from('tournament-logos')
         .upload(filePath, file, { upsert: true })
@@ -257,7 +252,6 @@ export default function AdminEinstellungenPage() {
         )
       }
 
-      // Öffentliche URL abrufen
       const {
         data: { publicUrl },
       } = supabase.storage.from('tournament-logos').getPublicUrl(filePath)
@@ -295,7 +289,6 @@ export default function AdminEinstellungenPage() {
     setStatusMessage(null)
 
     try {
-      // 1. Hauptturnier-Tabelle aktualisieren
       const { error: tourneyErr } = await supabase
         .from('tournaments')
         .update({
@@ -319,7 +312,6 @@ export default function AdminEinstellungenPage() {
 
       if (tourneyErr) throw tourneyErr
 
-      // 2. Settings aktualisieren / eintragen
       const settingsPayload = {
         tournament_id: tournament.id,
         team_count: teamCount,
@@ -363,7 +355,7 @@ export default function AdminEinstellungenPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -378,7 +370,10 @@ export default function AdminEinstellungenPage() {
   }
 
   return (
-    <form onSubmit={handleSave} className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
+    <form
+      onSubmit={handleSave}
+      className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 bg-slate-950 [color-scheme:dark]"
+    >
       {statusMessage && (
         <div
           className={`w-full rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
@@ -497,7 +492,7 @@ export default function AdminEinstellungenPage() {
           2. Design &amp; Branding
         </h2>
 
-        {/* TURNIERLOGO (BILD-UPLOAD & URL) */}
+        {/* TURNIERLOGO */}
         <div className="space-y-3 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
           <label className="block text-xs font-black text-white">
             🖼️ Turnier-Logo
@@ -507,7 +502,6 @@ export default function AdminEinstellungenPage() {
           </p>
 
           <div className="grid gap-4 sm:grid-cols-2 items-start pt-2">
-            {/* Datei Upload */}
             <div className="space-y-2">
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 1. Bild-Datei hochladen
@@ -526,7 +520,6 @@ export default function AdminEinstellungenPage() {
               )}
             </div>
 
-            {/* URL EINGABE */}
             <div className="space-y-2">
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 2. Oder Bild-URL eingeben
@@ -541,7 +534,6 @@ export default function AdminEinstellungenPage() {
             </div>
           </div>
 
-          {/* VORSCHAU */}
           {logoUrl && (
             <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/80 p-3 text-center">
               <span className="text-[10px] text-slate-400 uppercase font-black block mb-2 tracking-wider">Logo Vorschau</span>
@@ -550,7 +542,7 @@ export default function AdminEinstellungenPage() {
           )}
         </div>
 
-        {/* DESIGN FARBSCHEMA - TOGGLE PRESET VS CUSTOM */}
+        {/* DESIGN FARBSCHEMA */}
         <div className="space-y-4 pt-2">
           <div className="flex items-center justify-between">
             <label className="block text-xs font-black text-white">
@@ -582,7 +574,6 @@ export default function AdminEinstellungenPage() {
             </div>
           </div>
 
-          {/* OPTION A: PRESETS */}
           {designMode === 'preset' && (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {DESIGN_PRESETS.map((preset) => {
@@ -625,7 +616,6 @@ export default function AdminEinstellungenPage() {
             </div>
           )}
 
-          {/* OPTION B: CUSTOM FARBWAHL */}
           {designMode === 'custom' && (
             <div className="grid gap-4 sm:grid-cols-2 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
               <div>
@@ -745,7 +735,6 @@ export default function AdminEinstellungenPage() {
           💡 <strong>Hinweis:</strong> Die genaue Gruppenanzahl und Qualifikationsregeln stellst du direkt im Bereich <strong>&quot;Gruppen&quot;</strong> ein.
         </p>
 
-        {/* SPIEL UM PLATZ 3 TOGGLE */}
         <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4">
           <div>
             <div className="text-xs font-black text-white">Spiel um Platz 3 austragen</div>

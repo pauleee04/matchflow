@@ -42,7 +42,8 @@ type TournamentInfo = {
   slug?: string | null
   logo_url: string | null
   primary_color: string | null
-  background_style: string | null
+  secondary_color?: string | null
+  background_style?: string | null
   has_third_place_match?: boolean | null
 }
 
@@ -77,9 +78,43 @@ const KO_PHASES_MAP: Record<string, string> = {
   final: 'Finale',
 }
 
-const KO_CARD_HEIGHT = 84
-const KO_ROW_HEIGHT = 44
+const KO_CARD_HEIGHT = 88
+const KO_ROW_HEIGHT = 46
 const KO_HEADER_HEIGHT = 28
+
+// HELPER FÜR FARBUMWANDLUNGEN & KONSTRASTE
+function hexToRgba(hex: string | null | undefined, alpha: number, fallback: string = '#2563eb'): string {
+  let c = (hex || fallback).trim()
+  if (!c.startsWith('#')) return `rgba(37, 99, 235, ${alpha})`
+  if (c.length === 4) {
+    c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3]
+  }
+  if (c.length === 7) {
+    const r = parseInt(c.slice(1, 3), 16)
+    const g = parseInt(c.slice(3, 5), 16)
+    const b = parseInt(c.slice(5, 7), 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  return `rgba(37, 99, 235, ${alpha})`
+}
+
+function getContrastTextColor(hexColor: string | null | undefined): string {
+  if (!hexColor || !hexColor.startsWith('#')) return '#ffffff'
+  let hex = hexColor.replace('#', '')
+  if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('')
+  if (hex.length !== 6) return '#ffffff'
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000
+  return yiq >= 135 ? '#090d16' : '#ffffff'
+}
+
+function getPageBackgroundStyle(primary?: string | null, secondary?: string | null) {
+  const p1 = hexToRgba(primary, 0.25, '#2563eb')
+  const p2 = hexToRgba(secondary || primary, 0.12, '#3b82f6')
+  return `radial-gradient(circle at 50% 5%, ${p1} 0%, ${p2} 45%, #030712 90%)`
+}
 
 function getPhaseName(phase: string | null | undefined, groupId?: number | null) {
   if (!phase) return groupId ? 'Gruppenspiel' : 'Spiel'
@@ -256,7 +291,7 @@ export default function PublicLivePage() {
     try {
       const { data: tourneyData, error: tourneyError } = await supabase
         .from('tournaments')
-        .select('id, name, slug, logo_url, primary_color, background_style, has_third_place_match')
+        .select('id, name, slug, logo_url, primary_color, secondary_color, background_style, has_third_place_match')
         .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
         .maybeSingle()
 
@@ -391,6 +426,8 @@ export default function PublicLivePage() {
   }, [knockoutMatches])
 
   const primaryColor = tournament?.primary_color?.trim() || '#2563eb'
+  const secondaryColor = tournament?.secondary_color?.trim() || '#3b82f6'
+  const primaryContrastText = getContrastTextColor(primaryColor)
 
   function getKOSize() {
     if (matches.some((m) => m.phase === 'round_of_32')) return 32
@@ -480,30 +517,37 @@ export default function PublicLivePage() {
         <div
           className={`h-full overflow-hidden rounded-2xl border shadow-lg transition flex flex-col justify-between backdrop-blur-md ${
             isFinal
-              ? 'border-amber-500/80 bg-slate-900/90 text-white ring-1 ring-amber-500/40'
+              ? 'border-amber-400/80 bg-slate-900/95 ring-1 ring-amber-400/30'
               : isThirdPlace
-              ? 'border-amber-600/50 bg-slate-900/90 text-white'
+              ? 'border-amber-600/50 bg-slate-900/90'
               : finished
-              ? 'border-emerald-500/40 bg-slate-900/90 text-white'
+              ? 'border-slate-700 bg-slate-900/90'
               : live
-              ? 'border-red-500/60 bg-red-950/60 animate-pulse text-white'
+              ? 'border-red-500/80 bg-slate-900/95 animate-pulse'
               : match
-              ? 'border-white/10 bg-slate-900/80 text-slate-100'
+              ? 'border-slate-700/80 bg-slate-900/80 text-slate-100'
               : 'border-dashed border-white/10 bg-slate-950/40 text-slate-500'
           }`}
+          style={{
+            borderColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.5) : undefined,
+          }}
         >
           <div
             className={`flex h-5 items-center justify-between border-b px-2 text-[8px] font-black uppercase tracking-wider whitespace-nowrap ${
               isFinal
-                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
+                ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
                 : isThirdPlace
                 ? 'border-amber-600/30 bg-amber-600/10 text-amber-300'
                 : finished
-                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+                ? 'border-slate-800 text-white'
                 : live
-                ? 'border-red-500/20 bg-red-500/10 text-red-400'
+                ? 'border-red-500/20 bg-red-500/10 text-red-300'
                 : 'border-white/10 bg-slate-950/60 text-slate-400'
             }`}
+            style={{
+              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.15) : undefined,
+              color: finished && !isFinal && !isThirdPlace ? primaryColor : undefined,
+            }}
           >
             <span>{isThirdPlace ? 'Platz 3' : `Spiel #${position}`}</span>
             {live ? (
@@ -511,7 +555,7 @@ export default function PublicLivePage() {
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> LIVE
               </span>
             ) : finished ? (
-              <span className="text-emerald-400 font-extrabold">✓ Fertig</span>
+              <span className="font-extrabold" style={{ color: primaryColor }}>✓ Fertig</span>
             ) : (
               <span className="text-slate-400 font-normal">{match && formatTime(match.scheduled_time)}</span>
             )}
@@ -521,11 +565,20 @@ export default function PublicLivePage() {
             <div
               className={`flex h-5 items-center justify-between gap-1 rounded-md px-1.5 text-[10px] ${
                 t1Winner
-                  ? 'bg-emerald-500/20 text-emerald-300 font-black'
+                  ? 'font-black ring-1'
                   : match
-                  ? 'bg-slate-950/60 text-slate-200 font-bold'
+                  ? 'bg-slate-800/80 text-slate-200 font-bold'
                   : 'text-slate-500 font-medium'
               }`}
+              style={
+                t1Winner
+                  ? {
+                      backgroundColor: hexToRgba(primaryColor, 0.25),
+                      color: '#ffffff',
+                      borderColor: hexToRgba(primaryColor, 0.5),
+                    }
+                  : undefined
+              }
             >
               <span title={t1Name} className="truncate min-w-0">{t1Name}</span>
               <span className="shrink-0 font-mono font-black">{match ? match.team1_score ?? '-' : '-'}</span>
@@ -534,11 +587,20 @@ export default function PublicLivePage() {
             <div
               className={`flex h-5 items-center justify-between gap-1 rounded-md px-1.5 text-[10px] ${
                 t2Winner
-                  ? 'bg-emerald-500/20 text-emerald-300 font-black'
+                  ? 'font-black ring-1'
                   : match
-                  ? 'bg-slate-950/60 text-slate-200 font-bold'
+                  ? 'bg-slate-800/80 text-slate-200 font-bold'
                   : 'text-slate-500 font-medium'
               }`}
+              style={
+                t2Winner
+                  ? {
+                      backgroundColor: hexToRgba(primaryColor, 0.25),
+                      color: '#ffffff',
+                      borderColor: hexToRgba(primaryColor, 0.5),
+                    }
+                  : undefined
+              }
             >
               <span title={t2Name} className="truncate min-w-0">{t2Name}</span>
               <span className="shrink-0 font-mono font-black">{match ? match.team2_score ?? '-' : '-'}</span>
@@ -582,7 +644,7 @@ export default function PublicLivePage() {
       return (
         <div className="relative w-3 shrink-0" style={{ height }} aria-hidden="true">
           <svg
-            className="absolute inset-0 w-full text-slate-700"
+            className="absolute inset-0 w-full text-slate-600"
             style={{ top: KO_HEADER_HEIGHT, height: bodyHeight }}
             viewBox={`0 0 28 ${bodyHeight}`}
             preserveAspectRatio="none"
@@ -612,7 +674,7 @@ export default function PublicLivePage() {
     return (
       <div className="relative w-3 shrink-0" style={{ height }} aria-hidden="true">
         <svg
-          className="absolute inset-0 w-full text-slate-700"
+          className="absolute inset-0 w-full text-slate-600"
           style={{ top: KO_HEADER_HEIGHT, height: bodyHeight }}
           viewBox={`0 0 28 ${bodyHeight}`}
           preserveAspectRatio="none"
@@ -670,7 +732,7 @@ export default function PublicLivePage() {
         style={{ height: KO_HEADER_HEIGHT + totalRows * KO_ROW_HEIGHT }}
       >
         <div
-          className="flex shrink-0 items-center justify-center text-[9px] font-black uppercase tracking-wider text-slate-400 truncate px-1"
+          className="flex shrink-0 items-center justify-center text-[9px] font-black uppercase tracking-wider text-slate-300 truncate px-1"
           style={{ height: KO_HEADER_HEIGHT }}
         >
           {getPhaseName(phase)}
@@ -766,8 +828,8 @@ export default function PublicLivePage() {
                 style={{ height: KO_HEADER_HEIGHT }}
               >
                 <span
-                  className="rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-slate-950 shadow-sm truncate"
-                  style={{ backgroundColor: primaryColor }}
+                  className="rounded-md px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest shadow-sm truncate"
+                  style={{ backgroundColor: primaryColor, color: primaryContrastText }}
                 >
                   🏆 FINALE &amp; PLATZ 3
                 </span>
@@ -778,7 +840,7 @@ export default function PublicLivePage() {
                 <div className="w-full">
                   <div className="mb-1 flex items-center justify-center gap-1.5">
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                    <span className="text-[8px] font-black uppercase tracking-wider text-slate-400">
+                    <span className="text-[8px] font-black uppercase tracking-wider text-slate-300">
                       Das große Finale
                     </span>
                   </div>
@@ -790,7 +852,7 @@ export default function PublicLivePage() {
                   <div className="w-full">
                     <div className="mb-1 flex items-center justify-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-amber-600" />
-                      <span className="text-[8px] font-black uppercase tracking-wider text-slate-400">
+                      <span className="text-[8px] font-black uppercase tracking-wider text-slate-300">
                         Spiel um Platz 3
                       </span>
                     </div>
@@ -798,7 +860,7 @@ export default function PublicLivePage() {
                       <BracketMatchCard phase="third_place" position={1} />
                     ) : (
                       <div className="w-full rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-2 text-center">
-                        <p className="text-[9px] font-bold text-slate-500">Spiel um Platz 3 (folgt)</p>
+                        <p className="text-[9px] font-bold text-slate-400">Spiel um Platz 3 (folgt)</p>
                       </div>
                     )}
                   </div>
@@ -835,7 +897,7 @@ export default function PublicLivePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+      <div className="flex min-h-screen items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -851,377 +913,281 @@ export default function PublicLivePage() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-lg rounded-3xl border border-red-500/30 bg-red-950/20 p-6 text-center backdrop-blur-md">
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-xl text-red-400">
-          ⚠️
+      <div className="flex min-h-screen items-center justify-center p-6 bg-slate-950 [color-scheme:dark]">
+        <div className="mx-auto max-w-lg rounded-3xl border border-red-500/30 bg-red-950/20 p-6 text-center backdrop-blur-md">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-xl text-red-400">
+            ⚠️
+          </div>
+          <h2 className="text-lg font-black text-slate-100">Fehler beim Laden</h2>
+          <p className="mt-1 text-xs font-semibold text-red-300">{error}</p>
         </div>
-        <h2 className="text-lg font-black text-slate-100">Fehler beim Laden</h2>
-        <p className="mt-1 text-xs font-semibold text-red-300">{error}</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
-      {/* SEITEN-KOPF */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            {tournament?.logo_url ? (
-              <img
-                src={tournament.logo_url}
-                alt={tournament.name}
-                className="h-12 w-12 rounded-2xl object-contain bg-slate-950/60 p-1 border border-white/10"
-              />
-            ) : (
-              <span
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-slate-950 shadow-lg"
-                style={{ backgroundColor: primaryColor }}
-              >
-                🏆
-              </span>
-            )}
-            <div>
-              <span
-                className="text-[10px] font-black uppercase tracking-[0.2em]"
-                style={{ color: primaryColor }}
-              >
-                Echtzeit Arena
-              </span>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                {tournament?.name || 'Live-Spielplan & Ergebnisse'}
-              </h1>
+    <div
+      className="min-h-screen w-full bg-slate-950 text-slate-100 [color-scheme:dark] px-4 py-6 sm:px-8 sm:py-10"
+      style={{ background: getPageBackgroundStyle(primaryColor, secondaryColor) }}
+    >
+      <div className="mx-auto w-full max-w-5xl space-y-8 pb-16">
+        {/* SEITEN-KOPF */}
+        <section className="rounded-[32px] border border-white/10 bg-slate-900/80 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {tournament?.logo_url ? (
+                <img
+                  src={tournament.logo_url}
+                  alt={tournament.name}
+                  className="h-12 w-12 rounded-2xl object-contain bg-slate-950/60 p-1 border border-white/10"
+                />
+              ) : (
+                <span
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-xl font-black shadow-lg"
+                  style={{ backgroundColor: primaryColor, color: primaryContrastText }}
+                >
+                  🏆
+                </span>
+              )}
+              <div>
+                <span
+                  className="text-[10px] font-black uppercase tracking-[0.2em]"
+                  style={{ color: primaryColor }}
+                >
+                  Echtzeit Arena
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                  {tournament?.name || 'Live-Spielplan & Ergebnisse'}
+                </h1>
+              </div>
             </div>
+            <span
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold"
+              style={{
+                backgroundColor: hexToRgba(primaryColor, 0.15),
+                borderColor: hexToRgba(primaryColor, 0.3),
+                color: primaryColor,
+              }}
+            >
+              <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
+              Live Sync
+            </span>
           </div>
-          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-bold text-emerald-400">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            Live Sync
-          </span>
-        </div>
-        <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-300 font-medium">
-          Alle aktuellen Gruppentabellen, Begegnungen und K.-o.-Spiele in Echtzeit.
-        </p>
-      </section>
+          <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-300 font-medium">
+            Alle aktuellen Gruppentabellen, Begegnungen und K.-o.-Spiele in Echtzeit.
+          </p>
+        </section>
 
-      {/* LAUFENDE SPIELE (WENN VORHANDEN) */}
-      {liveMatches.length > 0 && (
-        <section className="rounded-[32px] border border-red-500/30 bg-red-500/10 p-6 shadow-2xl backdrop-blur-xl space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping" />
-            <h2 className="text-lg font-black text-red-400">
-              Laufende Spiele ({liveMatches.length})
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {liveMatches.map((match) => (
-              <article
-                key={match.id}
-                className="rounded-2xl border border-red-500/30 bg-slate-950/80 p-4 shadow-xl backdrop-blur-md space-y-3"
-              >
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-red-500/20 border border-red-500/30 px-2.5 py-0.5 text-[10px] font-black uppercase text-red-300">
-                      LIVE
-                    </span>
-                    {formatTime(match.scheduled_time) && (
-                      <span className="text-[10px] font-mono font-bold text-red-400">
-                        ⏰ {formatTime(match.scheduled_time)} Uhr
+        {/* LAUFENDE SPIELE (WENN VORHANDEN) */}
+        {liveMatches.length > 0 && (
+          <section className="rounded-[32px] border border-red-500/40 bg-red-950/30 p-6 shadow-2xl backdrop-blur-xl space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping" />
+              <h2 className="text-lg font-black text-red-400">
+                Laufende Spiele ({liveMatches.length})
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {liveMatches.map((match) => (
+                <article
+                  key={match.id}
+                  className="rounded-2xl border border-red-500/40 bg-slate-900/90 p-4 shadow-xl backdrop-blur-md space-y-3"
+                >
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-red-500/20 border border-red-500/40 px-2.5 py-0.5 text-[10px] font-black uppercase text-red-300">
+                        LIVE
+                      </span>
+                      {formatTime(match.scheduled_time) && (
+                        <span className="text-[10px] font-mono font-bold text-red-400">
+                          ⏰ {formatTime(match.scheduled_time)} Uhr
+                        </span>
+                      )}
+                    </div>
+                    {match.table_number && (
+                      <span className="text-slate-300 font-mono">
+                        Tisch {match.table_number}
                       </span>
                     )}
                   </div>
-                  {match.table_number && (
-                    <span className="text-slate-400 font-mono">
-                      Tisch {match.table_number}
-                    </span>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between font-black text-sm text-white">
-                    <span className="truncate">{getTeamName(match.team1_id)}</span>
-                    <span className="text-base font-mono text-emerald-400">
-                      {match.team1_score ?? '-'}
-                    </span>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between font-black text-sm text-white">
+                      <span className="truncate">{getTeamName(match.team1_id)}</span>
+                      <span className="text-base font-mono font-black" style={{ color: primaryColor }}>
+                        {match.team1_score ?? '-'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between font-black text-sm text-white">
+                      <span className="truncate">{getTeamName(match.team2_id)}</span>
+                      <span className="text-base font-mono font-black" style={{ color: primaryColor }}>
+                        {match.team2_score ?? '-'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between font-black text-sm text-white">
-                    <span className="truncate">{getTeamName(match.team2_id)}</span>
-                    <span className="text-base font-mono text-emerald-400">
-                      {match.team2_score ?? '-'}
-                    </span>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* K.-O.-BRACKET / TURNIERBAUM */}
-      {hasKOStarted && (
-        <section className="space-y-4">
-          <div className="flex items-center gap-2.5 px-1">
-            <span className="text-2xl">🌳</span>
-            <div>
-              <h2 className="text-xl font-black text-white">
-                K.-o.-Phase Turnierbaum
-              </h2>
-              <p className="text-xs text-slate-400 font-medium">Der direkte Weg ins Finale und zum Spiel um Platz 3.</p>
+                </article>
+              ))}
             </div>
-          </div>
-          <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-4 sm:p-6 shadow-2xl backdrop-blur-xl overflow-hidden">
-            <KnockoutBracket />
-          </div>
-        </section>
-      )}
+          </section>
+        )}
 
-      {/* GRUPPENTABELLEN */}
-      {groupStandings.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center gap-2.5 px-1">
-            <span className="text-xl">📊</span>
-            <h2 className="text-xl font-black text-white">
-              Gruppentabellen
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {groupStandings.map(({ group, standings }) => (
-              <div key={group.id} className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-4">
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider">
-                    {group.name}
-                  </h3>
-                  <span className="text-[10px] font-bold text-slate-400">
-                    {standings.length} Teams
-                  </span>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-white/10 text-[10px] font-black uppercase text-slate-400">
-                        <th className="py-2 px-1 text-center">#</th>
-                        <th className="py-2 px-1">Team</th>
-                        <th className="py-2 px-1 text-center" title="Spiele">Sp</th>
-                        <th className="py-2 px-1 text-center text-emerald-400" title="Siege">S</th>
-                        <th className="py-2 px-1 text-center text-amber-400" title="Unentschieden">U</th>
-                        <th className="py-2 px-1 text-center text-red-400" title="Niederlagen">N</th>
-                        <th className="py-2 px-1 text-center" title="Tore">Tore</th>
-                        <th className="py-2 px-1 text-center" title="Differenz">Diff</th>
-                        <th className="py-2 px-1 text-right font-black text-white" title="Punkte">Pkt</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/10 font-bold text-slate-200">
-                      {standings.map((st, idx) => {
-                        const isQualified = idx < 2
-                        return (
-                          <tr
-                            key={st.teamId}
-                            className={`transition ${
-                              isQualified ? 'bg-emerald-500/10 text-white' : ''
-                            }`}
-                          >
-                            <td className="py-2.5 px-1 text-center font-mono">
-                              <span
-                                className={`inline-flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-black ${
-                                  isQualified
-                                    ? 'bg-emerald-500 text-slate-950'
-                                    : 'bg-slate-950/60 text-slate-400 border border-white/10'
-                                }`}
-                              >
-                                {idx + 1}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-1 font-extrabold text-white truncate max-w-[150px]">
-                              {st.teamName}
-                            </td>
-                            <td className="py-2.5 px-1 text-center font-mono text-slate-400">
-                              {st.played}
-                            </td>
-                            <td className="py-2.5 px-1 text-center font-mono text-emerald-400">
-                              {st.wins}
-                            </td>
-                            <td className="py-2.5 px-1 text-center font-mono text-amber-400">
-                              {st.draws}
-                            </td>
-                            <td className="py-2.5 px-1 text-center font-mono text-red-400">
-                              {st.losses}
-                            </td>
-                            <td className="py-2.5 px-1 text-center font-mono text-slate-300">
-                              {st.scored}:{st.conceded}
-                            </td>
-                            <td className="py-2.5 px-1 text-center font-mono font-black">
-                              <span
-                                className={
-                                  st.diff > 0
-                                    ? 'text-emerald-400'
-                                    : st.diff < 0
-                                    ? 'text-red-400'
-                                    : 'text-slate-400'
-                                }
-                              >
-                                {st.diff > 0 ? `+${st.diff}` : st.diff}
-                              </span>
-                            </td>
-                            <td
-                              className="py-2.5 px-1 text-right font-mono font-black text-sm"
-                              style={{ color: primaryColor }}
-                            >
-                              {st.points}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+        {/* K.-O.-BRACKET / TURNIERBAUM */}
+        {hasKOStarted && (
+          <section className="space-y-4">
+            <div className="flex items-center gap-2.5 px-1">
+              <span className="text-2xl">🌳</span>
+              <div>
+                <h2 className="text-xl font-black text-white">
+                  K.-o.-Phase Turnierbaum
+                </h2>
+                <p className="text-xs text-slate-300 font-medium">Der direkte Weg ins Finale und zum Spiel um Platz 3.</p>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+            </div>
+            <div className="rounded-[32px] border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-xl overflow-hidden">
+              <KnockoutBracket />
+            </div>
+          </section>
+        )}
 
-      {/* SPIELPLAN UNTERGLIEDERT NACH GRUPPEN */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-2.5 px-1">
-          <span className="text-xl">📅</span>
-          <h2 className="text-xl font-black text-white">
-            Spielplan nach Gruppen
-          </h2>
-        </div>
-
-        <div className="space-y-4">
-          {matchesByGroup.map(({ group, matches: gMatches }) => {
-            const sectionKey = `group-${group.id}`
-            const isCollapsed = collapsedSections[sectionKey] ?? false
-
-            return (
-              <div key={group.id} className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-4">
-                <button
-                  type="button"
-                  onClick={() => toggleSection(sectionKey)}
-                  className="flex w-full items-center justify-between text-left transition hover:opacity-80"
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black text-slate-950 shadow-md"
-                      style={{ backgroundColor: primaryColor }}
-                    >
-                      {group.name.replace(/gruppe\s*/i, '').trim().charAt(0) || 'G'}
-                    </span>
-                    <h3 className="text-base font-black text-white">
+        {/* GRUPPENTABELLEN */}
+        {groupStandings.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex items-center gap-2.5 px-1">
+              <span className="text-xl">📊</span>
+              <h2 className="text-xl font-black text-white">
+                Gruppentabellen
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {groupStandings.map(({ group, standings }) => (
+                <div key={group.id} className="rounded-[32px] border border-white/10 bg-slate-900/80 overflow-hidden shadow-2xl backdrop-blur-xl space-y-4 p-5 sm:p-6">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <h3 className="text-sm font-black text-white uppercase tracking-wider">
                       {group.name}
                     </h3>
-                    <span className="text-[10px] font-bold text-slate-400">
-                      {gMatches.length} {gMatches.length === 1 ? 'Spiel' : 'Spiele'}
+                    <span className="text-[10px] font-bold text-slate-300">
+                      {standings.length} Teams
                     </span>
                   </div>
-                  <span className="text-slate-400 font-bold text-xs">
-                    {isCollapsed ? '▼ Ausklappen' : '▲ Einklappen'}
-                  </span>
-                </button>
 
-                {!isCollapsed && (
-                  <div className="pt-2 border-t border-white/10">
-                    {gMatches.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {gMatches.map((match) => {
-                          const finished = isFinished(match)
-                          const live = isLive(match)
-                          const formattedMatchTime = formatTime(match.scheduled_time)
-
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-white/10 text-[10px] font-black uppercase text-slate-400">
+                          <th className="py-2 px-1 text-center">#</th>
+                          <th className="py-2 px-1">Team</th>
+                          <th className="py-2 px-1 text-center" title="Spiele">Sp</th>
+                          <th className="py-2 px-1 text-center" style={{ color: primaryColor }} title="Siege">S</th>
+                          <th className="py-2 px-1 text-center text-amber-300" title="Unentschieden">U</th>
+                          <th className="py-2 px-1 text-center text-red-300" title="Niederlagen">N</th>
+                          <th className="py-2 px-1 text-center" title="Tore">Tore</th>
+                          <th className="py-2 px-1 text-center" title="Differenz">Diff</th>
+                          <th className="py-2 px-1 text-right font-black text-white" title="Punkte">Pkt</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/10 font-bold text-slate-200">
+                        {standings.map((st, idx) => {
+                          const isQualified = idx < 2
                           return (
-                            <article
-                              key={match.id}
-                              className={`rounded-2xl border p-4 transition shadow-md backdrop-blur-md ${
-                                live
-                                  ? 'border-red-500/40 bg-red-950/40'
-                                  : finished
-                                  ? 'border-emerald-500/20 bg-emerald-500/5'
-                                  : 'border-white/10 bg-slate-950/60'
-                              }`}
+                            <tr
+                              key={st.teamId}
+                              className="transition"
+                              style={
+                                isQualified
+                                  ? {
+                                      backgroundColor: hexToRgba(primaryColor, 0.12),
+                                    }
+                                  : undefined
+                              }
                             >
-                              <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-mono text-slate-300 font-bold">
-                                    ⏰ {formattedMatchTime ? `${formattedMatchTime} Uhr` : 'Zeit k.A.'}
-                                  </span>
-                                  {live && (
-                                    <span className="text-red-400 font-black animate-pulse flex items-center gap-1">
-                                      • LIVE
-                                    </span>
-                                  )}
-                                  {finished && (
-                                    <span className="text-emerald-400">
-                                      • ✓ Beendet
-                                    </span>
-                                  )}
-                                </div>
-                                {match.table_number != null && (
-                                  <span className="font-mono">Tisch {match.table_number}</span>
-                                )}
-                              </div>
-
-                              <div className="mt-3 space-y-1.5 text-xs font-extrabold text-white">
-                                <div className="flex items-center justify-between">
-                                  <span className="truncate max-w-[150px]">{getTeamName(match.team1_id)}</span>
-                                  <span className="font-mono font-black text-sm">
-                                    {match.team1_score ?? '-'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="truncate max-w-[150px]">{getTeamName(match.team2_id)}</span>
-                                  <span className="font-mono font-black text-sm">
-                                    {match.team2_score ?? '-'}
-                                  </span>
-                                </div>
-                              </div>
-                            </article>
+                              <td className="py-2.5 px-1 text-center font-mono">
+                                <span
+                                  className="inline-flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-black"
+                                  style={
+                                    isQualified
+                                      ? {
+                                          backgroundColor: primaryColor,
+                                          color: primaryContrastText,
+                                        }
+                                      : {
+                                          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                          color: 'rgba(255, 255, 255, 0.7)',
+                                        }
+                                  }
+                                >
+                                  {idx + 1}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-1 font-extrabold text-white truncate max-w-[150px]">
+                                {st.teamName}
+                              </td>
+                              <td className="py-2.5 px-1 text-center font-mono text-slate-400">{st.played}</td>
+                              <td className="py-2.5 px-1 text-center font-mono" style={{ color: primaryColor }}>
+                                {st.wins}
+                              </td>
+                              <td className="py-2.5 px-1 text-center font-mono text-amber-300">{st.draws}</td>
+                              <td className="py-2.5 px-1 text-center font-mono text-red-300">{st.losses}</td>
+                              <td className="py-2.5 px-1 text-center font-mono text-slate-300">
+                                {st.scored}:{st.conceded}
+                              </td>
+                              <td className="py-2.5 px-1 text-center font-mono font-black">
+                                <span
+                                  className={
+                                    st.diff > 0 ? 'text-emerald-400' : st.diff < 0 ? 'text-red-400' : 'text-slate-400'
+                                  }
+                                >
+                                  {st.diff > 0 ? `+${st.diff}` : st.diff}
+                                </span>
+                              </td>
+                              <td
+                                className="py-2.5 px-1 text-right font-mono font-black text-sm text-white"
+                              >
+                                {st.points}
+                              </td>
+                            </tr>
                           )
                         })}
-                      </div>
-                    ) : (
-                      <div className="text-center text-xs font-bold text-slate-400 py-4">
-                        Keine Spiele für diese Gruppe angesetzt.
-                      </div>
-                    )}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </section>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-      {/* SPIELPLAN UNTERGLIEDERT NACH K.-O.-PHASEN */}
-      {matchesByKOPhase.length > 0 && (
+        {/* SPIELPLAN UNTERGLIEDERT NACH GRUPPEN */}
         <section className="space-y-4">
           <div className="flex items-center gap-2.5 px-1">
-            <span className="text-xl">⚔️</span>
+            <span className="text-xl">📅</span>
             <h2 className="text-xl font-black text-white">
-              K.-o.-Phase Spiele
+              Spielplan nach Gruppen
             </h2>
           </div>
 
           <div className="space-y-4">
-            {matchesByKOPhase.map(({ phase, phaseName, matches: pMatches }) => {
-              const sectionKey = `ko-${phase}`
+            {matchesByGroup.map(({ group, matches: gMatches }) => {
+              const sectionKey = `group-${group.id}`
               const isCollapsed = collapsedSections[sectionKey] ?? false
 
               return (
-                <div key={phase} className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl space-y-4">
+                <div key={group.id} className="rounded-[32px] border border-white/10 bg-slate-900/80 p-6 shadow-2xl backdrop-blur-xl space-y-4">
                   <button
                     type="button"
                     onClick={() => toggleSection(sectionKey)}
                     className="flex w-full items-center justify-between text-left transition hover:opacity-80"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/30 text-xs font-black text-amber-400">
-                        🏆
+                      <span
+                        className="flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black shadow-md"
+                        style={{ backgroundColor: primaryColor, color: primaryContrastText }}
+                      >
+                        {group.name.replace(/gruppe\s*/i, '').trim().charAt(0) || 'G'}
                       </span>
                       <h3 className="text-base font-black text-white">
-                        {phaseName}
+                        {group.name}
                       </h3>
-                      <span className="text-[10px] font-bold text-slate-400">
-                        {pMatches.length} {pMatches.length === 1 ? 'Spiel' : 'Spiele'}
+                      <span className="text-[10px] font-bold text-slate-300">
+                        {gMatches.length} {gMatches.length === 1 ? 'Spiel' : 'Spiele'}
                       </span>
                     </div>
                     <span className="text-slate-400 font-bold text-xs">
@@ -1231,62 +1197,98 @@ export default function PublicLivePage() {
 
                   {!isCollapsed && (
                     <div className="pt-2 border-t border-white/10">
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {pMatches.map((match) => {
-                          const finished = isFinished(match)
-                          const live = isLive(match)
-                          const formattedMatchTime = formatTime(match.scheduled_time)
+                      {gMatches.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {gMatches.map((match) => {
+                            const finished = isFinished(match)
+                            const live = isLive(match)
+                            const formattedMatchTime = formatTime(match.scheduled_time)
+                            const t1Win = finished && match.team1_score != null && match.team2_score != null && match.team1_score > match.team2_score
+                            const t2Win = finished && match.team1_score != null && match.team2_score != null && match.team2_score > match.team1_score
 
-                          return (
-                            <article
-                              key={match.id}
-                              className={`rounded-2xl border p-4 transition shadow-md backdrop-blur-md ${
-                                live
-                                  ? 'border-red-500/40 bg-red-950/40'
-                                  : finished
-                                  ? 'border-emerald-500/20 bg-emerald-500/5'
-                                  : 'border-white/10 bg-slate-950/60'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-mono text-slate-300 font-bold">
-                                    ⏰ {formattedMatchTime ? `${formattedMatchTime} Uhr` : 'Zeit k.A.'}
-                                  </span>
-                                  {live && (
-                                    <span className="text-red-400 font-black animate-pulse flex items-center gap-1">
-                                      • LIVE
+                            return (
+                              <article
+                                key={match.id}
+                                className={`rounded-2xl border p-4 transition shadow-md backdrop-blur-md ${
+                                  live
+                                    ? 'border-red-500/80 bg-slate-900/95 animate-pulse'
+                                    : finished
+                                    ? 'bg-slate-900/90'
+                                    : 'border-white/10 bg-slate-900/70'
+                                }`}
+                                style={{
+                                  borderColor: finished ? hexToRgba(primaryColor, 0.4) : undefined,
+                                  backgroundColor: finished ? hexToRgba(primaryColor, 0.08) : undefined,
+                                }}
+                              >
+                                <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-300">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-mono text-slate-300 font-bold">
+                                      ⏰ {formattedMatchTime ? `${formattedMatchTime} Uhr` : 'Zeit k.A.'}
                                     </span>
-                                  )}
-                                  {finished && (
-                                    <span className="text-emerald-400">
-                                      • ✓ Beendet
-                                    </span>
+                                    {live && (
+                                      <span className="text-red-400 font-black animate-pulse flex items-center gap-1">
+                                        • LIVE
+                                      </span>
+                                    )}
+                                    {finished && (
+                                      <span style={{ color: primaryColor }} className="font-bold">
+                                        • ✓ Beendet
+                                      </span>
+                                    )}
+                                  </div>
+                                  {match.table_number != null && (
+                                    <span className="font-mono" style={{ color: primaryColor }}>Tisch {match.table_number}</span>
                                   )}
                                 </div>
-                                {match.table_number != null && (
-                                  <span className="font-mono">Tisch {match.table_number}</span>
-                                )}
-                              </div>
 
-                              <div className="mt-3 space-y-1.5 text-xs font-extrabold text-white">
-                                <div className="flex items-center justify-between">
-                                  <span className="truncate max-w-[150px]">{getTeamName(match.team1_id)}</span>
-                                  <span className="font-mono font-black text-sm">
-                                    {match.team1_score ?? '-'}
-                                  </span>
+                                <div className="mt-3 space-y-1.5 text-xs font-extrabold text-white">
+                                  <div
+                                    className={`flex items-center justify-between rounded-lg px-2 py-1 ${
+                                      t1Win ? 'font-black' : 'bg-slate-800/50'
+                                    }`}
+                                    style={
+                                      t1Win
+                                        ? {
+                                            backgroundColor: hexToRgba(primaryColor, 0.25),
+                                            color: '#ffffff',
+                                          }
+                                        : undefined
+                                    }
+                                  >
+                                    <span className="truncate max-w-[150px]">{getTeamName(match.team1_id)}</span>
+                                    <span className="font-mono font-black text-sm">
+                                      {match.team1_score ?? '-'}
+                                    </span>
+                                  </div>
+                                  <div
+                                    className={`flex items-center justify-between rounded-lg px-2 py-1 ${
+                                      t2Win ? 'font-black' : 'bg-slate-800/50'
+                                    }`}
+                                    style={
+                                      t2Win
+                                        ? {
+                                            backgroundColor: hexToRgba(primaryColor, 0.25),
+                                            color: '#ffffff',
+                                          }
+                                        : undefined
+                                    }
+                                  >
+                                    <span className="truncate max-w-[150px]">{getTeamName(match.team2_id)}</span>
+                                    <span className="font-mono font-black text-sm">
+                                      {match.team2_score ?? '-'}
+                                    </span>
+                                  </div>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="truncate max-w-[150px]">{getTeamName(match.team2_id)}</span>
-                                  <span className="font-mono font-black text-sm">
-                                    {match.team2_score ?? '-'}
-                                  </span>
-                                </div>
-                              </div>
-                            </article>
-                          )
-                        })}
-                      </div>
+                              </article>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center text-xs font-bold text-slate-400 py-4">
+                          Keine Spiele für diese Gruppe angesetzt.
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1294,7 +1296,142 @@ export default function PublicLivePage() {
             })}
           </div>
         </section>
-      )}
+
+        {/* SPIELPLAN UNTERGLIEDERT NACH K.-O.-PHASEN */}
+        {matchesByKOPhase.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex items-center gap-2.5 px-1">
+              <span className="text-xl">⚔️</span>
+              <h2 className="text-xl font-black text-white">
+                K.-o.-Phase Spiele
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              {matchesByKOPhase.map(({ phase, phaseName, matches: pMatches }) => {
+                const sectionKey = `ko-${phase}`
+                const isCollapsed = collapsedSections[sectionKey] ?? false
+
+                return (
+                  <div key={phase} className="rounded-[32px] border border-white/10 bg-slate-900/80 p-6 shadow-2xl backdrop-blur-xl space-y-4">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(sectionKey)}
+                      className="flex w-full items-center justify-between text-left transition hover:opacity-80"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/30 text-xs font-black text-amber-400">
+                          🏆
+                        </span>
+                        <h3 className="text-base font-black text-white">
+                          {phaseName}
+                        </h3>
+                        <span className="text-[10px] font-bold text-slate-300">
+                          {pMatches.length} {pMatches.length === 1 ? 'Spiel' : 'Spiele'}
+                        </span>
+                      </div>
+                      <span className="text-slate-400 font-bold text-xs">
+                        {isCollapsed ? '▼ Ausklappen' : '▲ Einklappen'}
+                      </span>
+                    </button>
+
+                    {!isCollapsed && (
+                      <div className="pt-2 border-t border-white/10">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {pMatches.map((match) => {
+                            const finished = isFinished(match)
+                            const live = isLive(match)
+                            const formattedMatchTime = formatTime(match.scheduled_time)
+                            const t1Win = finished && match.team1_score != null && match.team2_score != null && match.team1_score > match.team2_score
+                            const t2Win = finished && match.team1_score != null && match.team2_score != null && match.team2_score > match.team1_score
+
+                            return (
+                              <article
+                                key={match.id}
+                                className={`rounded-2xl border p-4 transition shadow-md backdrop-blur-md ${
+                                  live
+                                    ? 'border-red-500/80 bg-slate-900/95 animate-pulse'
+                                    : finished
+                                    ? 'bg-slate-900/90'
+                                    : 'border-white/10 bg-slate-900/70'
+                                }`}
+                                style={{
+                                  borderColor: finished ? hexToRgba(primaryColor, 0.4) : undefined,
+                                  backgroundColor: finished ? hexToRgba(primaryColor, 0.08) : undefined,
+                                }}
+                              >
+                                <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-300">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-mono text-slate-300 font-bold">
+                                      ⏰ {formattedMatchTime ? `${formattedMatchTime} Uhr` : 'Zeit k.A.'}
+                                    </span>
+                                    {live && (
+                                      <span className="text-red-400 font-black animate-pulse flex items-center gap-1">
+                                        • LIVE
+                                      </span>
+                                    )}
+                                    {finished && (
+                                      <span style={{ color: primaryColor }} className="font-bold">
+                                        • ✓ Beendet
+                                      </span>
+                                    )}
+                                  </div>
+                                  {match.table_number != null && (
+                                    <span className="font-mono" style={{ color: primaryColor }}>Tisch {match.table_number}</span>
+                                  )}
+                                </div>
+
+                                <div className="mt-3 space-y-1.5 text-xs font-extrabold text-white">
+                                  <div
+                                    className={`flex items-center justify-between rounded-lg px-2 py-1 ${
+                                      t1Win ? 'font-black' : 'bg-slate-800/50'
+                                    }`}
+                                    style={
+                                      t1Win
+                                        ? {
+                                            backgroundColor: hexToRgba(primaryColor, 0.25),
+                                            color: '#ffffff',
+                                          }
+                                        : undefined
+                                    }
+                                  >
+                                    <span className="truncate max-w-[150px]">{getTeamName(match.team1_id)}</span>
+                                    <span className="font-mono font-black text-sm">
+                                      {match.team1_score ?? '-'}
+                                    </span>
+                                  </div>
+                                  <div
+                                    className={`flex items-center justify-between rounded-lg px-2 py-1 ${
+                                      t2Win ? 'font-black' : 'bg-slate-800/50'
+                                    }`}
+                                    style={
+                                      t2Win
+                                        ? {
+                                            backgroundColor: hexToRgba(primaryColor, 0.25),
+                                            color: '#ffffff',
+                                          }
+                                        : undefined
+                                    }
+                                  >
+                                    <span className="truncate max-w-[150px]">{getTeamName(match.team2_id)}</span>
+                                    <span className="font-mono font-black text-sm">
+                                      {match.team2_score ?? '-'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </article>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   )
 }

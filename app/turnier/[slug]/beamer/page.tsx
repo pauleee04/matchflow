@@ -142,6 +142,72 @@ function getPreviousPhaseName(phase: string) {
   }
 }
 
+// DYNAMISCHES GRID & SKALIERUNGS-SYSTEM FÜR SPIEL-KARTEN
+function getMatchesLayoutConfig(matchCount: number, hasKOStarted: boolean) {
+  if (hasKOStarted || matchCount <= 2) {
+    return {
+      gridClass: 'grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto w-full',
+      cardPadding: 'p-4 sm:p-5 min-h-[130px]',
+      fontSize: 'text-xs sm:text-sm',
+      teamNameWidth: 'max-w-[140px]',
+    }
+  }
+  if (matchCount <= 4) {
+    return {
+      gridClass: 'grid grid-cols-2 gap-4 max-w-5xl mx-auto w-full',
+      cardPadding: 'p-4 min-h-[120px]',
+      fontSize: 'text-xs',
+      teamNameWidth: 'max-w-[130px]',
+    }
+  }
+  if (matchCount <= 6) {
+    return {
+      gridClass: 'grid grid-cols-2 sm:grid-cols-3 gap-3.5 max-w-6xl mx-auto w-full',
+      cardPadding: 'p-3 min-h-[110px]',
+      fontSize: 'text-xs',
+      teamNameWidth: 'max-w-[120px]',
+    }
+  }
+  if (matchCount <= 8) {
+    return {
+      gridClass: 'grid grid-cols-2 sm:grid-cols-4 gap-3 w-full',
+      cardPadding: 'p-3 min-h-[105px]',
+      fontSize: 'text-xs',
+      teamNameWidth: 'max-w-[110px]',
+    }
+  }
+  if (matchCount <= 12) {
+    return {
+      gridClass: 'grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 w-full',
+      cardPadding: 'p-2.5 min-h-[98px]',
+      fontSize: 'text-[11px]',
+      teamNameWidth: 'max-w-[100px]',
+    }
+  }
+  if (matchCount <= 16) {
+    return {
+      gridClass: 'grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2 w-full',
+      cardPadding: 'p-2 min-h-[90px]',
+      fontSize: 'text-[10.5px]',
+      teamNameWidth: 'max-w-[90px]',
+    }
+  }
+  if (matchCount <= 24) {
+    return {
+      gridClass: 'grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 w-full',
+      cardPadding: 'p-2 min-h-[85px]',
+      fontSize: 'text-[10px]',
+      teamNameWidth: 'max-w-[85px]',
+    }
+  }
+  return {
+    gridClass: 'grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-1.5 w-full',
+    cardPadding: 'p-1.5 min-h-[80px]',
+    fontSize: 'text-[9.5px]',
+    teamNameWidth: 'max-w-[75px]',
+  }
+}
+
 // ADAPTIVES AUTO-SCROLLING
 function useSmoothAutoScroll(
   containerRef: React.RefObject<HTMLDivElement | null>,
@@ -941,34 +1007,21 @@ export default function BeamerPage() {
     return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4'
   }
 
-  const getMatchesGridClass = (matchCount: number) => {
-    if (matchCount <= 4 || hasKOStarted) {
-      return 'flex flex-wrap items-center justify-center gap-6 max-w-5xl mx-auto w-full py-2'
-    }
-    if (matchCount <= 8) {
-      return 'grid grid-cols-2 md:grid-cols-4 gap-3.5 w-full'
-    }
-    if (matchCount <= 12) {
-      return 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 w-full'
-    }
-    if (matchCount <= 18) {
-      return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 gap-2.5 w-full'
-    }
-    return 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 w-full'
-  }
-
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-white">
+      <div className="flex min-h-[50vh] items-center justify-center text-white bg-slate-950 [color-scheme:dark]">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-white" />
       </div>
     )
   }
 
+  const activeMatchesCount = activeRound?.matches.length || 0
+  const layoutConfig = getMatchesLayoutConfig(activeMatchesCount, hasKOStarted)
+
   return (
     <div
       ref={containerRef}
-      className={`relative w-full overflow-hidden text-white font-sans transition-all flex flex-col justify-between ${
+      className={`relative w-full overflow-hidden text-white font-sans transition-all flex flex-col justify-between bg-slate-950 [color-scheme:dark] ${
         isFullscreen
           ? 'fixed inset-0 z-[99999] h-screen w-screen p-8 shadow-2xl'
           : 'h-[calc(100vh-140px)] rounded-3xl p-6 border border-white/10 shadow-2xl'
@@ -1020,7 +1073,7 @@ export default function BeamerPage() {
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-black text-white hover:bg-white/20 transition backdrop-blur-md"
+              className="rounded-xl border border-white/20 bg-slate-900/80 px-4 py-2 text-xs font-black text-white hover:bg-slate-800 transition backdrop-blur-md"
             >
               {isFullscreen ? 'Vollbild Beenden' : 'Vollbild'}
             </button>
@@ -1058,9 +1111,9 @@ export default function BeamerPage() {
             {activeRound && activeRound.matches.length > 0 ? (
               <div
                 ref={matchesContainerRef}
-                className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none] pr-1 flex flex-col justify-center"
+                className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none] pr-1 flex flex-col"
               >
-                <div className={getMatchesGridClass(activeRound.matches.length)}>
+                <div className={`my-auto ${layoutConfig.gridClass}`}>
                   {activeRound.matches.map((m) => {
                     const finished = isFinished(m)
                     const live = isLive(m)
@@ -1069,7 +1122,6 @@ export default function BeamerPage() {
                     const t1Win = finished && m.team1_score != null && m.team2_score != null && m.team1_score > m.team2_score
                     const t2Win = finished && m.team1_score != null && m.team2_score != null && m.team2_score > m.team1_score
                     const isKOMatch = KO_PHASES.includes(m.phase)
-                    const isLargeMatchCount = activeRound.matches.length > 12
 
                     // Gruppe auflösen
                     const groupName = m.group_id ? groupsById.get(m.group_id)?.name : null
@@ -1080,11 +1132,7 @@ export default function BeamerPage() {
                     return (
                       <div
                         key={m.id}
-                        className={`rounded-2xl border shadow-xl backdrop-blur-md flex flex-col justify-between transition ${
-                          isLargeMatchCount ? 'p-2.5 min-h-[110px]' : 'p-4 min-h-[130px]'
-                        } ${
-                          activeRound.matches.length <= 4 || hasKOStarted ? 'w-full max-w-[320px]' : ''
-                        } ${
+                        className={`rounded-2xl border shadow-xl backdrop-blur-md flex flex-col justify-between transition ${layoutConfig.cardPadding} ${
                           live
                             ? 'border-red-400/80 bg-red-500/20 animate-pulse'
                             : finished
@@ -1096,7 +1144,7 @@ export default function BeamerPage() {
                           backgroundColor: finished ? hexToRgba(primaryColor, 0.08) : undefined,
                         }}
                       >
-                        <div className="flex items-center justify-between border-b border-white/10 pb-1.5 text-[10px] font-black uppercase">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-1 text-[9.5px] font-black uppercase">
                           <span className="font-mono text-xs" style={{ color: primaryColor }}>
                             {m.table_number ? `Tisch ${m.table_number}` : 'Tisch —'}
                           </span>
@@ -1107,13 +1155,13 @@ export default function BeamerPage() {
                           ) : finished ? (
                             <span className="font-extrabold" style={{ color: primaryColor }}>✓ Fertig</span>
                           ) : (
-                            <span className="text-white/60">{matchLabel}</span>
+                            <span className="text-white/60 truncate max-w-[90px]">{matchLabel}</span>
                           )}
                         </div>
 
-                        <div className="my-2 space-y-1 text-xs font-black">
+                        <div className={`my-1.5 space-y-1 font-black ${layoutConfig.fontSize}`}>
                           <div
-                            className={`flex justify-between items-center rounded-lg px-2.5 py-1 ${
+                            className={`flex justify-between items-center rounded-lg px-2 py-0.5 ${
                               t1Win ? 'font-black' : 'bg-white/5 text-white'
                             }`}
                             style={
@@ -1125,13 +1173,15 @@ export default function BeamerPage() {
                                 : undefined
                             }
                           >
-                            <span className="truncate max-w-[120px]">{t1Name}</span>
-                            <span className="font-mono text-sm ml-1.5">
+                            <span className={`truncate ${layoutConfig.teamNameWidth}`} title={t1Name}>
+                              {t1Name}
+                            </span>
+                            <span className="font-mono text-xs ml-1.5 shrink-0">
                               {m.team1_score !== null ? m.team1_score : '-'}
                             </span>
                           </div>
                           <div
-                            className={`flex justify-between items-center rounded-lg px-2.5 py-1 ${
+                            className={`flex justify-between items-center rounded-lg px-2 py-0.5 ${
                               t2Win ? 'font-black' : 'bg-white/5 text-white'
                             }`}
                             style={
@@ -1143,14 +1193,16 @@ export default function BeamerPage() {
                                 : undefined
                             }
                           >
-                            <span className="truncate max-w-[120px]">{t2Name}</span>
-                            <span className="font-mono text-sm ml-1.5">
+                            <span className={`truncate ${layoutConfig.teamNameWidth}`} title={t2Name}>
+                              {t2Name}
+                            </span>
+                            <span className="font-mono text-xs ml-1.5 shrink-0">
                               {m.team2_score !== null ? m.team2_score : '-'}
                             </span>
                           </div>
                         </div>
 
-                        <div className="text-right text-[9px] font-mono font-bold text-white/50 border-t border-white/5 pt-1">
+                        <div className="text-right text-[8.5px] font-mono font-bold text-white/50 border-t border-white/5 pt-0.5">
                           {formatTime(m.scheduled_time)}
                         </div>
                       </div>

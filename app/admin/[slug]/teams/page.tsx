@@ -329,7 +329,7 @@ export default function AdminTeamsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -344,7 +344,7 @@ export default function AdminTeamsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 bg-slate-950 [color-scheme:dark]">
       {statusMessage && (
         <div
           className={`w-full rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
@@ -358,29 +358,29 @@ export default function AdminTeamsPage() {
       )}
 
       {/* METRIK CARDS */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Teams Gesamt</p>
           <p className="mt-2 text-3xl font-black text-white">{totalTeams}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Anwesend (Check-in)</p>
           <p className="mt-2 text-3xl font-black text-emerald-400">
             {checkedInCount} <span className="text-xs text-slate-500 font-bold">/ {totalTeams}</span>
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Bezahlt / Befreit</p>
           <p className="mt-2 text-3xl font-black text-blue-400">{paidCount}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Zahlung Ausstehend</p>
           <p className="mt-2 text-3xl font-black text-amber-400">{openPaymentCount}</p>
         </div>
       </section>
 
       {/* FILTER & AKTIONEN BAR */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
@@ -434,21 +434,21 @@ export default function AdminTeamsPage() {
       </section>
 
       {/* TEAM TABLE */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl overflow-x-auto">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl overflow-hidden w-full">
         {filteredTeams.length === 0 ? (
           <div className="py-8 text-center text-xs font-bold text-slate-400">
             Keine Teams für die gewählte Filterkombination gefunden.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/60">
+          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/80 shadow-inner">
             <table className="w-full text-left text-xs min-w-[600px]">
               <thead>
-                <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-950/80">
-                  <th className="py-3 px-4">Teamname</th>
-                  <th className="py-3 px-4">Spieler &amp; Kontakt</th>
-                  <th className="py-3 px-4 text-center">Check-in Status</th>
-                  <th className="py-3 px-4 text-center">Zahlungsstatus</th>
-                  <th className="py-3 px-4 text-right">Aktionen</th>
+                <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-950/90">
+                  <th className="py-3.5 px-4">Teamname</th>
+                  <th className="py-3.5 px-4">Spieler &amp; Kontakt</th>
+                  <th className="py-3.5 px-4 text-center">Check-in Status</th>
+                  <th className="py-3.5 px-4 text-center">Zahlungsstatus</th>
+                  <th className="py-3.5 px-4 text-right">Aktionen</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 font-bold">
@@ -557,7 +557,7 @@ export default function AdminTeamsPage() {
       {/* TEAM EDIT / ADD MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-[32px] border border-white/10 bg-slate-900/90 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[32px] border border-white/10 bg-slate-900/95 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <h3 className="text-xl font-black text-white tracking-tight">
                 {editingTeam ? 'Team Bearbeiten' : 'Neues Team Hinzufügen'}

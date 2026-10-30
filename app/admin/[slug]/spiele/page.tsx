@@ -469,7 +469,7 @@ export default function AdminSpielePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -484,7 +484,7 @@ export default function AdminSpielePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 bg-slate-950 [color-scheme:dark]">
       {statusMessage && (
         <div
           className={`w-full rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
@@ -498,27 +498,27 @@ export default function AdminSpielePage() {
       )}
 
       {/* METRIK CARDS */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Spiele Gesamt</p>
           <p className="mt-2 text-3xl font-black text-white">{totalMatches}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">🔴 Live / Aktiv</p>
           <p className="mt-2 text-3xl font-black text-red-400">{liveMatches}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Offen</p>
           <p className="mt-2 text-3xl font-black text-amber-400">{openMatches}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Beendet</p>
           <p className="mt-2 text-3xl font-black text-emerald-400">{finishedMatches}</p>
         </div>
       </section>
 
       {/* AUTOMATISCHER SPIELPLAN GENERATOR */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
         <div className="border-b border-white/10 pb-4">
           <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
             Gruppen-Spielplan generieren
@@ -640,7 +640,7 @@ export default function AdminSpielePage() {
       </section>
 
       {/* FILTER & SEARCH BAR */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
             Spiele Übersicht &amp; Live-Eingabe
@@ -700,7 +700,7 @@ export default function AdminSpielePage() {
             return (
               <div
                 key={tableKey}
-                className="overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/60 shadow-2xl backdrop-blur-xl transition"
+                className="overflow-hidden rounded-[32px] border border-white/10 bg-slate-900/60 shadow-2xl backdrop-blur-xl transition w-full"
               >
                 {/* TISCH HEADER */}
                 <button

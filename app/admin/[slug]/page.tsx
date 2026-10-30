@@ -124,20 +124,19 @@ export default function AdminTournamentDashboard() {
 
   const liveMatches = matches.filter((m) => m.status === 'live' || m.status === 'playing')
   const finishedMatches = matches.filter((m) => m.status === 'finished')
-  const scheduledMatches = matches.filter((m) => m.status === 'scheduled')
 
   const totalMatchesCount = matches.length
   const progressPercent =
     totalMatchesCount > 0 ? Math.round((finishedMatches.length / totalMatchesCount) * 100) : 0
 
   const sportConfig = getSportConfig(tournament?.type)
-  const primaryColor = tournament?.primary_color || '#f59e0b'
+  const primaryColor = tournament?.primary_color || '#22c55e'
   const adminBaseUrl = `/admin/${slug}`
   const publicBaseUrl = `/turnier/${slug}`
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -152,9 +151,9 @@ export default function AdminTournamentDashboard() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 bg-slate-950 [color-scheme:dark]">
       {/* KOPFZEILE UND SCHNELL-STATUS */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between w-full">
         <div>
           <div className="flex items-center gap-2">
             <span
@@ -194,7 +193,7 @@ export default function AdminTournamentDashboard() {
           <Link
             href={publicBaseUrl}
             target="_blank"
-            className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:text-white backdrop-blur-md"
+            className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:text-white backdrop-blur-md"
           >
             Öffentliche Seite ↗
           </Link>
@@ -202,8 +201,8 @@ export default function AdminTournamentDashboard() {
       </section>
 
       {/* KPI KENNZAHLEN CARDS */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
             <span>Angemeldete Teams</span>
             <span>👥</span>
@@ -212,12 +211,13 @@ export default function AdminTournamentDashboard() {
           <Link
             href={`${adminBaseUrl}/teams`}
             className="mt-2 inline-block text-[11px] font-bold text-amber-400 hover:underline"
+            style={{ color: primaryColor }}
           >
             Teams verwalten →
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
             <span>Live auf den Tischen</span>
             <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
@@ -231,7 +231,7 @@ export default function AdminTournamentDashboard() {
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
             <span>Gespielte Matches</span>
             <span>🏆</span>
@@ -242,12 +242,13 @@ export default function AdminTournamentDashboard() {
           <Link
             href={`${adminBaseUrl}/tabelle`}
             className="mt-2 inline-block text-[11px] font-bold text-amber-400 hover:underline"
+            style={{ color: primaryColor }}
           >
             Tabelle ansehen →
           </Link>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
             <span>Turnier-Fortschritt</span>
             <span>📊</span>
@@ -263,7 +264,7 @@ export default function AdminTournamentDashboard() {
       </div>
 
       {/* SCHNELL-AKTIONEN & BRANDING PREVIEW GRID */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 w-full">
         {/* SCHNELL-AKTIONEN (2 SPALTEN) */}
         <div className="lg:col-span-2 space-y-4 rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
           <h3 className="text-lg font-black tracking-tight text-white">Schnellzugriff &amp; Steuerung</h3>
@@ -271,7 +272,7 @@ export default function AdminTournamentDashboard() {
           <div className="grid gap-3 sm:grid-cols-2">
             <Link
               href={`${adminBaseUrl}/spiele`}
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4 transition hover:border-amber-500/40 hover:bg-white/5 backdrop-blur-md"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/80 p-4 transition hover:border-white/30 hover:bg-white/5 backdrop-blur-md"
             >
               <div>
                 <div className="font-black text-sm text-white">⚽ Spiele &amp; Ergebnisse</div>
@@ -282,7 +283,7 @@ export default function AdminTournamentDashboard() {
 
             <Link
               href={`${adminBaseUrl}/gruppen`}
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4 transition hover:border-amber-500/40 hover:bg-white/5 backdrop-blur-md"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/80 p-4 transition hover:border-white/30 hover:bg-white/5 backdrop-blur-md"
             >
               <div>
                 <div className="font-black text-sm text-white">🔀 Gruppen &amp; Auslosung</div>
@@ -293,7 +294,7 @@ export default function AdminTournamentDashboard() {
 
             <Link
               href={`${adminBaseUrl}/ko`}
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4 transition hover:border-amber-500/40 hover:bg-white/5 backdrop-blur-md"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/80 p-4 transition hover:border-white/30 hover:bg-white/5 backdrop-blur-md"
             >
               <div>
                 <div className="font-black text-sm text-white">🏆 K.-o.-Baum Generator</div>
@@ -304,7 +305,7 @@ export default function AdminTournamentDashboard() {
 
             <Link
               href={`${adminBaseUrl}/einstellungen`}
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-4 transition hover:border-amber-500/40 hover:bg-white/5 backdrop-blur-md"
+              className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/80 p-4 transition hover:border-white/30 hover:bg-white/5 backdrop-blur-md"
             >
               <div>
                 <div className="font-black text-sm text-white">⚙️ Design &amp; Einstellungen</div>
@@ -321,14 +322,15 @@ export default function AdminTournamentDashboard() {
             <h3 className="text-lg font-black tracking-tight text-white">Aktuelles Branding</h3>
             <Link
               href={`${adminBaseUrl}/einstellungen`}
-              className="text-xs font-extrabold text-amber-400 hover:underline"
+              className="text-xs font-extrabold hover:underline"
+              style={{ color: primaryColor }}
             >
               Anpassen ⚙️
             </Link>
           </div>
 
           <div className="space-y-2.5 text-xs">
-            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-3">
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/80 p-3">
               <span className="font-bold text-slate-400">Hauptfarbe:</span>
               <div className="flex items-center gap-2">
                 <span
@@ -339,12 +341,12 @@ export default function AdminTournamentDashboard() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-3">
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/80 p-3">
               <span className="font-bold text-slate-400">Hintergrund-Stil:</span>
               <span className="font-bold uppercase text-white">{tournament?.background_style || 'dark'}</span>
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 p-3">
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/80 p-3">
               <span className="font-bold text-slate-400">Logo-Wasserzeichen:</span>
               <span className="font-bold text-white">{tournament?.logo_url ? 'Vorhanden ✓' : 'Keins hinterlegt'}</span>
             </div>
@@ -353,7 +355,7 @@ export default function AdminTournamentDashboard() {
       </div>
 
       {/* MONITOR AKTUELL LAUFENDE SPIELE */}
-      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+      <section className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
@@ -362,6 +364,7 @@ export default function AdminTournamentDashboard() {
           <Link
             href={`${adminBaseUrl}/spiele`}
             className="text-xs font-bold text-amber-400 hover:underline"
+            style={{ color: primaryColor }}
           >
             Alle Spiele verwalten →
           </Link>

@@ -279,7 +279,7 @@ export default function AdminTabellePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -294,7 +294,7 @@ export default function AdminTabellePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 bg-slate-950 [color-scheme:dark]">
       {error && (
         <div className="w-full rounded-2xl border border-red-500/30 bg-red-950/20 p-4 text-xs font-extrabold text-red-300 backdrop-blur-md">
           {error}
@@ -302,18 +302,18 @@ export default function AdminTabellePage() {
       )}
 
       {/* METRIK CARDS */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3 w-full">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Gruppen Gesamt</p>
           <p className="mt-2 text-3xl font-black text-white">{groups.length}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Absolvierte Gruppenspiele</p>
           <p className="mt-2 text-3xl font-black text-emerald-400">
             {totalFinishedGroupGames} <span className="text-xs text-slate-500 font-bold">/ {totalGroupGames}</span>
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Qualifikation pro Gruppe</p>
           <p className="mt-2 text-3xl font-black" style={{ color: primaryColor }}>
             Top {qualifiersPerGroup} <span className="text-xs text-slate-400 font-bold">K.-o.-Einzug</span>
@@ -327,11 +327,11 @@ export default function AdminTabellePage() {
           Noch keine Gruppen oder Teams zugewiesen.
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 w-full">
           {groupStandings.map(({ group, standings }) => (
             <div
               key={group.id}
-              className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 overflow-hidden"
+              className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 overflow-hidden w-full"
             >
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <h3 className="text-xl font-black text-white tracking-tight">{group.name}</h3>
@@ -340,11 +340,11 @@ export default function AdminTabellePage() {
                 </span>
               </div>
 
-              {/* HORIZONTALE SCROLLBAR FÜR DIGITALE MOBILE GERÄTE */}
-              <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/60">
+              {/* HORIZONTALE SCROLLBAR FÜR MOBILE GERÄTE */}
+              <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/80 shadow-inner">
                 <table className="w-full text-left text-xs min-w-[500px]">
                   <thead>
-                    <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-950/80">
+                    <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-400 whitespace-nowrap bg-slate-950/90">
                       <th className="py-3 px-2 text-center w-8">#</th>
                       <th className="py-3 px-3">Team</th>
                       <th className="py-3 px-2 text-center w-10" title="Spiele">Sp</th>

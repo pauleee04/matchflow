@@ -27,14 +27,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!slug) return
     async function loadTournament() {
-      const { data } = await publicSupabase
-        .from('tournaments')
-        .select('id, name, slug, logo_url, primary_color, secondary_color, background_style')
-        .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
-        .maybeSingle()
+      try {
+        const { data } = await publicSupabase
+          .from('tournaments')
+          .select('id, name, slug, logo_url, primary_color, secondary_color, background_style')
+          .or(`slug.eq.${slug},slug.eq.${rawSlug}`)
+          .maybeSingle()
 
-      if (data) {
-        setTournament(data as TournamentData)
+        if (data) {
+          setTournament(data as TournamentData)
+        }
+      } catch (err) {
+        console.error('Fehler beim Laden des Admin-Layouts:', err)
       }
     }
     void loadTournament()
@@ -78,23 +82,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div
-      className="relative min-h-screen p-4 sm:p-6 lg:p-8 space-y-8 text-slate-100 transition-colors duration-500 bg-slate-950"
+      className="relative min-h-screen p-4 sm:p-6 lg:p-8 space-y-8 text-slate-100 transition-colors duration-500 bg-slate-950 [color-scheme:dark]"
       style={{
-        background: tournament?.background_style || `radial-gradient(circle at 50% 0%, ${primaryColor}20 0%, transparent 70%), radial-gradient(circle at 100% 100%, ${secondaryColor}15 0%, transparent 60%)`,
+        background:
+          tournament?.background_style ||
+          `radial-gradient(circle at 50% 0%, ${primaryColor}20 0%, transparent 70%), radial-gradient(circle at 100% 100%, ${secondaryColor}15 0%, transparent 60%)`,
       }}
     >
-      {/* GLOBAL OVERRIDE FÜR DIE TRANSPARENZ ALLER UNTERSEITEN-KARTEN */}
-      <style>{`
-        main section, 
-        main .rounded-3xl, 
-        main .rounded-2xl {
-          background-color: rgba(15, 23, 42, 0.6) !important;
-          backdrop-filter: blur(16px) !important;
-          -webkit-backdrop-filter: blur(16px) !important;
-          border-color: rgba(255, 255, 255, 0.1) !important;
-        }
-      `}</style>
-
       {/* 1. GROSSES ZENTRALES WASSERZEICHEN IM SEITENHINTERGRUND */}
       <div className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden select-none">
         {tournament?.logo_url ? (
@@ -154,7 +148,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/admin"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-bold text-slate-300 shadow-lg backdrop-blur-md transition hover:border-white/20 hover:text-white"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-bold text-slate-300 shadow-lg backdrop-blur-md transition hover:border-white/20 hover:text-white"
             >
               ← Meine Turniere
             </Link>
@@ -185,9 +179,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   href={link.href}
                   className="inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-black transition-all shadow-md"
                   style={{
-                    backgroundColor: isActive ? primaryColor : 'rgba(2, 6, 23, 0.6)',
-                    color: isActive ? '#022c22' : '#e2e8f0',
-                    border: isActive ? `1px solid ${primaryColor}` : '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundColor: isActive ? primaryColor : 'rgba(2, 6, 23, 0.8)',
+                    color: isActive ? '#020617' : '#e2e8f0',
+                    border: isActive
+                      ? `1px solid ${primaryColor}`
+                      : '1px solid rgba(255, 255, 255, 0.1)',
                   }}
                 >
                   {link.label}
@@ -226,7 +222,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               type="button"
               onClick={triggerBroadcast}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2 text-xs font-extrabold text-slate-300 shadow-md backdrop-blur-md hover:border-white/20 hover:text-white transition"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2 text-xs font-extrabold text-slate-300 shadow-md backdrop-blur-md hover:border-white/20 hover:text-white transition"
             >
               🔄 Live-Sync / Aktualisieren
             </button>
@@ -234,7 +230,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </header>
 
-      {/* HAUPTINHALT ALLER UNTERSEITEN (DASHBOARD, KO, GRUPPEN) */}
+      {/* HAUPTINHALT ALLER UNTERSEITEN */}
       <main className="relative z-10">{children}</main>
     </div>
   )

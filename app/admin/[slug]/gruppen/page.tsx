@@ -884,7 +884,6 @@ export default function AdminGruppenPage() {
     }
   }
 
-  // NEU: GRUPPEN & SPIELE AUFLÖSEN / ZURÜCKSETZEN
   async function resetGroupsAndMatches() {
     if (!tournament?.id) return
 
@@ -903,7 +902,6 @@ export default function AdminGruppenPage() {
     setSuccess('')
 
     try {
-      // 1. Spiele zurücksetzen (falls Tabelle 'matches' existiert)
       const { error: matchesError } = await supabase
         .from('matches')
         .delete()
@@ -913,7 +911,6 @@ export default function AdminGruppenPage() {
         console.warn('Hinweis beim Löschen der Spiele (Matches):', matchesError.message)
       }
 
-      // 2. Gruppenmitglieder löschen
       const { error: membersDeleteErr } = await supabase
         .from('group_members')
         .delete()
@@ -921,7 +918,6 @@ export default function AdminGruppenPage() {
 
       if (membersDeleteErr) throw membersDeleteErr
 
-      // 3. Gruppen löschen
       const { error: groupsDeleteErr } = await supabase
         .from('groups')
         .delete()
@@ -962,7 +958,6 @@ export default function AdminGruppenPage() {
     return map
   }, [groups, members, teams])
 
-  // GEFILTERTE GRUPPEN FÜR DIE SUCHFUNKTION
   const filteredGroups = useMemo(() => {
     if (!groupSearchQuery.trim()) return groups
 
@@ -990,7 +985,7 @@ export default function AdminGruppenPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100">
+      <div className="flex min-h-[50vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
         <div className="text-center">
           <div
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
@@ -1005,7 +1000,7 @@ export default function AdminGruppenPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100">
+    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 bg-slate-950 [color-scheme:dark]">
       {/* ERROR & SUCCESS MESSAGES */}
       {error && (
         <div className="rounded-2xl border border-red-500/30 bg-red-950/20 p-4 text-xs font-extrabold text-red-300 backdrop-blur-md">
@@ -1021,19 +1016,19 @@ export default function AdminGruppenPage() {
 
       {/* TEAM OVERVIEW CARDS */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 w-full">
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Angemeldete Teams</p>
           <p className="mt-2 text-3xl font-black text-white">{teams.length}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Aktuelle Gruppen</p>
           <p className="mt-2 text-3xl font-black text-white">{groups.length}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Zugeordnet</p>
           <p className="mt-2 text-3xl font-black text-white">{members.length}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-2xl backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-slate-900/60 p-6 shadow-2xl backdrop-blur-xl">
           <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Ohne Gruppe</p>
           <p
             className="mt-2 text-3xl font-black"
@@ -1385,7 +1380,6 @@ export default function AdminGruppenPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              {/* SUCHFELD */}
               <div className="relative min-w-[220px]">
                 <input
                   type="text"
@@ -1404,7 +1398,6 @@ export default function AdminGruppenPage() {
                 )}
               </div>
 
-              {/* GRUPPEN AUFLÖSEN BUTTON */}
               <button
                 type="button"
                 onClick={resetGroupsAndMatches}
@@ -1416,14 +1409,12 @@ export default function AdminGruppenPage() {
             </div>
           </div>
 
-          {/* SUCHGERGEBNISSE WARNUNG / HINWEIS */}
           {filteredGroups.length === 0 && (
             <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/40 p-8 text-center text-xs font-bold text-slate-400">
               Keine Gruppen oder Teams gefunden für &quot;{groupSearchQuery}&quot;.
             </div>
           )}
 
-          {/* GRUPPEN GRID - NACHHALTIGES RASTER OHNE INNERES SCROLLEN */}
           <div className="grid gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 w-full">
             {filteredGroups.map((group) => {
               const groupItems = groupTeamMap[group.id] ?? []
@@ -1436,7 +1427,6 @@ export default function AdminGruppenPage() {
                   className="rounded-2xl border border-white/10 bg-slate-950/80 p-4 space-y-3.5 flex flex-col justify-between shadow-xl hover:border-white/20 transition-all"
                 >
                   <div className="space-y-3">
-                    {/* CARD HEADER */}
                     <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                       <div className="flex items-center gap-2">
                         <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/10 text-[10px] font-black text-emerald-400 border border-emerald-500/30">
@@ -1449,7 +1439,6 @@ export default function AdminGruppenPage() {
                       </span>
                     </div>
 
-                    {/* HINWEIS UND DROPDOWN FÜR UNGERADE TEAMS (SPIELFREI) */}
                     {isOdd && (
                       <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-2.5 space-y-1.5">
                         <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-amber-300">
@@ -1477,7 +1466,6 @@ export default function AdminGruppenPage() {
                       </div>
                     )}
 
-                    {/* TEAM LISTE OHNE INNERES SCROLLEN */}
                     <div className="space-y-2 pt-0.5">
                       {groupItems.length === 0 ? (
                         <p className="text-xs text-slate-500 py-4 text-center">Keine Teams in dieser Gruppe</p>
@@ -1507,9 +1495,7 @@ export default function AdminGruppenPage() {
                                 )}
                               </div>
 
-                              {/* TAUSCHEN UND VERSCHIEBEN AKTIONEN IN EINER KOMPAKTEN ZEILE */}
                               <div className="flex items-center gap-1.5 pt-1.5 border-t border-white/10">
-                                {/* Direct Group Move */}
                                 <select
                                   defaultValue=""
                                   onChange={(e) => {
@@ -1531,7 +1517,6 @@ export default function AdminGruppenPage() {
                                     ))}
                                 </select>
 
-                                {/* Swap with team */}
                                 <button
                                   type="button"
                                   onClick={() => {

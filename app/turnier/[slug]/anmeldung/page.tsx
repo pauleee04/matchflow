@@ -200,8 +200,16 @@ export default function PublicAnmeldungPage() {
 
   if (loading) {
     return (
-      <div className="p-8 text-center text-xs font-bold text-slate-400">
-        Lade Anmeldeformular …
+      <div className="flex min-h-[40vh] items-center justify-center p-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
+        <div className="text-center">
+          <div
+            className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
+            style={{ borderTopColor: primaryColor }}
+          />
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
+            Lade Anmeldeformular …
+          </p>
+        </div>
       </div>
     )
   }
@@ -209,19 +217,19 @@ export default function PublicAnmeldungPage() {
   // FALL 1: ERFOLGREICHE ANMELDUNG
   if (successData) {
     return (
-      <div className="w-full space-y-6">
-        <div className="w-full rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-8 shadow-2xl backdrop-blur-xl text-center space-y-4">
+      <div className="w-full max-w-3xl mx-auto space-y-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
+        <div className="w-full rounded-[32px] border border-emerald-500/30 bg-emerald-950/20 p-8 sm:p-10 shadow-2xl backdrop-blur-xl text-center space-y-6">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500 text-3xl font-black text-slate-950 shadow-lg">
             🎉
           </div>
-          <h1 className="text-2xl font-black text-white sm:text-3xl">Anmeldung erfolgreich!</h1>
+          <h1 className="text-2xl font-black text-white sm:text-3xl tracking-tight">Anmeldung erfolgreich!</h1>
           <p className="text-sm font-semibold text-emerald-300 max-w-xl mx-auto">
             Das Team <span className="font-black text-white">„{successData.teamName}“</span> wurde erfolgreich für das Turnier registriert.
           </p>
 
           {/* ZAHLUNGSHINWEIS DYNAMISCH */}
           {tournament?.entry_fee && tournament.entry_fee > 0 ? (
-            <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/60 p-6 text-left max-w-xl mx-auto space-y-3">
+            <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/80 p-6 text-left max-w-xl mx-auto space-y-3">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <span className="text-xs font-black uppercase text-slate-400">Startgebühr</span>
                 <span className="text-lg font-black text-emerald-400">{tournament.entry_fee.toFixed(2)} €</span>
@@ -236,10 +244,13 @@ export default function PublicAnmeldungPage() {
               {successData.paymentMethod === 'bank' && (
                 <div className="space-y-2 text-xs text-slate-300">
                   <p>🏛️ <strong className="text-white">Überweisung an:</strong></p>
-                  <div className="rounded-xl bg-slate-900 p-3 font-mono text-[11px] space-y-1 text-slate-200">
+                  <div className="rounded-xl bg-slate-900/90 border border-white/10 p-3.5 font-mono text-[11px] space-y-1.5 text-slate-200">
                     {tournament.bank_account_holder && <div>Inhaber: {tournament.bank_account_holder}</div>}
                     {tournament.bank_iban && <div>IBAN: {tournament.bank_iban}</div>}
-                    <div>Verwendungszweck: {tournament.bank_reference || `${tournament.name} - ${successData.teamName}`}</div>
+                    <div>
+                      Verwendungszweck:{' '}
+                      {tournament.bank_reference || `${tournament.name} - ${successData.teamName}`}
+                    </div>
                   </div>
                 </div>
               )}
@@ -263,7 +274,7 @@ export default function PublicAnmeldungPage() {
               )}
             </div>
           ) : (
-            <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-slate-950/40 p-4 text-xs font-bold text-emerald-400">
+            <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-slate-950/60 p-4 text-xs font-bold text-emerald-400">
               Dieses Turnier ist kostenlos! Ihr seid direkt startklar.
             </div>
           )}
@@ -271,7 +282,7 @@ export default function PublicAnmeldungPage() {
           <div className="pt-4 flex justify-center gap-3">
             <Link
               href={`/turnier/${encodeURIComponent(slug)}`}
-              className="rounded-xl px-6 py-3 text-xs font-black text-slate-950 transition hover:opacity-90"
+              className="rounded-2xl px-6 py-3.5 text-xs font-black text-slate-950 transition hover:opacity-90 shadow-lg"
               style={{ backgroundColor: primaryColor }}
             >
               Zur Turnierübersicht
@@ -285,15 +296,15 @@ export default function PublicAnmeldungPage() {
   // FALL 2: ANMELDUNG GESCHLOSSEN ODER VOLL
   if (!isRegistrationOpen || isFull) {
     return (
-      <div className="w-full space-y-6">
-        <div className="w-full rounded-3xl border border-red-500/30 bg-red-500/10 p-8 shadow-2xl backdrop-blur-xl text-center space-y-4">
+      <div className="w-full max-w-3xl mx-auto space-y-6 text-slate-100 bg-slate-950 [color-scheme:dark]">
+        <div className="w-full rounded-[32px] border border-red-500/30 bg-red-950/20 p-8 sm:p-10 shadow-2xl backdrop-blur-xl text-center space-y-4">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/20 text-3xl font-black text-red-400 border border-red-500/30">
             🚫
           </div>
-          <h1 className="text-2xl font-black text-white sm:text-3xl">
+          <h1 className="text-2xl font-black text-white sm:text-3xl tracking-tight">
             {!isRegistrationOpen ? 'Anmeldung geschlossen' : 'Turnier ausgebucht'}
           </h1>
-          <p className="text-xs font-bold text-slate-300 max-w-md mx-auto">
+          <p className="text-xs font-bold text-slate-300 max-w-md mx-auto leading-relaxed">
             {!isRegistrationOpen
               ? 'Der Veranstalter hat die Online-Anmeldung für dieses Turnier momentan deaktiviert.'
               : `Die maximale Anzahl von ${maxTeams} Teams ist bereits erreicht.`}
@@ -301,7 +312,7 @@ export default function PublicAnmeldungPage() {
           <div className="pt-2">
             <Link
               href={`/turnier/${encodeURIComponent(slug)}`}
-              className="inline-block rounded-xl border border-white/10 bg-white/10 px-6 py-3 text-xs font-black text-white hover:bg-white/20 transition"
+              className="inline-block rounded-2xl border border-white/10 bg-slate-950/80 px-6 py-3 text-xs font-black text-white hover:bg-slate-900 transition"
             >
               Zurück zur Turnierübersicht
             </Link>
@@ -313,27 +324,27 @@ export default function PublicAnmeldungPage() {
 
   // FALL 3: ANMELDEFORMULAR
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full max-w-3xl mx-auto space-y-8 text-slate-100 bg-slate-950 [color-scheme:dark]">
       {errorMessage && (
-        <div className="w-full rounded-2xl border border-red-500/30 bg-red-500/20 p-4 text-xs font-extrabold text-red-300 backdrop-blur-md">
+        <div className="w-full rounded-2xl border border-red-500/30 bg-red-950/20 p-4 text-xs font-extrabold text-red-300 backdrop-blur-md">
           {errorMessage}
         </div>
       )}
 
       {/* FORMULAR CARD */}
-      <div className="w-full rounded-3xl border border-white/15 bg-[#061710]/70 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
+      <div className="w-full rounded-[32px] border border-white/10 bg-slate-900/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-5">
           <div>
             <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: primaryColor }}>
               Jetzt Teilnahme sichern
             </span>
-            <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">Team-Anmeldung</h1>
-            <p className="mt-1 text-xs text-slate-400">
+            <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl tracking-tight">Team-Anmeldung</h1>
+            <p className="mt-1 text-xs text-slate-300 font-medium">
               Trage deinen Teamnamen und die beiden Spieler ein, um am Turnier teilzunehmen.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-2.5 text-xs font-black text-slate-300 shrink-0">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs font-black text-slate-300 shrink-0">
             👥 Plätze: <span className="text-emerald-400">{currentTeamCount}</span> / {maxTeams} belegt
           </div>
         </div>
@@ -346,7 +357,7 @@ export default function PublicAnmeldungPage() {
             </h2>
 
             <div>
-              <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+              <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5">
                 Teamname *
               </label>
               <input
@@ -355,13 +366,13 @@ export default function PublicAnmeldungPage() {
                 placeholder="z. B. Bierkapitäne"
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-emerald-500"
+                className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-white/30"
               />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5">
                   Spieler 1 *
                 </label>
                 <input
@@ -370,12 +381,12 @@ export default function PublicAnmeldungPage() {
                   placeholder="Vor- und Nachname"
                   value={player1}
                   onChange={(e) => setPlayer1(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-emerald-500"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-white/30"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">
+                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5">
                   Spieler 2 *
                 </label>
                 <input
@@ -384,7 +395,7 @@ export default function PublicAnmeldungPage() {
                   placeholder="Vor- und Nachname"
                   value={player2}
                   onChange={(e) => setPlayer2(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white outline-none focus:border-emerald-500"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-xs font-bold text-white placeholder-slate-500 outline-none focus:border-white/30"
                 />
               </div>
             </div>
@@ -406,8 +417,8 @@ export default function PublicAnmeldungPage() {
                     onClick={() => setPaymentMethod('cash')}
                     className={`rounded-2xl border p-4 text-left transition ${
                       paymentMethod === 'cash'
-                        ? 'border-emerald-500/50 bg-emerald-500/10 text-white'
-                        : 'border-white/10 bg-slate-950/40 text-slate-400 hover:bg-white/5'
+                        ? 'border-emerald-500/50 bg-emerald-500/10 text-white shadow-lg'
+                        : 'border-white/10 bg-slate-950/80 text-slate-400 hover:bg-slate-900'
                     }`}
                   >
                     <div className="text-lg mb-1">💵</div>
@@ -422,8 +433,8 @@ export default function PublicAnmeldungPage() {
                     onClick={() => setPaymentMethod('bank')}
                     className={`rounded-2xl border p-4 text-left transition ${
                       paymentMethod === 'bank'
-                        ? 'border-emerald-500/50 bg-emerald-500/10 text-white'
-                        : 'border-white/10 bg-slate-950/40 text-slate-400 hover:bg-white/5'
+                        ? 'border-emerald-500/50 bg-emerald-500/10 text-white shadow-lg'
+                        : 'border-white/10 bg-slate-950/80 text-slate-400 hover:bg-slate-900'
                     }`}
                   >
                     <div className="text-lg mb-1">🏛️</div>
@@ -438,8 +449,8 @@ export default function PublicAnmeldungPage() {
                     onClick={() => setPaymentMethod('paypal')}
                     className={`rounded-2xl border p-4 text-left transition ${
                       paymentMethod === 'paypal'
-                        ? 'border-emerald-500/50 bg-emerald-500/10 text-white'
-                        : 'border-white/10 bg-slate-950/40 text-slate-400 hover:bg-white/5'
+                        ? 'border-emerald-500/50 bg-emerald-500/10 text-white shadow-lg'
+                        : 'border-white/10 bg-slate-950/80 text-slate-400 hover:bg-slate-900'
                     }`}
                   >
                     <div className="text-lg mb-1">💳</div>
@@ -456,7 +467,7 @@ export default function PublicAnmeldungPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-2xl px-8 py-4 text-xs font-black text-slate-950 shadow-xl transition hover:scale-105 active:scale-95 disabled:opacity-40"
+              className="rounded-2xl px-8 py-4 text-xs font-black text-slate-950 shadow-xl transition hover:opacity-90 disabled:opacity-40"
               style={{ backgroundColor: primaryColor }}
             >
               {submitting ? 'Melde an …' : '🚀 Team kostenpflichtig / verbindlich anmelden'}
