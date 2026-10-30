@@ -520,7 +520,7 @@ export default function BeamerPage() {
   const bgStyle = useMemo(() => {
     if (isLightBg) {
       return {
-        background: `radial-gradient(circle at 50% 20%, ${hexToRgba(primaryColor, 0.18)} 0%, transparent 65%), #0f172a`,
+        background: `radial-gradient(circle at 50% 20%, ${hexToRgba(primaryColor, 0.22)} 0%, transparent 65%), #0f172a`,
       }
     }
 
@@ -535,7 +535,7 @@ export default function BeamerPage() {
       return { background: tournament.background_style }
     }
     return {
-      background: `radial-gradient(circle at 50% 20%, ${hexToRgba(primaryColor, 0.35)} 0%, transparent 65%), radial-gradient(circle at 85% 85%, ${hexToRgba(secondaryColor, 0.22)} 0%, transparent 55%), #090d16`,
+      background: `radial-gradient(circle at 50% 20%, ${hexToRgba(primaryColor, 0.4)} 0%, transparent 65%), radial-gradient(circle at 85% 85%, ${hexToRgba(secondaryColor, 0.25)} 0%, transparent 55%), #090d16`,
     }
   }, [tournament?.background_style, primaryColor, secondaryColor, isLightBg])
 
@@ -622,16 +622,16 @@ export default function BeamerPage() {
           className={[
             'h-full overflow-hidden rounded-xl border shadow-xl backdrop-blur-md transition flex flex-col justify-between',
             isFinal
-              ? 'border-2 border-amber-400/90 bg-slate-900/80 shadow-amber-500/20'
+              ? 'border-2 border-amber-400/90 bg-black/80 shadow-amber-500/20'
               : isThirdPlace
-              ? 'border border-amber-500/60 bg-slate-900/80'
+              ? 'border border-amber-500/60 bg-black/80'
               : finished
-              ? 'border border-white/30 bg-slate-900/80'
+              ? 'border-white/30 bg-black/80'
               : live
               ? 'border-2 border-red-500 bg-red-950/60 animate-pulse'
               : match
-              ? 'border border-white/20 bg-slate-900/70'
-              : 'border-dashed border-white/20 bg-slate-900/40',
+              ? 'border-white/20 bg-black/70'
+              : 'border-dashed border-white/20 bg-black/40',
           ].join(' ')}
           style={{
             borderColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.6) : undefined,
@@ -651,7 +651,7 @@ export default function BeamerPage() {
                 : 'border-white/10 bg-black/50 text-slate-300',
             ].join(' ')}
             style={{
-              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.3) : undefined,
+              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.35) : undefined,
               color: finished && !isFinal && !isThirdPlace ? '#ffffff' : undefined,
             }}
           >
@@ -680,9 +680,9 @@ export default function BeamerPage() {
               style={
                 t1Winner
                   ? {
-                      backgroundColor: hexToRgba(primaryColor, 0.35),
+                      backgroundColor: hexToRgba(primaryColor, 0.4),
                       color: '#ffffff',
-                      borderColor: hexToRgba(primaryColor, 0.6),
+                      borderColor: hexToRgba(primaryColor, 0.7),
                     }
                   : undefined
               }
@@ -705,9 +705,9 @@ export default function BeamerPage() {
               style={
                 t2Winner
                   ? {
-                      backgroundColor: hexToRgba(primaryColor, 0.35),
+                      backgroundColor: hexToRgba(primaryColor, 0.4),
                       color: '#ffffff',
-                      borderColor: hexToRgba(primaryColor, 0.6),
+                      borderColor: hexToRgba(primaryColor, 0.7),
                     }
                   : undefined
               }
@@ -1052,18 +1052,21 @@ export default function BeamerPage() {
 
       <div className="relative z-10 flex flex-col h-full justify-between space-y-4">
         {/* HEADER BAR */}
-        <header className="flex flex-wrap items-center justify-between border-b border-white/15 pb-4 shrink-0 bg-slate-900/60 p-4 rounded-2xl backdrop-blur-md gap-4">
+        <header
+          className="flex flex-wrap items-center justify-between border border-white/15 pb-4 shrink-0 p-4 rounded-2xl backdrop-blur-md gap-4 shadow-xl"
+          style={{ backgroundColor: hexToRgba(primaryColor, 0.12) }}
+        >
           <div className="flex items-center gap-4">
             {tournament?.logo_url ? (
               <img
                 src={tournament.logo_url}
                 alt="Logo"
-                className="h-12 w-12 rounded-2xl border border-white/20 bg-slate-900/90 p-1.5 object-contain shadow-md"
+                className="h-12 w-12 rounded-2xl border border-white/20 bg-black/80 p-1.5 object-contain shadow-md"
               />
             ) : (
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-black shadow-md text-slate-950"
-                style={{ backgroundColor: primaryColor }}
+                className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-black shadow-md"
+                style={{ backgroundColor: primaryColor, color: primaryContrastText }}
               >
                 🍺
               </div>
@@ -1080,30 +1083,33 @@ export default function BeamerPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-            {/* HELLIGKEITS- & DESIGN-STEUERUNG FÜR DEN ADMIN */}
-            <div className="flex items-center gap-3 bg-slate-950/70 border border-white/15 px-3 py-1.5 rounded-xl text-xs">
-              <span className="font-extrabold text-slate-300 flex items-center gap-1.5">
-                ☀️ <span>Helligkeit:</span>
-              </span>
-              <input
-                type="range"
-                min="70"
-                max="160"
-                value={brightness}
-                onChange={(e) => setBrightness(Number(e.target.value))}
-                className="w-20 accent-emerald-500 cursor-pointer"
-                title="Helligkeit anpassen"
-              />
-              <span className="font-mono text-[11px] font-black w-9 text-right">{brightness}%</span>
+            {/* HELLIGKEITS- & DESIGN-STEUERUNG (NUR WENN NICHT VOLLBILD) */}
+            {!isFullscreen && (
+              <div className="flex items-center gap-3 bg-black/70 border border-white/15 px-3 py-1.5 rounded-xl text-xs backdrop-blur-md">
+                <span className="font-extrabold text-slate-300 flex items-center gap-1.5">
+                  ☀️ <span>Helligkeit:</span>
+                </span>
+                <input
+                  type="range"
+                  min="70"
+                  max="160"
+                  value={brightness}
+                  onChange={(e) => setBrightness(Number(e.target.value))}
+                  className="w-20 cursor-pointer"
+                  style={{ accentColor: primaryColor }}
+                  title="Helligkeit anpassen"
+                />
+                <span className="font-mono text-[11px] font-black w-9 text-right">{brightness}%</span>
 
-              <button
-                type="button"
-                onClick={() => setIsLightBg((prev) => !prev)}
-                className="ml-1 px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-[10px] font-bold transition border border-white/10"
-              >
-                {isLightBg ? ' Dunkles Theme' : ' Helleres Theme'}
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setIsLightBg((prev) => !prev)}
+                  className="ml-1 px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-[10px] font-bold transition border border-white/10"
+                >
+                  {isLightBg ? ' Dunkles Theme' : ' Helleres Theme'}
+                </button>
+              </div>
+            )}
 
             <div className="text-right">
               <p className="font-mono text-2xl font-black tracking-wider" style={{ color: primaryColor }}>
@@ -1114,9 +1120,10 @@ export default function BeamerPage() {
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="inline-flex items-center gap-2 rounded-2xl border-2 border-white/30 px-4 py-2 text-xs font-black text-white shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-2xl border-2 border-white/30 px-4 py-2 text-xs font-black shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
               style={{
                 backgroundColor: primaryColor,
+                color: primaryContrastText,
                 boxShadow: `0 0 20px ${hexToRgba(primaryColor, 0.45)}`,
               }}
             >
@@ -1180,8 +1187,8 @@ export default function BeamerPage() {
                           live
                             ? 'border-2 border-red-500 bg-red-950/60 animate-pulse'
                             : finished
-                            ? 'border-white/20 bg-slate-900/80'
-                            : 'border-white/15 bg-slate-900/60'
+                            ? 'border-white/20 bg-black/80'
+                            : 'border-white/15 bg-black/60'
                         }`}
                         style={{
                           borderColor: finished ? hexToRgba(primaryColor, 0.5) : undefined,
@@ -1211,7 +1218,7 @@ export default function BeamerPage() {
                             style={
                               t1Win
                                 ? {
-                                    backgroundColor: hexToRgba(primaryColor, 0.35),
+                                    backgroundColor: hexToRgba(primaryColor, 0.4),
                                     color: '#ffffff',
                                   }
                                 : undefined
@@ -1231,7 +1238,7 @@ export default function BeamerPage() {
                             style={
                               t2Win
                                 ? {
-                                    backgroundColor: hexToRgba(primaryColor, 0.35),
+                                    backgroundColor: hexToRgba(primaryColor, 0.4),
                                     color: '#ffffff',
                                   }
                                 : undefined
@@ -1277,7 +1284,7 @@ export default function BeamerPage() {
                 {groupStandings.map(({ group, standings }) => (
                   <div
                     key={group.id}
-                    className="rounded-2xl border border-white/20 bg-slate-900/80 overflow-hidden shadow-2xl backdrop-blur-md"
+                    className="rounded-2xl border border-white/20 bg-black/80 overflow-hidden shadow-2xl backdrop-blur-md"
                   >
                     <div
                       className="px-2.5 py-1.5 text-center text-xs font-black uppercase flex items-center justify-between"
@@ -1389,14 +1396,17 @@ export default function BeamerPage() {
             <h2 className="text-xs font-black uppercase tracking-wider text-slate-200 mb-2 px-2">
               K.-o.-Phase Bracket
             </h2>
-            <div className="flex-1 min-h-0 overflow-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none] border border-white/20 rounded-2xl bg-slate-900/80 p-4 sm:p-6 backdrop-blur-md flex items-center justify-center">
+            <div className="flex-1 min-h-0 overflow-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none] border border-white/20 rounded-2xl bg-black/80 p-4 sm:p-6 backdrop-blur-md flex items-center justify-center">
               <KnockoutBracket />
             </div>
           </main>
         )}
 
         {/* FOOTER BAR */}
-        <footer className="border-t border-white/15 pt-3 flex justify-between items-center text-[10px] font-bold text-slate-300 shrink-0 bg-slate-900/60 p-3 rounded-2xl backdrop-blur-md">
+        <footer
+          className="border border-white/15 pt-3 flex justify-between items-center text-[10px] font-bold text-slate-300 shrink-0 p-3 rounded-2xl backdrop-blur-md shadow-lg"
+          style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}
+        >
           <span>{tournament?.name || 'Bierpong Tournament'} Beamer Live Screen</span>
           <span className="flex items-center gap-1.5">
             <span>

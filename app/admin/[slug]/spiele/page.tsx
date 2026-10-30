@@ -228,7 +228,7 @@ export default function AdminSpielePage() {
     return groups.find((g) => g.id === id)?.name || `Gruppe #${id}`
   }
 
-  // AUTOMATISCHER SPIELPLAN-GENERATOR MIT STRIKTER LOGIK & GEORDNETER TISCHVERTEILUNG
+  // AUTOMATISCHER SPIELPLAN-GENERATOR MIT LÜCKENLOSER TISCHVERTEILUNG (GRUPPE FÜR GRUPPE)
   async function handleGenerateGroupSchedule() {
     if (!tournament?.id || groups.length === 0) return
 
@@ -274,33 +274,63 @@ export default function AdminSpielePage() {
         throw new Error('Es wurden keine gültigen Paarungen gefunden. Prüfe, ob den Gruppen ausreichend Teams zugewiesen sind.')
       }
 
-      // 3. Bevorzugte Tischgruppen pro Gruppe festlegen (z.B. Gruppe A -> Tisch 1, Gruppe B -> Tisch 3 etc.)
-      const groupTableOffset: Record<number, number> = {}
-      validGroups.forEach((g, idx) => {
-        const pref = Math.floor(idx * (tableCount / validGroups.length)) + 1
-        groupTableOffset[g.id] = Math.min(pref, tableCount)
-      })
-
-      // Speicherstrukturen für Zeitslots: Teams & Tische pro Slot
+      // Speicherstrukturen für Zeitslots: Spiele & Teams pro Slot
+      const slotMatches: Map<number, Array<{ group_id: number; team1_id: number; team2_id: number }>> = new Map()
       const slotTeams: Map<number, Set<number>> = new Map()
-      const slotTables: Map<number, Set<number>> = new Map()
 
-      const getSlotTeams = (slot: number) => {
-        if (!slotTeams.has(slot)) slotTeams.set(slot, new Set())
-        return slotTeams.get(slot)!
-      }
-
-      const getSlotTables = (slot: number) => {
-        if (!slotTables.has(slot)) slotTables.set(slot, new Set())
-        return slotTables.get(slot)!
-      }
-
-      // Minimaler Start-Zeitslot für die nächste Runde einer Gruppe
       const groupNextMinSlot: Record<number, number> = {}
       validGroups.forEach((g) => {
         groupNextMinSlot[g.id] = 0
       })
 
+      // 3. Runden- und gruppenweise durchiterieren und Spiele in die Slots einsortieren
+      for (let r = 0; r < maxRounds; r++) {
+        validGroups.forEach((g) => {
+          const rounds = groupRoundsMap[g.id]
+          if (!rounds || !rounds[r]) return
+
+          let roundMaxSlotUsed = groupNextMinSlot[g.id]
+
+          rounds[r].matches.forEach((match) => {
+            const t1 = match.team1_id
+            const t2 = match.team2_id
+
+            let slot = groupNextMinSlot[g.id]
+
+            while (true) {
+              if (!slotTeams.has(slot)) slotTeams.set(slot, new Set())
+              if (!slotMatches.has(slot)) slotMatches.set(slot, [])
+
+              const teamsInSlot = slotTeams.get(slot)!
+              const matchesInSlot = slotMatches.get(slot)!
+
+              // REGEL 1: Kein Team darf im selben Zeitslot doppelt spielen
+              // REGEL 2: Maximale Tischanzahl pro Slot darf nicht überschritten werden
+              if (!teamsInSlot.has(t1) && !teamsInSlot.has(t2) && matchesInSlot.length < tableCount) {
+                teamsInSlot.add(t1)
+                teamsInSlot.add(t2)
+                matchesInSlot.push({
+                  group_id: g.id,
+                  team1_id: t1,
+                  team2_id: t2,
+                })
+
+                if (slot > roundMaxSlotUsed) {
+                  roundMaxSlotUsed = slot
+                }
+                break
+              }
+
+              slot++
+            }
+          })
+
+          // Nächste Runde dieser Gruppe darf erst nach der aktuellen Runde starten
+          groupNextMinSlot[g.id] = roundMaxSlotUsed + 1
+        })
+      }
+
+      // 4. Spiele flach klopfen und Tische sequenziell zuweisen (Tisch 1, 2, 3... ohne Lücken)
       const scheduledMatches: Array<{
         group_id: number
         team1_id: number
@@ -309,88 +339,22 @@ export default function AdminSpielePage() {
         tableNumber: number
       }> = []
 
-      // 4. Rundenweise durch alle Gruppen iterieren und konfliktfrei einplanen
-      for (let r = 0; r < maxRounds; r++) {
-        validGroups.forEach((g) => {
-          const rounds = groupRoundsMap[g.id]
-          if (!rounds || !rounds[r]) return
+      const sortedSlots = Array.from(slotMatches.keys()).sort((a, b) => a - b)
 
-          const roundMatches = rounds[r].matches
-          let roundMaxSlotUsed = groupNextMinSlot[g.id]
-
-          roundMatches.forEach((match) => {
-            const t1 = match.team1_id
-            const t2 = match.team2_id
-
-            let startSlot = groupNextMinSlot[g.id]
-            let placed = false
-
-            for (let slot = startSlot; !placed; slot++) {
-              const teamsBusy = getSlotTeams(slot)
-              const tablesUsed = getSlotTables(slot)
-
-              // REGEL 1: Kein Team darf im selben Zeitslot doppelt spielen!
-              if (teamsBusy.has(t1) || teamsBusy.has(t2)) {
-                continue
-              }
-
-              // REGEL 2: Maximale Tischanzahl pro Zeitslot nicht überschreiten
-              if (tablesUsed.size >= tableCount) {
-                continue
-              }
-
-              // Freien Tisch suchen (bevorzugt nahe dem Gruppen-Offset)
-              const prefStart = groupTableOffset[g.id] || 1
-              let chosenTable: number | null = null
-
-              for (let t = prefStart; t <= tableCount; t++) {
-                if (!tablesUsed.has(t)) {
-                  chosenTable = t
-                  break
-                }
-              }
-
-              if (!chosenTable) {
-                for (let t = 1; t < prefStart; t++) {
-                  if (!tablesUsed.has(t)) {
-                    chosenTable = t
-                    break
-                  }
-                }
-              }
-
-              if (chosenTable) {
-                teamsBusy.add(t1)
-                teamsBusy.add(t2)
-                tablesUsed.add(chosenTable)
-
-                scheduledMatches.push({
-                  group_id: g.id,
-                  team1_id: t1,
-                  team2_id: t2,
-                  slotIndex: slot,
-                  tableNumber: chosenTable,
-                })
-
-                if (slot > roundMaxSlotUsed) {
-                  roundMaxSlotUsed = slot
-                }
-                placed = true
-              }
-            }
+      sortedSlots.forEach((slotIndex) => {
+        const matchesInSlot = slotMatches.get(slotIndex)!
+        matchesInSlot.forEach((m, idx) => {
+          scheduledMatches.push({
+            ...m,
+            slotIndex,
+            tableNumber: idx + 1, // Lückenlose Belegung ab Tisch 1
           })
-
-          // Die nächste Runde der Gruppe darf erst im Zeitslot NACH dieser Runde starten
-          groupNextMinSlot[g.id] = roundMaxSlotUsed + 1
         })
-      }
+      })
 
       if (scheduledMatches.length === 0) {
         throw new Error('Es wurden keine Spiele generiert.')
       }
-
-      // Nach Zeitslot und Tisch sortieren
-      scheduledMatches.sort((a, b) => a.slotIndex - b.slotIndex || a.tableNumber - b.tableNumber)
 
       // 5. Uhrzeiten berechnen & in Supabase eintragen
       const [startHours, startMinutes] = startTime.split(':').map(Number)
@@ -421,7 +385,7 @@ export default function AdminSpielePage() {
       await loadData()
       setStatusMessage({
         type: 'success',
-        text: `Spielplan mit ${rowsToInsert.length} Spielen erfolgreich ohne Team-Überschneidungen auf ${tableCount} Tische verteilt!`,
+        text: `Spielplan mit ${rowsToInsert.length} Spielen erfolgreich ohne Lücken auf ${tableCount} Tische verteilt!`,
       })
     } catch (err: any) {
       console.error(err)
@@ -623,7 +587,7 @@ export default function AdminSpielePage() {
             Gruppen-Spielplan generieren
           </h2>
           <p className="mt-1 text-xs font-medium text-slate-300">
-            Erstelle automatisch alle Gruppen-Paarungen (Round-Robin / Berger-System) ohne zeitliche Team-Überschneidungen und mit geordneter Tischverteilung.
+            Erstelle automatisch alle Gruppen-Paarungen (Round-Robin / Berger-System) ohne zeitliche Team-Überschneidungen und mit lückenloser Tischbelegung.
           </p>
         </div>
 
