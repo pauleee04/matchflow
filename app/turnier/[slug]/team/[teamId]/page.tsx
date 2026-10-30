@@ -22,6 +22,11 @@ type Group = {
   name: string
 }
 
+type GroupMemberData = {
+  team_id: number | string
+  manual_rank?: number | null
+}
+
 type TournamentMatch = {
   id: number | string
   tournament_id?: number | string | null
@@ -51,6 +56,7 @@ type GroupStanding = {
   goalsFor: number
   goalsAgainst: number
   goalDiff: number
+  manualRank?: number | null
 }
 
 type TournamentInfo = {
@@ -82,7 +88,7 @@ type PublicTeamPage = {
 
 type TeamRulesPreview = {
   show_on_team_page: boolean
-  team_summary: string | null
+  rules_text: string | null
 }
 
 // HELPER FÜR FARBANPASSUNGEN UND KONTRASTE
@@ -178,12 +184,14 @@ function calculateStandings(
   teams: Team[],
   groupTeamIds: Set<string>,
   matches: TournamentMatch[],
+  groupMembers?: GroupMemberData[],
 ): GroupStanding[] {
   const groupTeams = teams.filter((t) => groupTeamIds.has(String(t.id)))
   const groupMatches = matches.filter(
     (m) =>
       ['finished', 'beendet', 'completed'].includes(m.status.toLowerCase()) &&
-      m.team1_id && m.team2_id &&
+      m.team1_id &&
+      m.team2_id &&
       groupTeamIds.has(String(m.team1_id)) &&
       groupTeamIds.has(String(m.team2_id)),
   )
@@ -191,6 +199,7 @@ function calculateStandings(
   const statsMap = new Map<string, GroupStanding>()
 
   groupTeams.forEach((t) => {
+    const member = groupMembers?.find((m) => String(m.team_id) === String(t.id))
     statsMap.set(String(t.id), {
       teamId: t.id,
       teamName: t.name,
@@ -202,6 +211,7 @@ function calculateStandings(
       goalsFor: 0,
       goalsAgainst: 0,
       goalDiff: 0,
+      manualRank: member?.manual_rank ?? null,
     })
   })
 
@@ -224,23 +234,83 @@ function calculateStandings(
       }
 
       if (m.team1_score > m.team2_score) {
-        if (t1) { t1.wins++; t1.points += 3 }
-        if (t2) { t2.losses++ }
+        if (t1) {
+          t1.wins++
+          t1.points += 3
+        }
+        if (t2) {
+          t2.losses++
+        }
       } else if (m.team2_score > m.team1_score) {
-        if (t2) { t2.wins++; t2.points += 3 }
-        if (t1) { t1.losses++ }
+        if (t2) {
+          t2.wins++
+          t2.points += 3
+        }
+        if (t1) {
+          t1.losses++
+        }
       } else {
-        if (t1) { t1.draws++; t1.points += 1 }
-        if (t2) { t2.draws++; t2.points += 1 }
+        if (t1) {
+          t1.draws++
+          t1.points += 1
+        }
+        if (t2) {
+          t2.draws++
+          t2.points += 1
+        }
       }
     }
   })
 
+  // Direkter Vergleich (Head-to-Head)
+  const getHeadToHead = (aId: string | number, bId: string | number): number => {
+    const directMatches = groupMatches.filter(
+      (m) =>
+        (String(m.team1_id) === String(aId) && String(m.team2_id) === String(bId)) ||
+        (String(m.team1_id) === String(bId) && String(m.team2_id) === String(aId)),
+    )
+    if (directMatches.length === 0) return 0
+
+    let pA = 0
+    let pB = 0
+    directMatches.forEach((m) => {
+      const s1 = m.team1_score!
+      const s2 = m.team2_score!
+      if (String(m.team1_id) === String(aId)) {
+        if (s1 > s2) pA += 3
+        else if (s2 > s1) pB += 3
+        else {
+          pA += 1
+          pB += 1
+        }
+      } else {
+        if (s2 > s1) pA += 3
+        else if (s1 > s2) pB += 3
+        else {
+          pA += 1
+          pB += 1
+        }
+      }
+    })
+    return pB - pA // Negativ -> A hat mehr Punkte im direkten Vergleich
+  }
+
   return Array.from(statsMap.values()).sort((a, b) => {
+    // 1. Punkte
     if (b.points !== a.points) return b.points - a.points
+    // 2. Tordifferenz
     if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff
+    // 3. Eigene Tore / Becher
     if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor
-    return b.wins - a.wins
+    // 4. Direkter Vergleich
+    const h2h = getHeadToHead(a.teamId, b.teamId)
+    if (h2h !== 0) return h2h
+    // 5. Manueller Admin-Overrule
+    const rA = a.manualRank ?? 999
+    const rB = b.manualRank ?? 999
+    if (rA !== rB) return rA - rB
+    // 6. Alphabetisch
+    return a.teamName.localeCompare(b.teamName)
   })
 }
 
@@ -274,6 +344,7 @@ export default function CleanPublicTeamPage() {
   const [tournament, setTournament] = useState<TournamentInfo | null>(null)
   const [teams, setTeams] = useState<Team[]>([])
   const [group, setGroup] = useState<Group | null>(null)
+  const [groupMembers, setGroupMembers] = useState<GroupMemberData[]>([])
   const [matches, setMatches] = useState<TournamentMatch[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -297,154 +368,184 @@ export default function CleanPublicTeamPage() {
     }
   }, [])
 
-  const loadData = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true)
-    const queryParams = new URLSearchParams(window.location.search)
-    const tokenFromQuery = queryParams.get('t')
-    const teamIdOrToken = tokenFromQuery || rawTeamId
+  const loadData = useCallback(
+    async (isRefresh = false) => {
+      if (isRefresh) setRefreshing(true)
+      const queryParams = new URLSearchParams(window.location.search)
+      const tokenFromQuery = queryParams.get('t')
+      const teamIdOrToken = tokenFromQuery || rawTeamId
 
-    if (!teamIdOrToken) {
-      setError('Keine gültige Team-ID oder Token angegeben.')
-      setLoading(false)
-      setRefreshing(false)
-      return
-    }
-
-    try {
-      let loadedTeam: Team | null = null
-      let loadedTournament: TournamentInfo | null = null
-      let loadedGroup: Group | null = null
-      let loadedTeams: Team[] = []
-      let loadedMatches: TournamentMatch[] = []
-
-      // 1. RPC Call
-      try {
-        const { data: rpcData } = await supabase.rpc('get_public_team_page', {
-          p_token: teamIdOrToken,
-        })
-
-        if (rpcData && (rpcData as PublicTeamPage).team) {
-          const pageData = rpcData as PublicTeamPage
-          loadedTeam = pageData.team ?? null
-          loadedTournament = pageData.tournament ?? null
-          loadedGroup = pageData.group ?? null
-          loadedTeams = pageData.teams ?? []
-          if (pageData.matches) {
-            loadedMatches = pageData.matches.map((m) => normalizeMatch(m as Record<string, unknown>))
-          }
-        }
-      } catch (err) {
-        console.warn('RPC Fallback get_public_team_page:', err)
-      }
-
-      // 2. Fallback Direct Selects
-      if (!loadedTeam) {
-        const { data: tourneyData } = await supabase
-          .from('tournaments')
-          .select('*')
-          .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
-          .maybeSingle()
-
-        if (tourneyData) {
-          loadedTournament = tourneyData as TournamentInfo
-        }
-
-        const isNumericId = !isNaN(Number(teamIdOrToken)) && Number(teamIdOrToken) > 0
-        let teamRes
-
-        if (isNumericId) {
-          teamRes = await supabase.from('teams').select('*').eq('id', Number(teamIdOrToken)).maybeSingle()
-        } else {
-          teamRes = await supabase
-            .from('teams')
-            .select('*')
-            .or(`access_token.eq."${teamIdOrToken}",id.eq."${teamIdOrToken}"`)
-            .maybeSingle()
-        }
-
-        if (teamRes?.data) {
-          loadedTeam = teamRes.data as Team
-        }
-
-        if (loadedTeam) {
-          const tournamentId = loadedTeam.tournament_id || loadedTournament?.id
-
-          if (tournamentId) {
-            if (!loadedTournament) {
-              const { data: tData } = await supabase.from('tournaments').select('*').eq('id', tournamentId).maybeSingle()
-              if (tData) loadedTournament = tData as TournamentInfo
-            }
-
-            const { data: allTeams } = await supabase.from('teams').select('*').eq('tournament_id', tournamentId)
-            loadedTeams = (allTeams || []) as Team[]
-
-            const { data: groupMember } = await supabase
-              .from('group_members')
-              .select('group_id')
-              .eq('team_id', loadedTeam.id)
-              .maybeSingle()
-
-            const groupId = groupMember?.group_id || (loadedTeam as Record<string, unknown>).group_id
-            if (groupId) {
-              const { data: gData } = await supabase.from('groups').select('*').eq('id', groupId).maybeSingle()
-              if (gData) loadedGroup = gData as Group
-            }
-
-            const { data: matchesData } = await supabase.from('matches').select('*').eq('tournament_id', tournamentId)
-            if (matchesData) {
-              loadedMatches = matchesData.map((m) => normalizeMatch(m as Record<string, unknown>))
-            }
-          }
-        }
-      }
-
-      if (!loadedTeam) {
-        setError('Team konnte nicht gefunden werden.')
+      if (!teamIdOrToken) {
+        setError('Keine gültige Team-ID oder Token angegeben.')
+        setLoading(false)
+        setRefreshing(false)
         return
       }
 
-      setTeam(loadedTeam)
-      setTournament(loadedTournament)
-      setGroup(loadedGroup)
-      setTeams(loadedTeams)
-      setMatches(loadedMatches)
-      setError('')
+      try {
+        let loadedTeam: Team | null = null
+        let loadedTournament: TournamentInfo | null = null
+        let loadedGroup: Group | null = null
+        let loadedTeams: Team[] = []
+        let loadedMatches: TournamentMatch[] = []
+        let loadedGroupMembers: GroupMemberData[] = []
 
-      if (!isEditing) {
-        setEditPlayer1(loadedTeam.player1 || '')
-        setEditPlayer2(loadedTeam.player2 || '')
-      }
-
-      // 3. Turnier-Regeln flexibel abrufen (aus `tournament_rules`)
-      if (loadedTournament?.id) {
-        const { data: rulesData } = await supabase
-          .from('tournament_rules')
-          .select('*')
-          .eq('tournament_id', loadedTournament.id)
-          .maybeSingle()
-
-        if (rulesData) {
-          const summaryText =
-            rulesData.team_summary ||
-            rulesData.rules_summary ||
-            rulesData.rules ||
-            rulesData.content ||
-            ''
-
-          setTeamRulesPreview({
-            show_on_team_page: rulesData.show_on_team_page ?? true,
-            team_summary: typeof summaryText === 'string' ? summaryText : '',
+        // 1. RPC Call
+        try {
+          const { data: rpcData } = await supabase.rpc('get_public_team_page', {
+            p_token: teamIdOrToken,
           })
+
+          if (rpcData && (rpcData as PublicTeamPage).team) {
+            const pageData = rpcData as PublicTeamPage
+            loadedTeam = pageData.team ?? null
+            loadedTournament = pageData.tournament ?? null
+            loadedGroup = pageData.group ?? null
+            loadedTeams = pageData.teams ?? []
+            if (pageData.matches) {
+              loadedMatches = pageData.matches.map((m) => normalizeMatch(m as Record<string, unknown>))
+            }
+          }
+        } catch (err) {
+          console.warn('RPC Fallback get_public_team_page:', err)
         }
+
+        // 2. Fallback Direct Selects
+        if (!loadedTeam) {
+          const { data: tourneyData } = await supabase
+            .from('tournaments')
+            .select('*')
+            .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
+            .maybeSingle()
+
+          if (tourneyData) {
+            loadedTournament = tourneyData as TournamentInfo
+          }
+
+          const isNumericId = !isNaN(Number(teamIdOrToken)) && Number(teamIdOrToken) > 0
+          let teamRes
+
+          if (isNumericId) {
+            teamRes = await supabase.from('teams').select('*').eq('id', Number(teamIdOrToken)).maybeSingle()
+          } else {
+            teamRes = await supabase
+              .from('teams')
+              .select('*')
+              .or(`access_token.eq."${teamIdOrToken}",id.eq."${teamIdOrToken}"`)
+              .maybeSingle()
+          }
+
+          if (teamRes?.data) {
+            loadedTeam = teamRes.data as Team
+          }
+
+          if (loadedTeam) {
+            const tournamentId = loadedTeam.tournament_id || loadedTournament?.id
+
+            if (tournamentId) {
+              if (!loadedTournament) {
+                const { data: tData } = await supabase
+                  .from('tournaments')
+                  .select('*')
+                  .eq('id', tournamentId)
+                  .maybeSingle()
+                if (tData) loadedTournament = tData as TournamentInfo
+              }
+
+              const { data: allTeams } = await supabase.from('teams').select('*').eq('tournament_id', tournamentId)
+              loadedTeams = (allTeams || []) as Team[]
+
+              const { data: groupMember } = await supabase
+                .from('group_members')
+                .select('group_id, manual_rank')
+                .eq('team_id', loadedTeam.id)
+                .maybeSingle()
+
+              const groupId = groupMember?.group_id || (loadedTeam as Record<string, unknown>).group_id
+              if (groupId) {
+                const { data: gData } = await supabase.from('groups').select('*').eq('id', groupId).maybeSingle()
+                if (gData) loadedGroup = gData as Group
+
+                // Alle Members der Gruppe inkl. manual_rank abrufen
+                const { data: allGroupMembers } = await supabase
+                  .from('group_members')
+                  .select('team_id, manual_rank')
+                  .eq('group_id', groupId)
+
+                if (allGroupMembers) {
+                  loadedGroupMembers = allGroupMembers as GroupMemberData[]
+                }
+              }
+
+              const { data: matchesData } = await supabase.from('matches').select('*').eq('tournament_id', tournamentId)
+              if (matchesData) {
+                loadedMatches = matchesData.map((m) => normalizeMatch(m as Record<string, unknown>))
+              }
+            }
+          }
+        } else if (loadedGroup?.id) {
+          // Falls über RPC geladen, Mitglieder für manual_rank abfragen
+          const { data: allGroupMembers } = await supabase
+            .from('group_members')
+            .select('team_id, manual_rank')
+            .eq('group_id', loadedGroup.id)
+
+          if (allGroupMembers) {
+            loadedGroupMembers = allGroupMembers as GroupMemberData[]
+          }
+        }
+
+        if (!loadedTeam) {
+          setError('Team konnte nicht gefunden werden.')
+          return
+        }
+
+        setTeam(loadedTeam)
+        setTournament(loadedTournament)
+        setGroup(loadedGroup)
+        setGroupMembers(loadedGroupMembers)
+        setTeams(loadedTeams)
+        setMatches(loadedMatches)
+        setError('')
+
+        if (!isEditing) {
+          setEditPlayer1(loadedTeam.player1 || '')
+          setEditPlayer2(loadedTeam.player2 || '')
+        }
+
+        // 3. Echte Turnier-Regeln direkt aus tournament_rules abrufen
+        if (loadedTournament?.id) {
+          const { data: rulesData } = await supabase
+            .from('tournament_rules')
+            .select('*')
+            .eq('tournament_id', loadedTournament.id)
+            .maybeSingle()
+
+          if (rulesData) {
+            const rulesText =
+              rulesData.team_summary ||
+              rulesData.rules_summary ||
+              rulesData.rules ||
+              rulesData.rules_text ||
+              rulesData.content ||
+              ''
+
+            setTeamRulesPreview({
+              show_on_team_page: rulesData.show_on_team_page ?? true,
+              rules_text: typeof rulesText === 'string' ? rulesText : '',
+            })
+          }
+        }
+      } catch (err) {
+        console.error(err)
+        setError('Ein Fehler beim Laden der Daten ist aufgetreten.')
+      } finally {
+        setLoading(false)
+        setRefreshing(false)
       }
-    } catch (err) {
-      console.error(err)
-      setError('Ein Fehler beim Laden der Daten ist aufgetreten.')
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [slug, rawSlug, rawTeamId, isEditing])
+    },
+    [slug, rawSlug, rawTeamId, isEditing],
+  )
 
   useEffect(() => {
     void loadData()
@@ -556,7 +657,10 @@ export default function CleanPublicTeamPage() {
     groupTeamIds.add(String(team.id))
 
     teams.forEach((t) => {
-      if ((t as Record<string, unknown>).group_id && String((t as Record<string, unknown>).group_id) === String(group.id)) {
+      if (
+        (t as Record<string, unknown>).group_id &&
+        String((t as Record<string, unknown>).group_id) === String(group.id)
+      ) {
         groupTeamIds.add(String(t.id))
       }
     })
@@ -568,8 +672,8 @@ export default function CleanPublicTeamPage() {
       }
     })
 
-    return calculateStandings(teams, groupTeamIds, matches)
-  }, [group, team, teams, matches])
+    return calculateStandings(teams, groupTeamIds, matches, groupMembers)
+  }, [group, team, teams, matches, groupMembers])
 
   const myGroupRank = useMemo(() => {
     if (!group || standings.length === 0 || !team) return null
@@ -601,8 +705,17 @@ export default function CleanPublicTeamPage() {
       const myNameNorm = normalizeName(team.name)
 
       const ignoredKeys = new Set([
-        'id', 'tournament_id', 'group_id', 'groupid', 'round',
-        'table_number', 'table', 'status', 'scheduled_time', 'created_at', 'updated_at',
+        'id',
+        'tournament_id',
+        'group_id',
+        'groupid',
+        'round',
+        'table_number',
+        'table',
+        'status',
+        'scheduled_time',
+        'created_at',
+        'updated_at',
       ])
 
       for (const [key, val] of Object.entries(m)) {
@@ -618,13 +731,10 @@ export default function CleanPublicTeamPage() {
 
       return false
     },
-    [team, rankPlaceholders]
+    [team, rankPlaceholders],
   )
 
-  const isMyMatch = useCallback(
-    (m: TournamentMatch) => inspectMatchForTeam(m),
-    [inspectMatchForTeam]
-  )
+  const isMyMatch = useCallback((m: TournamentMatch) => inspectMatchForTeam(m), [inspectMatchForTeam])
 
   const getOpponent = useCallback(
     (m: TournamentMatch) => {
@@ -650,7 +760,7 @@ export default function CleanPublicTeamPage() {
 
       return 'TBD (Gegner offen)'
     },
-    [team, teams, rankPlaceholders]
+    [team, teams, rankPlaceholders],
   )
 
   const getMyScore = useCallback(
@@ -666,7 +776,7 @@ export default function CleanPublicTeamPage() {
 
       return isT1Me ? m.team1_score : m.team2_score
     },
-    [team, rankPlaceholders]
+    [team, rankPlaceholders],
   )
 
   const getOppScore = useCallback(
@@ -682,7 +792,7 @@ export default function CleanPublicTeamPage() {
 
       return isT1Me ? m.team2_score : m.team1_score
     },
-    [team, rankPlaceholders]
+    [team, rankPlaceholders],
   )
 
   const finishedMatches = useMemo(
@@ -690,7 +800,7 @@ export default function CleanPublicTeamPage() {
       matches
         .filter((m) => isMyMatch(m) && ['finished', 'beendet', 'completed'].includes(m.status.toLowerCase()))
         .sort((a, b) => String(b.id).localeCompare(String(a.id))),
-    [matches, isMyMatch]
+    [matches, isMyMatch],
   )
 
   const upcomingMatches = useMemo(
@@ -703,17 +813,14 @@ export default function CleanPublicTeamPage() {
           }
           return String(a.id).localeCompare(String(b.id))
         }),
-    [matches, isMyMatch]
+    [matches, isMyMatch],
   )
 
-  const allKoMatches = useMemo(
-    () => matches.filter((m) => isKoPhaseMatch(m)),
-    [matches]
-  )
+  const allKoMatches = useMemo(() => matches.filter((m) => isKoPhaseMatch(m)), [matches])
 
   const rulesList = useMemo(() => {
-    if (!teamRulesPreview?.team_summary) return null
-    return teamRulesPreview.team_summary
+    if (!teamRulesPreview?.rules_text) return null
+    return teamRulesPreview.rules_text
       .split('\n')
       .map((l) => l.trim())
       .filter((l) => l.length > 0)
@@ -724,15 +831,26 @@ export default function CleanPublicTeamPage() {
 
   const isTournamentFinished = useMemo(() => {
     if (tournament?.status === 'finished') return true
-    if (matches.length > 0 && matches.every((m) => ['finished', 'beendet', 'completed'].includes(m.status.toLowerCase()))) return true
+    if (
+      matches.length > 0 &&
+      matches.every((m) => ['finished', 'beendet', 'completed'].includes(m.status.toLowerCase()))
+    )
+      return true
     return false
   }, [tournament, matches])
 
   const isWinnerTeam = useMemo(() => {
     if (!isTournamentFinished || !team?.id) return false
-    const finalMatch = matches.find((m) => m.phase?.toLowerCase().includes('finale') && ['finished', 'beendet', 'completed'].includes(m.status.toLowerCase()))
+    const finalMatch = matches.find(
+      (m) =>
+        m.phase?.toLowerCase().includes('finale') &&
+        ['finished', 'beendet', 'completed'].includes(m.status.toLowerCase()),
+    )
     if (!finalMatch) return false
-    const t1Win = finalMatch.team1_score !== null && finalMatch.team2_score !== null && finalMatch.team1_score > finalMatch.team2_score
+    const t1Win =
+      finalMatch.team1_score !== null &&
+      finalMatch.team2_score !== null &&
+      finalMatch.team1_score > finalMatch.team2_score
     const winnerId = t1Win ? finalMatch.team1_id : finalMatch.team2_id
     return String(winnerId) === String(team.id)
   }, [isTournamentFinished, matches, team])
@@ -760,9 +878,7 @@ export default function CleanPublicTeamPage() {
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
             style={{ borderTopColor: primaryColor }}
           />
-          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
-            Lade Team-Portal …
-          </p>
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">Lade Team-Portal …</p>
         </div>
       </div>
     )
@@ -771,7 +887,7 @@ export default function CleanPublicTeamPage() {
   if (error || !team) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center p-6 [color-scheme:dark]">
-        <div className="mx-auto max-w-lg rounded-[32px] border border-red-500/30 bg-black/40 p-6 text-center backdrop-blur-xl my-12">
+        <div className="mx-auto my-12 max-w-lg rounded-[32px] border border-red-500/30 bg-black/40 p-6 text-center backdrop-blur-xl">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/10 text-xl text-red-400">
             ⚠️
           </div>
@@ -800,14 +916,12 @@ export default function CleanPublicTeamPage() {
 
       {/* GEWINNER BANNER */}
       {isWinnerTeam && (
-        <section className="rounded-[32px] border border-amber-500/40 bg-gradient-to-r from-amber-500/20 via-yellow-400/20 to-amber-500/20 p-6 sm:p-8 text-center shadow-2xl backdrop-blur-xl animate-pulse">
+        <section className="rounded-[32px] border border-amber-500/40 bg-gradient-to-r from-amber-500/20 via-yellow-400/20 to-amber-500/20 p-6 text-center shadow-2xl backdrop-blur-xl animate-pulse sm:p-8">
           <span className="text-4xl sm:text-5xl">🏆 🥇 🏆</span>
-          <h2 className="mt-2 text-2xl sm:text-3xl font-black text-amber-300">
+          <h2 className="mt-2 text-2xl font-black text-amber-300 sm:text-3xl">
             Herzlichen Glückwunsch zum Turniersieg! 🎉
           </h2>
-          <p className="mt-1 text-xs sm:text-sm font-bold text-amber-100">
-            Ihr habt euch den 1. Platz gesichert!
-          </p>
+          <p className="mt-1 text-xs font-bold text-amber-100 sm:text-sm">Ihr habt euch den 1. Platz gesichert!</p>
           <a
             href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/sieger`}
             className="mt-4 inline-block rounded-2xl bg-amber-400 px-6 py-2.5 text-xs font-black uppercase tracking-wider text-slate-950 transition shadow-lg hover:bg-amber-300"
@@ -818,12 +932,16 @@ export default function CleanPublicTeamPage() {
       )}
 
       {/* 1. KONTROLLZENTRUM BLOCK */}
-      <section className="rounded-[32px] border border-white/10 bg-black/40 p-6 sm:p-8 shadow-2xl backdrop-blur-md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-5 min-w-0 flex-1">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border border-white/10 bg-black/50 flex items-center justify-center text-3xl shadow-inner overflow-hidden shrink-0">
+      <section className="rounded-[32px] border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-md sm:p-8">
+        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-5">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/50 text-3xl shadow-inner sm:h-20 sm:w-20">
               {tournament?.logo_url ? (
-                <img src={tournament.logo_url} alt={tournament.name || 'Logo'} className="w-full h-full object-contain p-1.5" />
+                <img
+                  src={tournament.logo_url}
+                  alt={tournament.name || 'Logo'}
+                  className="h-full w-full object-contain p-1.5"
+                />
               ) : (
                 '🏆'
               )}
@@ -836,7 +954,9 @@ export default function CleanPublicTeamPage() {
               {!isEditing ? (
                 <>
                   <div className="flex items-center gap-3">
-                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-0.5 text-white truncate">{team.name}</h1>
+                    <h1 className="mt-0.5 truncate text-2xl font-black tracking-tight text-white sm:text-3xl">
+                      {team.name}
+                    </h1>
                     <button
                       type="button"
                       onClick={() => {
@@ -845,20 +965,20 @@ export default function CleanPublicTeamPage() {
                         setIsEditing(true)
                         setDetailsMessage('')
                       }}
-                      className="px-2.5 py-1 rounded-xl border border-white/10 bg-black/50 hover:border-white/20 hover:bg-black/70 text-xs font-bold text-slate-200 transition shrink-0"
+                      className="shrink-0 rounded-xl border border-white/10 bg-black/50 px-2.5 py-1 text-xs font-bold text-slate-200 transition hover:border-white/20 hover:bg-black/70"
                     >
                       ✏️ Spieler bearbeiten
                     </button>
                   </div>
-                  <p className="text-xs sm:text-sm font-medium text-slate-300 mt-1">
+                  <p className="mt-1 text-xs font-medium text-slate-300 sm:text-sm">
                     👤 Spieler: {team.player1 || 'Name offen'} &amp; {team.player2 || 'Name offen'}
                   </p>
                 </>
               ) : (
-                <form onSubmit={handleSaveDetails} className="mt-2 space-y-3 max-w-lg">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <form onSubmit={handleSaveDetails} className="mt-2 max-w-lg space-y-3">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                      <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
                         Spieler 1 Name
                       </label>
                       <input
@@ -866,11 +986,11 @@ export default function CleanPublicTeamPage() {
                         value={editPlayer1}
                         onChange={(e) => setEditPlayer1(e.target.value)}
                         placeholder="Name Spieler 1"
-                        className="w-full px-3 py-2 rounded-xl border border-white/10 bg-black/50 text-white text-xs font-bold focus:outline-none focus:border-white/30"
+                        className="w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                      <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
                         Spieler 2 Name
                       </label>
                       <input
@@ -878,7 +998,7 @@ export default function CleanPublicTeamPage() {
                         value={editPlayer2}
                         onChange={(e) => setEditPlayer2(e.target.value)}
                         placeholder="Name Spieler 2"
-                        className="w-full px-3 py-2 rounded-xl border border-white/10 bg-black/50 text-white text-xs font-bold focus:outline-none focus:border-white/30"
+                        className="w-full rounded-xl border border-white/10 bg-black/50 px-3 py-2 text-xs font-bold text-white focus:border-white/30 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -886,7 +1006,7 @@ export default function CleanPublicTeamPage() {
                     <button
                       type="submit"
                       disabled={savingDetails}
-                      className="px-4 py-2 rounded-xl text-xs font-black transition shadow"
+                      className="rounded-xl px-4 py-2 text-xs font-black transition shadow"
                       style={{ backgroundColor: primaryColor, color: primaryContrastText }}
                     >
                       {savingDetails ? 'Speichere...' : '💾 Speichern'}
@@ -894,7 +1014,7 @@ export default function CleanPublicTeamPage() {
                     <button
                       type="button"
                       onClick={() => setIsEditing(false)}
-                      className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 border border-white/10 bg-black/50 hover:bg-black/70 transition"
+                      className="rounded-xl border border-white/10 bg-black/50 px-4 py-2 text-xs font-bold text-slate-300 transition hover:bg-black/70"
                     >
                       Abbrechen
                     </button>
@@ -902,57 +1022,65 @@ export default function CleanPublicTeamPage() {
                 </form>
               )}
 
-              {detailsMessage && (
-                <p className="text-xs font-bold mt-2 text-emerald-400">
-                  {detailsMessage}
-                </p>
-              )}
+              {detailsMessage && <p className="mt-2 text-xs font-bold text-emerald-400">{detailsMessage}</p>}
             </div>
           </div>
 
-          <div className="flex flex-wrap md:flex-col gap-2 md:items-end">
-            <span className="px-3.5 py-1.5 border border-white/10 bg-black/50 rounded-full text-xs font-bold text-slate-200">
+          <div className="flex flex-wrap gap-2 md:flex-col md:items-end">
+            <span className="rounded-full border border-white/10 bg-black/50 px-3.5 py-1.5 text-xs font-bold text-slate-200">
               📌 {group?.name || 'Gruppe offen'}
             </span>
-            <span className={`px-3.5 py-1.5 rounded-full text-xs font-black ${isPaid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`}>
+            <span
+              className={`rounded-full px-3.5 py-1.5 text-xs font-black ${
+                isPaid
+                  ? 'border border-emerald-500/30 bg-emerald-500/20 text-emerald-300'
+                  : 'border border-amber-500/30 bg-amber-500/20 text-amber-300'
+              }`}
+            >
               {isPaid ? '🟢 Bezahlt' : '🟡 Zahlung offen'}
             </span>
-            <span className={`px-3.5 py-1.5 rounded-full text-xs font-black ${team.checkin_status ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-black/50 text-slate-400 border border-white/10'}`}>
+            <span
+              className={`rounded-full px-3.5 py-1.5 text-xs font-black ${
+                team.checkin_status
+                  ? 'border border-emerald-500/30 bg-emerald-500/20 text-emerald-300'
+                  : 'border border-white/10 bg-black/50 text-slate-400'
+              }`}
+            >
               {team.checkin_status ? '🟢 Eingecheckt' : '⚪ Nicht eingecheckt'}
             </span>
           </div>
         </div>
 
-        <div className="mt-6 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
           <div className="flex flex-wrap gap-2">
             <a
               href={`/turnier/${encodeURIComponent(tournamentSlugParam)}`}
-              className="px-3.5 py-2 border border-white/10 bg-black/50 hover:border-white/20 hover:bg-black/70 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white"
+              className="rounded-xl border border-white/10 bg-black/50 px-3.5 py-2 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:bg-black/70 hover:text-white"
             >
               🌐 Hauptseite
             </a>
             <a
               href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/live`}
-              className="px-3.5 py-2 border border-white/10 bg-black/50 hover:border-white/20 hover:bg-black/70 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white"
+              className="rounded-xl border border-white/10 bg-black/50 px-3.5 py-2 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:bg-black/70 hover:text-white"
             >
               🔴 Live-Spielplan
             </a>
             <a
               href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/regeln`}
-              className="px-3.5 py-2 border border-white/10 bg-black/50 hover:border-white/20 hover:bg-black/70 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white"
+              className="rounded-xl border border-white/10 bg-black/50 px-3.5 py-2 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:bg-black/70 hover:text-white"
             >
               📜 Regeln
             </a>
             <a
               href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/stats`}
-              className="px-3.5 py-2 border border-white/10 bg-black/50 hover:border-white/20 hover:bg-black/70 rounded-xl text-xs font-bold transition text-slate-300 hover:text-white"
+              className="rounded-xl border border-white/10 bg-black/50 px-3.5 py-2 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:bg-black/70 hover:text-white"
             >
               📊 Statistiken
             </a>
             {isTournamentFinished && (
               <a
                 href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/sieger`}
-                className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 rounded-xl text-xs font-black transition text-amber-300 animate-pulse"
+                className="animate-pulse rounded-xl border border-amber-500/40 bg-amber-500/20 px-3.5 py-2 text-xs font-black text-amber-300 transition hover:bg-amber-500/30"
               >
                 🥇 Sieger &amp; Platzierungen
               </a>
@@ -963,7 +1091,7 @@ export default function CleanPublicTeamPage() {
             type="button"
             onClick={() => void loadData(true)}
             disabled={refreshing}
-            className="px-3.5 py-2 border border-white/10 bg-black/50 hover:border-white/20 hover:bg-black/70 rounded-xl text-xs font-bold transition disabled:opacity-50 text-slate-300"
+            className="rounded-xl border border-white/10 bg-black/50 px-3.5 py-2 text-xs font-bold text-slate-300 transition hover:border-white/20 hover:bg-black/70 disabled:opacity-50"
           >
             {refreshing ? '🔄 Lade...' : '🔄 Aktualisieren'}
           </button>
@@ -971,13 +1099,13 @@ export default function CleanPublicTeamPage() {
       </section>
 
       {/* 2. TABELLE (NUR EIGENE GRUPPE) */}
-      <section className="rounded-[32px] border border-white/10 bg-black/40 p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-4">
+      <section className="space-y-4 rounded-[32px] border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-md sm:p-8">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
               {group?.name || 'Gruppe'}
             </p>
-            <h2 className="text-xl sm:text-2xl font-black text-white">Tabelle</h2>
+            <h2 className="text-xl font-black text-white sm:text-2xl">Tabelle</h2>
           </div>
           <span className="text-2xl">📈</span>
         </div>
@@ -987,7 +1115,7 @@ export default function CleanPublicTeamPage() {
             <table className="w-full text-left text-xs font-medium">
               <thead>
                 <tr className="border-b border-white/10 text-[10px] font-black uppercase text-slate-400">
-                  <th className="py-2.5 px-2 text-center w-10">Pl.</th>
+                  <th className="w-10 py-2.5 px-2 text-center">Pl.</th>
                   <th className="py-2.5 px-3">Team</th>
                   <th className="py-2.5 px-2 text-center">Sp</th>
                   <th className="py-2.5 px-2 text-center text-emerald-400">S</th>
@@ -995,7 +1123,7 @@ export default function CleanPublicTeamPage() {
                   <th className="py-2.5 px-2 text-center text-red-400">N</th>
                   <th className="py-2.5 px-2 text-center">Tore</th>
                   <th className="py-2.5 px-2 text-center">Diff</th>
-                  <th className="py-2.5 px-3 text-right font-black text-white w-16">Pkt.</th>
+                  <th className="w-16 py-2.5 px-3 text-right font-black text-white">Pkt.</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10 font-bold text-slate-200">
@@ -1005,35 +1133,39 @@ export default function CleanPublicTeamPage() {
                   return (
                     <tr
                       key={st.teamId}
-                      className={`transition ${isMe ? 'bg-emerald-500/20 text-white font-black' : ''}`}
+                      className={`transition ${isMe ? 'bg-emerald-500/20 font-black text-white' : ''}`}
                     >
                       <td className="py-3 px-2 text-center">
                         <span
                           className={`inline-flex h-6 w-6 items-center justify-center rounded-md font-mono text-[10px] font-black ${
                             idx === 0
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              ? 'border border-amber-500/30 bg-amber-500/20 text-amber-300'
                               : isMe
                               ? 'bg-emerald-500 text-slate-950'
-                              : 'bg-black/50 text-slate-400 border border-white/10'
+                              : 'border border-white/10 bg-black/50 text-slate-400'
                           }`}
                         >
                           {idx + 1}
                         </span>
                       </td>
-                      <td className="py-3 px-3 font-extrabold text-white">
-                        {st.teamName}
-                      </td>
+                      <td className="py-3 px-3 font-extrabold text-white">{st.teamName}</td>
                       <td className="py-3 px-2 text-center font-mono text-slate-400">{st.played}</td>
                       <td className="py-3 px-2 text-center font-mono text-emerald-400">{st.wins}</td>
                       <td className="py-3 px-2 text-center font-mono text-amber-400">{st.draws}</td>
                       <td className="py-3 px-2 text-center font-mono text-red-400">{st.losses}</td>
-                      <td className="py-3 px-2 text-center font-mono text-slate-300">{st.goalsFor}:{st.goalsAgainst}</td>
+                      <td className="py-3 px-2 text-center font-mono text-slate-300">
+                        {st.goalsFor}:{st.goalsAgainst}
+                      </td>
                       <td className="py-3 px-2 text-center font-mono font-black">
-                        <span className={st.goalDiff > 0 ? 'text-emerald-400' : st.goalDiff < 0 ? 'text-red-400' : 'text-slate-400'}>
+                        <span
+                          className={
+                            st.goalDiff > 0 ? 'text-emerald-400' : st.goalDiff < 0 ? 'text-red-400' : 'text-slate-400'
+                          }
+                        >
                           {diffText}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-right font-mono font-black text-sm" style={{ color: primaryColor }}>
+                      <td className="py-3 px-3 text-right font-mono text-sm font-black" style={{ color: primaryColor }}>
                         {st.points}
                       </td>
                     </tr>
@@ -1050,12 +1182,14 @@ export default function CleanPublicTeamPage() {
       </section>
 
       {/* 3. HISTORIE & AUSBLICK */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* HISTORIE / ERGEBNISSE */}
-        <section className="rounded-[32px] border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-md space-y-4">
+        <section className="space-y-4 rounded-[32px] border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Historie</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
+                Historie
+              </p>
               <h2 className="text-xl font-black text-white">Ergebnisse</h2>
             </div>
             <span className="text-2xl">🏆</span>
@@ -1064,35 +1198,47 @@ export default function CleanPublicTeamPage() {
           {finishedMatches.length > 0 ? (
             <div className="space-y-3">
               {finishedMatches.map((m) => {
-                const s1 = getMyScore(m), s2 = getOppScore(m)
+                const s1 = getMyScore(m),
+                  s2 = getOppScore(m)
                 const won = s1 !== null && s2 !== null && s1 > s2
                 const drawn = s1 !== null && s2 !== null && s1 === s2
                 const isKo = isKoPhaseMatch(m)
                 return (
-                  <div key={m.id} className="p-4 rounded-2xl border border-white/10 bg-black/40 space-y-2.5 backdrop-blur-md">
+                  <div
+                    key={m.id}
+                    className="space-y-2.5 rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-md"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <span
-                          className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs border shrink-0 ${
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border text-xs font-black ${
                             won
-                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                              ? 'border-emerald-500/30 bg-emerald-500/20 text-emerald-300'
                               : drawn
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                              : 'bg-red-500/20 text-red-300 border-red-500/30'
+                              ? 'border-amber-500/30 bg-amber-500/20 text-amber-300'
+                              : 'border-red-500/30 bg-red-500/20 text-red-300'
                           }`}
                         >
                           {won ? 'W' : drawn ? '=' : 'L'}
                         </span>
                         <div className="min-w-0">
-                          <p className="font-extrabold text-xs sm:text-sm text-white truncate max-w-[150px]">{getOpponent(m)}</p>
-                          <span className={`text-[10px] font-bold uppercase tracking-wider ${isKo ? 'text-amber-400 font-black' : 'text-slate-400'}`}>
+                          <p className="max-w-[150px] truncate text-xs font-extrabold text-white sm:text-sm">
+                            {getOpponent(m)}
+                          </p>
+                          <span
+                            className={`text-[10px] font-bold uppercase tracking-wider ${
+                              isKo ? 'font-black text-amber-400' : 'text-slate-400'
+                            }`}
+                          >
                             {isKo ? `⚡ ${m.phase || 'KO-Spiel'}` : 'Gruppenspiel'}
                           </span>
                         </div>
                       </div>
-                      <span className="font-mono font-black text-base text-white ml-2">{s1} : {s2}</span>
+                      <span className="ml-2 font-mono text-base font-black text-white">
+                        {s1} : {s2}
+                      </span>
                     </div>
-                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 pt-2 border-t border-white/10">
+                    <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[10px] font-bold text-slate-400">
                       <span>⏰ {m.scheduled_time ? formatDateTime(m.scheduled_time) : 'Zeit k.A.'}</span>
                       <span>🏓 {m.table_number ? `Tisch ${m.table_number}` : 'Tisch TBD'}</span>
                     </div>
@@ -1108,10 +1254,12 @@ export default function CleanPublicTeamPage() {
         </section>
 
         {/* AUSBLICK / KOMMENDE SPIELE */}
-        <section className="rounded-[32px] border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-md space-y-4">
+        <section className="space-y-4 rounded-[32px] border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Ausblick</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
+                Ausblick
+              </p>
               <h2 className="text-xl font-black text-white">Kommende Spiele</h2>
             </div>
             <span className="text-2xl">📅</span>
@@ -1124,36 +1272,46 @@ export default function CleanPublicTeamPage() {
                 return (
                   <div
                     key={m.id}
-                    className={`p-4 rounded-2xl border space-y-2.5 backdrop-blur-md ${
-                      isKo
-                        ? 'border-amber-500/30 bg-amber-500/10'
-                        : 'border-white/10 bg-black/40'
+                    className={`space-y-2.5 rounded-2xl border p-4 backdrop-blur-md ${
+                      isKo ? 'border-amber-500/30 bg-amber-500/10' : 'border-white/10 bg-black/40'
                     }`}
                   >
-                    <div className="flex justify-between items-center text-xs">
+                    <div className="flex items-center justify-between text-xs">
                       <span
-                        className={`px-2.5 py-0.5 font-black rounded-lg border text-[10px] uppercase tracking-wider ${
+                        className={`rounded-lg border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${
                           isKo
-                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                            ? 'border-amber-500/30 bg-amber-500/20 text-amber-300'
+                            : 'border-emerald-500/30 bg-emerald-500/20 text-emerald-300'
                         }`}
                       >
                         {isKo ? `⚡ ${m.phase || 'Achtelfinale / KO-Runde'}` : 'Gruppenspiel'}
                       </span>
-                      <span className="text-slate-200 font-mono font-bold text-[10px]">
+                      <span className="font-mono text-[10px] font-bold text-slate-200">
                         ⏰ {m.scheduled_time ? formatTimeOnly(m.scheduled_time) : 'Zeit offen'}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center font-black text-xs sm:text-sm text-white py-0.5">
-                      <span className="truncate max-w-[130px]" style={{ color: primaryColor }}>{team.name}</span>
-                      <span className="text-xs font-bold text-slate-500 px-2">VS</span>
-                      <span className="truncate max-w-[130px] text-slate-200">{getOpponent(m)}</span>
+                    <div className="flex items-center justify-between py-0.5 text-xs font-black text-white sm:text-sm">
+                      <span className="max-w-[130px] truncate" style={{ color: primaryColor }}>
+                        {team.name}
+                      </span>
+                      <span className="px-2 text-xs font-bold text-slate-500">VS</span>
+                      <span className="max-w-[130px] truncate text-slate-200">{getOpponent(m)}</span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 pt-2 border-t border-white/10">
-                      <span>🏓 <strong className="text-slate-200">{m.table_number ? `Tisch ${m.table_number}` : 'Tisch TBD'}</strong></span>
-                      <span>⏰ <strong className="text-slate-200">{m.scheduled_time ? formatDateTime(m.scheduled_time) : 'Offen'}</strong></span>
+                    <div className="flex items-center justify-between border-t border-white/10 pt-2 text-[10px] font-bold text-slate-400">
+                      <span>
+                        🏓{' '}
+                        <strong className="text-slate-200">
+                          {m.table_number ? `Tisch ${m.table_number}` : 'Tisch TBD'}
+                        </strong>
+                      </span>
+                      <span>
+                        ⏰{' '}
+                        <strong className="text-slate-200">
+                          {m.scheduled_time ? formatDateTime(m.scheduled_time) : 'Offen'}
+                        </strong>
+                      </span>
                     </div>
                   </div>
                 )
@@ -1167,10 +1325,10 @@ export default function CleanPublicTeamPage() {
         </section>
       </div>
 
-      {/* 4. REGELN VORSCHAU */}
-      <section className="rounded-[32px] border border-white/10 bg-black/40 p-6 sm:p-8 shadow-2xl backdrop-blur-md">
+      {/* 4. REGELN VORSCHAU (ECHTE TURNIERREGELN) */}
+      <section className="rounded-[32px] border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-md sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-2 flex-1">
+          <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-xl">📜</span>
               <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
@@ -1179,25 +1337,23 @@ export default function CleanPublicTeamPage() {
             </div>
             <h2 className="text-xl font-black text-white">Turnierregeln &amp; Ablauf</h2>
             <div className="rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-md">
-              <ul className="space-y-1.5 text-xs sm:text-sm text-slate-300 font-medium">
-                {rulesList && rulesList.length > 0 ? (
-                  rulesList.map((line, i) => {
+              {rulesList && rulesList.length > 0 ? (
+                <ul className="list-inside list-disc space-y-2 text-xs font-medium text-slate-300 sm:text-sm">
+                  {rulesList.map((line, i) => {
                     const cleanLine = line.replace(/^[•\-\*]\s*/, '')
-                    return <li key={i}>• {cleanLine}</li>
-                  })
-                ) : (
-                  <>
-                    <li>• Bitte seid mindestens 10 Minuten vor eurem Anpfiff am zugewiesenen Tisch.</li>
-                    <li>• Spielstände müssen direkt nach Matchende gemeldet werden.</li>
-                    <li>• Fairplay und sportlicher Respekt stehen an oberster Stelle.</li>
-                  </>
-                )}
-              </ul>
+                    return <li key={i}>{cleanLine}</li>
+                  })}
+                </ul>
+              ) : (
+                <p className="text-xs font-medium italic text-slate-400 sm:text-sm">
+                  Für dieses Turnier wurden noch keine spezifischen Regel-Hinweise hinterlegt.
+                </p>
+              )}
             </div>
           </div>
           <a
             href={`/turnier/${encodeURIComponent(tournamentSlugParam)}/regeln`}
-            className="px-5 py-3 rounded-2xl text-xs sm:text-sm font-black shadow-lg transition whitespace-nowrap self-start sm:self-center shrink-0"
+            className="shrink-0 self-start whitespace-nowrap rounded-2xl px-5 py-3 text-xs font-black transition shadow-lg sm:self-center sm:text-sm"
             style={{ backgroundColor: primaryColor, color: primaryContrastText }}
           >
             Hier zu allen Regeln →
@@ -1207,16 +1363,18 @@ export default function CleanPublicTeamPage() {
 
       {/* 5. KO-PHASE OVERVIEW */}
       {allKoMatches.length > 0 && (
-        <section className="rounded-[32px] border border-white/10 bg-black/40 p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-4">
+        <section className="space-y-4 rounded-[32px] border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-md sm:p-8">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Finalrunde</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
+                Finalrunde
+              </p>
               <h2 className="text-xl font-black text-white">KO-Phase Übersicht</h2>
             </div>
             <span className="text-2xl">⚡</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {allKoMatches.map((m) => {
               const isMe = isMyMatch(m)
               const t1 = m.team1_name || teams.find((t) => String(t.id) === String(m.team1_id))?.name || 'TBD'
@@ -1225,20 +1383,45 @@ export default function CleanPublicTeamPage() {
               return (
                 <div
                   key={m.id}
-                  className={`p-4 rounded-2xl border space-y-2 backdrop-blur-md ${
+                  className={`space-y-2 rounded-2xl border p-4 backdrop-blur-md ${
                     isMe ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-white/10 bg-black/40'
                   }`}
                 >
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-black uppercase" style={{ color: primaryColor }}>{m.phase || 'KO-Spiel'}</span>
-                    <span className="text-[10px] font-mono font-bold text-slate-400">
-                      {m.scheduled_time ? formatTimeOnly(m.scheduled_time) : ''} {m.table_number ? `• Tisch ${m.table_number}` : ''}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase" style={{ color: primaryColor }}>
+                      {m.phase || 'KO-Spiel'}
+                    </span>
+                    <span className="font-mono text-[10px] font-bold text-slate-400">
+                      {m.scheduled_time ? formatTimeOnly(m.scheduled_time) : ''}{' '}
+                      {m.table_number ? `• Tisch ${m.table_number}` : ''}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center font-black text-xs sm:text-sm text-white pt-1">
-                    <span className={isMe && (normalizeName(t1) === normalizeName(team.name) || rankPlaceholders.some((p) => normalizeName(t1).includes(p))) ? 'text-emerald-400' : ''}>{t1}</span>
-                    <span className="text-xs font-mono font-bold text-slate-400 px-2">{m.team1_score ?? '-'} : {m.team2_score ?? '-'}</span>
-                    <span className={isMe && (normalizeName(t2) === normalizeName(team.name) || rankPlaceholders.some((p) => normalizeName(t2).includes(p))) ? 'text-emerald-400' : ''}>{t2}</span>
+                  <div className="flex items-center justify-between pt-1 text-xs font-black text-white sm:text-sm">
+                    <span
+                      className={
+                        isMe &&
+                        (normalizeName(t1) === normalizeName(team.name) ||
+                          rankPlaceholders.some((p) => normalizeName(t1).includes(p)))
+                          ? 'text-emerald-400'
+                          : ''
+                      }
+                    >
+                      {t1}
+                    </span>
+                    <span className="px-2 font-mono text-xs font-bold text-slate-400">
+                      {m.team1_score ?? '-'} : {m.team2_score ?? '-'}
+                    </span>
+                    <span
+                      className={
+                        isMe &&
+                        (normalizeName(t2) === normalizeName(team.name) ||
+                          rankPlaceholders.some((p) => normalizeName(t2).includes(p)))
+                          ? 'text-emerald-400'
+                          : ''
+                      }
+                    >
+                      {t2}
+                    </span>
                   </div>
                 </div>
               )
@@ -1248,13 +1431,15 @@ export default function CleanPublicTeamPage() {
       )}
 
       {/* 6. ZAHLUNG & CHECKOUT */}
-      <section className="rounded-[32px] border border-white/10 bg-black/40 p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-4">
+      <section className="space-y-4 rounded-[32px] border border-white/10 bg-black/40 p-6 shadow-2xl backdrop-blur-md sm:p-8">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>Gebühr</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: primaryColor }}>
+              Gebühr
+            </p>
             <h2 className="text-xl font-black text-white">Zahlung</h2>
             {entryFee > 0 && (
-              <p className="text-xs font-semibold text-slate-300 mt-0.5">
+              <p className="mt-0.5 text-xs font-semibold text-slate-300">
                 {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(entryFee)} pro Team
               </p>
             )}
@@ -1262,34 +1447,44 @@ export default function CleanPublicTeamPage() {
           <span className="text-2xl">💶</span>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-black/40 p-4 space-y-4 backdrop-blur-md">
+        <div className="space-y-4 rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] font-black uppercase text-slate-400">Status</p>
-              <p className={`font-black text-sm mt-0.5 ${isPaid ? 'text-emerald-400' : 'text-amber-400'}`}>
+              <p className={`mt-0.5 text-sm font-black ${isPaid ? 'text-emerald-400' : 'text-amber-400'}`}>
                 {isPaid ? '🟢 Bezahlt' : '🟡 Zahlung ausstehend'}
               </p>
             </div>
             <span className="text-xl">{isPaid ? '✅' : '⏳'}</span>
           </div>
 
-          <div className="pt-3 border-t border-white/10">
+          <div className="border-t border-white/10 pt-3">
             <p className="text-[10px] font-black uppercase text-slate-400">Gewählte Methode</p>
-            <p className="font-extrabold text-xs sm:text-sm mt-0.5 text-white">
-              {team.payment_method === 'bar' ? '💶 Barzahlung vor Ort' : team.payment_method === 'paypal' ? '🅿️ PayPal' : team.payment_method === 'ueberweisung' ? '🏦 Banküberweisung' : 'Noch nicht gewählt'}
+            <p className="mt-0.5 text-xs font-extrabold text-white sm:text-sm">
+              {team.payment_method === 'bar'
+                ? '💶 Barzahlung vor Ort'
+                : team.payment_method === 'paypal'
+                ? '🅿️ PayPal'
+                : team.payment_method === 'ueberweisung'
+                ? '🏦 Banküberweisung'
+                : 'Noch nicht gewählt'}
             </p>
           </div>
 
           {!isPaid && (
-            <div className="pt-3 border-t border-white/10 space-y-3">
+            <div className="space-y-3 border-t border-white/10 pt-3">
               <p className="text-xs font-bold text-slate-300">Zahlungsart ändern:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {tournament?.cash_enabled && (
                   <button
                     type="button"
                     disabled={changingPayment}
                     onClick={() => void changePaymentMethod('bar')}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-black transition ${team.payment_method === 'bar' ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300' : 'border-white/10 bg-black/50 hover:border-white/20 hover:bg-black/70 text-slate-300'}`}
+                    className={`rounded-xl border px-3 py-2.5 text-xs font-black transition ${
+                      team.payment_method === 'bar'
+                        ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
+                        : 'border-white/10 bg-black/50 text-slate-300 hover:border-white/20 hover:bg-black/70'
+                    }`}
                   >
                     Bar vor Ort
                   </button>
@@ -1299,7 +1494,11 @@ export default function CleanPublicTeamPage() {
                     type="button"
                     disabled={changingPayment}
                     onClick={() => void changePaymentMethod('ueberweisung')}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-black transition ${team.payment_method === 'ueberweisung' ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300' : 'border-white/10 bg-black/50 hover:border-white/20 hover:bg-black/70 text-slate-300'}`}
+                    className={`rounded-xl border px-3 py-2.5 text-xs font-black transition ${
+                      team.payment_method === 'ueberweisung'
+                        ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
+                        : 'border-white/10 bg-black/50 text-slate-300 hover:border-white/20 hover:bg-black/70'
+                    }`}
                   >
                     Überweisung
                   </button>
@@ -1309,36 +1508,44 @@ export default function CleanPublicTeamPage() {
                     type="button"
                     disabled={changingPayment}
                     onClick={() => void changePaymentMethod('paypal')}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-black transition ${team.payment_method === 'paypal' ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300' : 'border-white/10 bg-black/50 hover:border-white/20 hover:bg-black/70 text-slate-300'}`}
+                    className={`rounded-xl border px-3 py-2.5 text-xs font-black transition ${
+                      team.payment_method === 'paypal'
+                        ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
+                        : 'border-white/10 bg-black/50 text-slate-300 hover:border-white/20 hover:bg-black/70'
+                    }`}
                   >
                     PayPal
                   </button>
                 )}
               </div>
 
-              {team.payment_method === 'paypal' && tournament?.paypal_enabled && process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID && (
-                <div className="pt-2">
-                  <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID, currency: 'EUR' }}>
-                    <PayPalButtons
-                      style={{ layout: 'vertical', shape: 'rect' }}
-                      disabled={payingWithPayPal}
-                      createOrder={async () => await createPayPalOrder()}
-                      onApprove={async (data) => {
-                        try {
-                          await capturePayPalOrder(data.orderID)
-                        } catch (err) {
-                          setPaymentMessage(err instanceof Error ? err.message : 'Zahlungsfehler')
-                        }
-                      }}
-                    />
-                  </PayPalScriptProvider>
-                </div>
-              )}
+              {team.payment_method === 'paypal' &&
+                tournament?.paypal_enabled &&
+                process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID && (
+                  <div className="pt-2">
+                    <PayPalScriptProvider
+                      options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID, currency: 'EUR' }}
+                    >
+                      <PayPalButtons
+                        style={{ layout: 'vertical', shape: 'rect' }}
+                        disabled={payingWithPayPal}
+                        createOrder={async () => await createPayPalOrder()}
+                        onApprove={async (data) => {
+                          try {
+                            await capturePayPalOrder(data.orderID)
+                          } catch (err) {
+                            setPaymentMessage(err instanceof Error ? err.message : 'Zahlungsfehler')
+                          }
+                        }}
+                      />
+                    </PayPalScriptProvider>
+                  </div>
+                )}
             </div>
           )}
 
           {paymentMessage && (
-            <p className="text-xs font-bold p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+            <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-bold text-emerald-300">
               {paymentMessage}
             </p>
           )}
@@ -1346,7 +1553,7 @@ export default function CleanPublicTeamPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="py-6 text-center text-xs text-slate-400 font-medium">
+      <footer className="py-6 text-center text-xs font-medium text-slate-400">
         <p>{tournament?.name || 'Turnier-Portal'}</p>
       </footer>
     </div>

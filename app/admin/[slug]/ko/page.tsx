@@ -15,20 +15,9 @@ type TournamentData = {
   has_third_place_match: boolean | null
 }
 
-type Team = {
-  id: number
-  name: string
-}
-
-type Group = {
-  id: number
-  name: string
-}
-
-type GroupMember = {
-  group_id: number
-  team_id: number
-}
+type Team = { id: number; name: string }
+type Group = { id: number; name: string }
+type GroupMember = { group_id: number; team_id: number; manual_rank?: number | null }
 
 type Match = {
   id: number
@@ -86,8 +75,11 @@ type Standing = {
   wins: number
   draws: number
   losses: number
+  goalsFor: number
+  goalsAgainst: number
   points: number
   scoreDifference: number
+  manualRank: number | null
 }
 
 type QualifiedTeam = {
@@ -125,38 +117,32 @@ function MatchScoreEditor({
   }, [match.team1_score, match.team2_score])
 
   return (
-    <div className="mt-2 border-t border-white/10 pt-2">
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          min="0"
-          max="10"
-          value={score1}
-          onChange={(event) =>
-            setScore1(Math.min(10, Math.max(0, Number(event.target.value) || 0)))
-          }
-          className="h-9 w-12 rounded-xl border border-white/10 bg-black/50 text-center text-xs font-black text-white outline-none focus:border-white/30"
-        />
-        <span className="font-black text-slate-500">:</span>
-        <input
-          type="number"
-          min="0"
-          max="10"
-          value={score2}
-          onChange={(event) =>
-            setScore2(Math.min(10, Math.max(0, Number(event.target.value) || 0)))
-          }
-          className="h-9 w-12 rounded-xl border border-white/10 bg-black/50 text-center text-xs font-black text-white outline-none focus:border-white/30"
-        />
-        <button
-          type="button"
-          onClick={() => onSave(match.id, score1, score2)}
-          className="ml-auto h-9 rounded-xl px-3 text-[10px] font-black text-slate-950 transition hover:opacity-90 shadow-md"
-          style={{ backgroundColor: primaryColor }}
-        >
-          Speichern
-        </button>
-      </div>
+    <div className="flex items-center gap-2 pt-2">
+      <input
+        type="number"
+        min="0"
+        max="10"
+        value={score1}
+        onChange={(event) => setScore1(Math.min(10, Math.max(0, Number(event.target.value) || 0)))}
+        className="h-9 w-12 rounded-xl border border-white/10 bg-black/50 text-center text-xs font-black text-white outline-none focus:border-white/30"
+      />
+      <span className="text-xs font-bold text-slate-400">:</span>
+      <input
+        type="number"
+        min="0"
+        max="10"
+        value={score2}
+        onChange={(event) => setScore2(Math.min(10, Math.max(0, Number(event.target.value) || 0)))}
+        className="h-9 w-12 rounded-xl border border-white/10 bg-black/50 text-center text-xs font-black text-white outline-none focus:border-white/30"
+      />
+      <button
+        type="button"
+        onClick={() => onSave(match.id, score1, score2)}
+        className="ml-auto h-9 rounded-xl px-3 text-[10px] font-black text-slate-950 transition hover:opacity-90 shadow-md"
+        style={{ backgroundColor: primaryColor }}
+      >
+        Speichern
+      </button>
     </div>
   )
 }
@@ -195,7 +181,6 @@ export default function AdminKOPage() {
     if (!slug) return
     setLoading(true)
     setStatusMessage(null)
-
     try {
       const { data: tourneyData, error: tourneyError } = await publicSupabase
         .from('tournaments')
@@ -214,24 +199,20 @@ export default function AdminKOPage() {
           .select('id, name')
           .eq('tournament_id', tourneyData.id)
           .order('created_at', { ascending: true }),
-
         publicSupabase
           .from('groups')
           .select('id, name')
           .eq('tournament_id', tourneyData.id)
           .order('id', { ascending: true }),
-
         publicSupabase
           .from('group_members')
-          .select('group_id, team_id')
+          .select('group_id, team_id, manual_rank')
           .eq('tournament_id', tourneyData.id),
-
         publicSupabase
           .from('matches')
           .select('*')
           .eq('tournament_id', tourneyData.id)
           .order('scheduled_time', { ascending: true }),
-
         publicSupabase
           .from('tournament_settings')
           .select('*')
@@ -240,7 +221,6 @@ export default function AdminKOPage() {
       ])
 
       const loadedMatches = (matchesRes.data || []) as Match[]
-
       setTeams((teamsRes.data || []) as Team[])
       setGroups((groupsRes.data || []) as Group[])
       setMembers((membersRes.data || []) as GroupMember[])
@@ -263,9 +243,7 @@ export default function AdminKOPage() {
 
   useEffect(() => {
     if (!tournament?.id) return
-
     const channel = publicSupabase.channel(`tournament:${tournament.id}`)
-
     channel
       .on('broadcast', { event: 'refresh' }, () => {
         void loadData()
@@ -295,9 +273,7 @@ export default function AdminKOPage() {
       const firstWithTime = phaseMatches.find((match) => match.scheduled_time)
       if (firstWithTime?.scheduled_time) {
         const date = new Date(firstWithTime.scheduled_time)
-        times[phase] = `${String(date.getHours()).padStart(2, '0')}:${String(
-          date.getMinutes()
-        ).padStart(2, '0')}`
+        times[phase] = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
       }
     })
     setRoundTimes(times)
@@ -325,63 +301,126 @@ export default function AdminKOPage() {
 
   function getStandings(groupId: number): Standing[] {
     const groupTeams = getGroupTeams(groupId)
-    const standings = groupTeams.map((team) => {
-      let games = 0
-      let wins = 0
-      let draws = 0
-      let losses = 0
-      let points = 0
-      let scoreDifference = 0
+    const groupMatches = matches.filter(
+      (match) =>
+        match.group_id === groupId &&
+        match.phase === 'group' &&
+        match.status === 'finished' &&
+        match.team1_score !== null &&
+        match.team2_score !== null,
+    )
 
-      matches
-        .filter(
-          (match) =>
-            match.group_id === groupId &&
-            match.phase === 'group' &&
-            match.status === 'finished' &&
-            (match.team1_id === team.id || match.team2_id === team.id)
-        )
-        .forEach((match) => {
-          if (match.team1_score === null || match.team2_score === null) return
-          const isTeam1 = match.team1_id === team.id
-          const ownScore = isTeam1 ? match.team1_score : match.team2_score
-          const opponentScore = isTeam1 ? match.team2_score : match.team1_score
+    const standingsMap = new Map<number, Standing>()
 
-          games++
-          scoreDifference += ownScore - opponentScore
-
-          if (ownScore > opponentScore) {
-            wins++
-            points += 3
-          } else if (ownScore === opponentScore) {
-            draws++
-            points += 1
-          } else {
-            losses++
-          }
-        })
-
-      return {
+    groupTeams.forEach((team) => {
+      const member = members.find((m) => m.group_id === groupId && m.team_id === team.id)
+      standingsMap.set(team.id, {
         position: 0,
         teamId: team.id,
         teamName: team.name,
-        games,
-        wins,
-        draws,
-        losses,
-        points,
-        scoreDifference,
+        games: 0,
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        points: 0,
+        scoreDifference: 0,
+        manualRank: member?.manual_rank ?? null,
+      })
+    })
+
+    groupMatches.forEach((match) => {
+      const t1 = standingsMap.get(match.team1_id)
+      const t2 = standingsMap.get(match.team2_id)
+      const score1 = match.team1_score!
+      const score2 = match.team2_score!
+
+      if (t1) {
+        t1.games++
+        t1.goalsFor += score1
+        t1.goalsAgainst += score2
+        t1.scoreDifference = t1.goalsFor - t1.goalsAgainst
+        if (score1 > score2) {
+          t1.wins++
+          t1.points += 3
+        } else if (score1 === score2) {
+          t1.draws++
+          t1.points += 1
+        } else {
+          t1.losses++
+        }
+      }
+
+      if (t2) {
+        t2.games++
+        t2.goalsFor += score2
+        t2.goalsAgainst += score1
+        t2.scoreDifference = t2.goalsFor - t2.goalsAgainst
+        if (score2 > score1) {
+          t2.wins++
+          t2.points += 3
+        } else if (score1 === score2) {
+          t2.draws++
+          t2.points += 1
+        } else {
+          t2.losses++
+        }
       }
     })
 
-    standings.sort((a, b) => {
+    const standingsList = Array.from(standingsMap.values())
+
+    // Hilfsfunktion: Direkter Vergleich
+    const getHeadToHead = (aId: number, bId: number): number => {
+      const directMatches = groupMatches.filter(
+        (m) =>
+          (m.team1_id === aId && m.team2_id === bId) ||
+          (m.team1_id === bId && m.team2_id === aId),
+      )
+      if (directMatches.length === 0) return 0
+
+      let pointsA = 0
+      let pointsB = 0
+      directMatches.forEach((m) => {
+        const s1 = m.team1_score!
+        const s2 = m.team2_score!
+        if (m.team1_id === aId) {
+          if (s1 > s2) pointsA += 3
+          else if (s2 > s1) pointsB += 3
+          else {
+            pointsA += 1
+            pointsB += 1
+          }
+        } else {
+          if (s2 > s1) pointsA += 3
+          else if (s1 > s2) pointsB += 3
+          else {
+            pointsA += 1
+            pointsB += 1
+          }
+        }
+      })
+      return pointsB - pointsA
+    }
+
+    // VOLLSTÄNDIGER TIE-BREAKER MATCHING LOGIK
+    standingsList.sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points
       if (b.scoreDifference !== a.scoreDifference) return b.scoreDifference - a.scoreDifference
-      if (b.wins !== a.wins) return b.wins - a.wins
+      if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor
+
+      const h2h = getHeadToHead(a.teamId, b.teamId)
+      if (h2h !== 0) return h2h
+
+      const rA = a.manualRank ?? 999
+      const rB = b.manualRank ?? 999
+      if (rA !== rB) return rA - rB
+
       return a.teamName.localeCompare(b.teamName)
     })
 
-    return standings.map((standing, index) => ({
+    return standingsList.map((standing, index) => ({
       ...standing,
       position: index + 1,
     }))
@@ -394,9 +433,7 @@ export default function AdminKOPage() {
   const groupPhaseFinished = useMemo(() => {
     if (groups.length === 0) return false
     return groups.every((group) => {
-      const groupMatches = matches.filter(
-        (match) => match.group_id === group.id && match.phase === 'group'
-      )
+      const groupMatches = matches.filter((match) => match.group_id === group.id && match.phase === 'group')
       return groupMatches.length > 0 && groupMatches.every((match) => match.status === 'finished')
     })
   }, [groups, matches])
@@ -420,14 +457,13 @@ export default function AdminKOPage() {
           })
         })
     })
+
     return result
   }, [groupStandings, settings])
 
-  const fillerEnabled =
-    settings?.filler_enabled === true || (settings?.additional_qualifiers ?? 0) > 0
+  const fillerEnabled = settings?.filler_enabled === true || (settings?.additional_qualifiers ?? 0) > 0
   const fillerCount = settings?.filler_qualifiers ?? settings?.additional_qualifiers ?? 0
-  const fillerPosition =
-    settings?.filler_place ?? settings?.additional_qualifier_position ?? 0
+  const fillerPosition = settings?.filler_place ?? settings?.additional_qualifier_position ?? 0
 
   const fillerCandidates = useMemo(() => {
     if (!settings || !fillerEnabled || fillerCount <= 0 || fillerPosition <= 0) {
@@ -448,7 +484,10 @@ export default function AdminKOPage() {
       .sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points
         if (b.scoreDifference !== a.scoreDifference) return b.scoreDifference - a.scoreDifference
-        if (b.wins !== a.wins) return b.wins - a.wins
+        if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor
+        const rA = a.manualRank ?? 999
+        const rB = b.manualRank ?? 999
+        if (rA !== rB) return rA - rB
         return a.teamName.localeCompare(b.teamName)
       })
   }, [settings, fillerEnabled, fillerCount, fillerPosition, groupStandings])
@@ -591,23 +630,19 @@ export default function AdminKOPage() {
   async function createKnockout() {
     setStatusMessage(null)
     if (!tournament?.id) return
-
     if (!settings) {
       setStatusMessage({ type: 'error', text: 'Keine Turniereinstellungen gefunden.' })
       return
     }
-
     const koSize = getKOSize()
     if (![8, 16, 32].includes(koSize)) {
       setStatusMessage({ type: 'error', text: 'Die K.-o.-Größe muss 8, 16 oder 32 sein.' })
       return
     }
-
     if (!groupPhaseFinished) {
       setStatusMessage({ type: 'error', text: 'Die Gruppenphase muss zuerst vollständig beendet sein.' })
       return
     }
-
     if (qualifiedTeams.length !== koSize) {
       setStatusMessage({
         type: 'error',
@@ -615,7 +650,6 @@ export default function AdminKOPage() {
       })
       return
     }
-
     if (knockoutMatches.length > 0) {
       setStatusMessage({ type: 'error', text: 'Die K.-o.-Phase wurde bereits erstellt.' })
       return
@@ -628,7 +662,6 @@ export default function AdminKOPage() {
     }
 
     setCreating(true)
-
     try {
       const pairings = createRandomPairings(qualifiedTeams)
       if (pairings.length * 2 !== koSize) {
@@ -637,7 +670,6 @@ export default function AdminKOPage() {
 
       const phase = getInitialPhase(koSize)
       const roundNumber = getRoundNumber(phase)
-
       const groupMatches = matches.filter((match) => match.phase === 'group')
       const lastGroupTime = groupMatches
         .map((match) => (match.scheduled_time ? new Date(match.scheduled_time).getTime() : 0))
@@ -677,9 +709,7 @@ export default function AdminKOPage() {
       }))
 
       const { data, error } = await publicSupabase.from('matches').insert(rows).select('id')
-
       if (error) throw new Error(`KO-Spiele konnten nicht gespeichert werden: ${error.message}`)
-
       if (!data || data.length !== rows.length) {
         throw new Error(`Nur ${data?.length ?? 0} von ${rows.length} KO-Spielen wurden gespeichert.`)
       }
@@ -706,17 +736,13 @@ export default function AdminKOPage() {
 
   function getCurrentRoundMatches() {
     const existingPhases = KO_PHASES.filter(
-      (phase) => phase !== 'third_place' && matches.some((match) => match.phase === phase)
+      (phase) => phase !== 'third_place' && matches.some((match) => match.phase === phase),
     )
     if (existingPhases.length === 0) return []
     const currentPhase = existingPhases[existingPhases.length - 1]
     return matches
       .filter((match) => match.phase === currentPhase)
-      .sort(
-        (a, b) =>
-          (a.knockout_position ?? a.bracket_position ?? 0) -
-          (b.knockout_position ?? b.bracket_position ?? 0)
-      )
+      .sort((a, b) => (a.knockout_position ?? a.bracket_position ?? 0) - (b.knockout_position ?? b.bracket_position ?? 0))
   }
 
   function getNextPhase(currentPhase: string) {
@@ -737,13 +763,11 @@ export default function AdminKOPage() {
   async function createNextRound() {
     setStatusMessage(null)
     if (!tournament?.id) return
-
     const currentMatches = getCurrentRoundMatches()
     if (currentMatches.length === 0) {
       setStatusMessage({ type: 'error', text: 'Keine aktuelle K.-o.-Runde gefunden.' })
       return
     }
-
     if (currentMatches.some((match) => match.status !== 'finished')) {
       setStatusMessage({ type: 'error', text: 'Alle Spiele der aktuellen Runde müssen beendet sein.' })
       return
@@ -791,10 +815,9 @@ export default function AdminKOPage() {
     const nextRound = getRoundNumber(nextPhase)
     const previousRoundStart = getRoundStartTime(currentMatches)
     const scheduled = new Date(previousRoundStart.getTime() + roundGapMinutes * 60 * 1000)
-
     const rows: Array<Record<string, unknown>> = []
 
-    // 1. HAUPTSPIEL(E) (z. B. Finale oder nächste KO-Runde)
+    // 1. HAUPTSPIEL (z. B. Finale oder nächste KO-Runde)
     for (let i = 0; i < winners.length; i += 2) {
       const team1Id = winners[i]
       const team2Id = winners[i + 1]
@@ -872,18 +895,15 @@ export default function AdminKOPage() {
     }
 
     setCreating(true)
-
     try {
       const { data, error } = await publicSupabase.from('matches').insert(rows).select('id, phase')
       if (error) throw new Error(`Die nächste Runde konnte nicht gespeichert werden: ${error.message}`)
-
       if (!data || data.length !== rows.length) {
         throw new Error('Die nächste Runde wurde nicht vollständig gespeichert.')
       }
 
       const insertedMatches = data as { id: number; phase: string }[]
       const finalMatch = insertedMatches.find((m) => m.phase === 'final')
-
       if (finalMatch) {
         for (let i = 0; i < currentMatches.length; i++) {
           await publicSupabase
@@ -911,11 +931,7 @@ export default function AdminKOPage() {
   function getPhaseMatches(phase: string) {
     return knockoutMatches
       .filter((match) => match.phase === phase)
-      .sort(
-        (a, b) =>
-          (a.knockout_position ?? a.bracket_position ?? 0) -
-          (b.knockout_position ?? b.bracket_position ?? 0)
-      )
+      .sort((a, b) => (a.knockout_position ?? a.bracket_position ?? 0) - (b.knockout_position ?? b.bracket_position ?? 0))
   }
 
   function getExistingBracketPhases() {
@@ -1052,7 +1068,6 @@ export default function AdminKOPage() {
 
     setSavingTime(true)
     setStatusMessage(null)
-
     try {
       const { error } = await publicSupabase
         .from('matches')
@@ -1157,7 +1172,7 @@ export default function AdminKOPage() {
             ].join(' ')}
           >
             <span className="truncate text-[7px] font-black uppercase tracking-[0.1em] text-slate-400">
-              {phase === 'third_place' ? 'Platz 3' : `Spiel ${getGlobalMatchNumber(phase, position)}`}
+              {phase === 'third_place' ? 'Platz 3' : `Spiel #${getGlobalMatchNumber(phase, position)}`}
             </span>
             {finished ? (
               <span className="rounded-full bg-emerald-400/15 px-1 py-0.5 text-[6px] font-black uppercase text-emerald-300">
@@ -1173,30 +1188,21 @@ export default function AdminKOPage() {
                 Offen
               </span>
             ) : (
-              <span className="text-[6px] font-black uppercase tracking-wider text-slate-500">
-                folgt
-              </span>
+              <span className="text-[6px] font-black uppercase tracking-wider text-slate-500">folgt</span>
             )}
           </div>
-
           <div className="space-y-0.5 p-0.5">
             <div
               className={[
                 'flex h-5 items-center justify-between gap-1 rounded-lg px-1.5',
-                team1Winner
-                  ? 'bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/40'
-                  : 'bg-black/40',
+                team1Winner ? 'bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/40' : 'bg-black/40',
               ].join(' ')}
             >
               <span
                 title={team1Name}
                 className={[
                   'min-w-0 truncate text-[8px]',
-                  team1Winner
-                    ? 'font-black text-emerald-300'
-                    : match
-                    ? 'font-bold text-white'
-                    : 'font-semibold text-slate-400',
+                  team1Winner ? 'font-black text-emerald-300' : match ? 'font-bold text-white' : 'font-semibold text-slate-400',
                 ].join(' ')}
               >
                 {team1Name}
@@ -1210,24 +1216,17 @@ export default function AdminKOPage() {
                 {match ? match.team1_score ?? '-' : '-'}
               </span>
             </div>
-
             <div
               className={[
                 'flex h-5 items-center justify-between gap-1 rounded-lg px-1.5',
-                team2Winner
-                  ? 'bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/40'
-                  : 'bg-black/40',
+                team2Winner ? 'bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/40' : 'bg-black/40',
               ].join(' ')}
             >
               <span
                 title={team2Name}
                 className={[
                   'min-w-0 truncate text-[8px]',
-                  team2Winner
-                    ? 'font-black text-emerald-300'
-                    : match
-                    ? 'font-bold text-white'
-                    : 'font-semibold text-slate-400',
+                  team2Winner ? 'font-black text-emerald-300' : match ? 'font-bold text-white' : 'font-semibold text-slate-400',
                 ].join(' ')}
               >
                 {team2Name}
@@ -1242,12 +1241,9 @@ export default function AdminKOPage() {
               </span>
             </div>
           </div>
-
           <div className="flex h-4 items-center justify-between border-t border-white/10 px-1.5 text-[6px] font-bold text-slate-400">
             <span>{match?.table_number ? `Tisch ${match.table_number}` : 'Tisch -'}</span>
-            <span>
-              {match && formatMatchTime(match) ? `${formatMatchTime(match)} Uhr` : 'Zeit -'}
-            </span>
+            <span>{match && formatMatchTime(match) ? `${formatMatchTime(match)} Uhr` : 'Zeit -'}</span>
           </div>
         </div>
       </div>
@@ -1283,7 +1279,6 @@ export default function AdminKOPage() {
     if (outerCount <= 0 || innerCount <= 0) return null
     const outerSpan = getBracketRowSpan(outerPhase, phases)
     const innerSpan = getBracketRowSpan(innerPhase, phases)
-
     const bodyHeight = totalRows * BRACKET_ROW_HEIGHT
     const height = bodyHeight + BRACKET_HEADER_HEIGHT
 
@@ -1291,11 +1286,7 @@ export default function AdminKOPage() {
 
     if (isCenterConnector) {
       return (
-        <div
-          className="relative w-[clamp(3px,0.55vw,8px)] shrink-0"
-          style={{ height }}
-          aria-hidden="true"
-        >
+        <div className="relative w-[clamp(3px,0.55vw,8px)] shrink-0" style={{ height }} aria-hidden="true">
           <svg
             className="absolute left-0 right-0 w-full text-white/20"
             style={{ top: BRACKET_HEADER_HEIGHT, height: bodyHeight }}
@@ -1308,34 +1299,12 @@ export default function AdminKOPage() {
               const xOuter = direction === 'left' ? 0 : 28
               const xMiddle = 14
               const xInner = direction === 'left' ? 28 : 0
-
               return (
                 <g key={index}>
-                  <line
-                    x1={xOuter}
-                    y1={outerCenter}
-                    x2={xMiddle}
-                    y2={outerCenter}
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                  />
-                  <line
-                    x1={xMiddle}
-                    y1={outerCenter}
-                    x2={xMiddle}
-                    y2={centerLine}
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                  />
+                  <line x1={xOuter} y1={outerCenter} x2={xMiddle} y2={outerCenter} stroke="currentColor" strokeWidth="1.4" />
+                  <line x1={xMiddle} y1={outerCenter} x2={xMiddle} y2={centerLine} stroke="currentColor" strokeWidth="1.4" />
                   {index === 0 && (
-                    <line
-                      x1={xMiddle}
-                      y1={centerLine}
-                      x2={xInner}
-                      y2={centerLine}
-                      stroke="currentColor"
-                      strokeWidth="1.4"
-                    />
+                    <line x1={xMiddle} y1={centerLine} x2={xInner} y2={centerLine} stroke="currentColor" strokeWidth="1.4" />
                   )}
                 </g>
               )
@@ -1346,11 +1315,7 @@ export default function AdminKOPage() {
     }
 
     return (
-      <div
-        className="relative w-[clamp(3px,0.55vw,8px)] shrink-0"
-        style={{ height }}
-        aria-hidden="true"
-      >
+      <div className="relative w-[clamp(3px,0.55vw,8px)] shrink-0" style={{ height }} aria-hidden="true">
         <svg
           className="absolute left-0 right-0 w-full text-white/20"
           style={{ top: BRACKET_HEADER_HEIGHT, height: bodyHeight }}
@@ -1363,45 +1328,15 @@ export default function AdminKOPage() {
             const outerCenterA = ((outerA * outerSpan + outerSpan / 2) / totalRows) * bodyHeight
             const outerCenterB = ((outerB * outerSpan + outerSpan / 2) / totalRows) * bodyHeight
             const innerCenter = ((index * innerSpan + innerSpan / 2) / totalRows) * bodyHeight
-
             const xOuter = direction === 'left' ? 0 : 28
             const xMiddle = 14
             const xInner = direction === 'left' ? 28 : 0
-
             return (
               <g key={index}>
-                <line
-                  x1={xOuter}
-                  y1={outerCenterA}
-                  x2={xMiddle}
-                  y2={outerCenterA}
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                />
-                <line
-                  x1={xOuter}
-                  y1={outerCenterB}
-                  x2={xMiddle}
-                  y2={outerCenterB}
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                />
-                <line
-                  x1={xMiddle}
-                  y1={outerCenterA}
-                  x2={xMiddle}
-                  y2={outerCenterB}
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                />
-                <line
-                  x1={xMiddle}
-                  y1={innerCenter}
-                  x2={xInner}
-                  y2={innerCenter}
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                />
+                <line x1={xOuter} y1={outerCenterA} x2={xMiddle} y2={outerCenterA} stroke="currentColor" strokeWidth="1.4" />
+                <line x1={xOuter} y1={outerCenterB} x2={xMiddle} y2={outerCenterB} stroke="currentColor" strokeWidth="1.4" />
+                <line x1={xMiddle} y1={outerCenterA} x2={xMiddle} y2={outerCenterB} stroke="currentColor" strokeWidth="1.4" />
+                <line x1={xMiddle} y1={innerCenter} x2={xInner} y2={innerCenter} stroke="currentColor" strokeWidth="1.4" />
               </g>
             )
           })}
@@ -1426,9 +1361,7 @@ export default function AdminKOPage() {
     if (count <= 0 || fullCount <= 0) return null
 
     const leftCount = Math.ceil(fullCount / 2)
-    const positions = Array.from({ length: count }, (_, index) =>
-      side === 'left' ? index + 1 : leftCount + index + 1
-    )
+    const positions = Array.from({ length: count }, (_, index) => (side === 'left' ? index + 1 : leftCount + index + 1))
     const rowSpan = getBracketRowSpan(phase, phases)
 
     return (
@@ -1438,10 +1371,7 @@ export default function AdminKOPage() {
           height: BRACKET_HEADER_HEIGHT + totalRows * BRACKET_ROW_HEIGHT,
         }}
       >
-        <div
-          className="flex shrink-0 items-start justify-center"
-          style={{ height: BRACKET_HEADER_HEIGHT }}
-        >
+        <div className="flex shrink-0 items-start justify-center" style={{ height: BRACKET_HEADER_HEIGHT }}>
           <span className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
             {getPhaseName(phase)}
           </span>
@@ -1484,7 +1414,6 @@ export default function AdminKOPage() {
     const thirdPlaceMatch = getPhaseMatches('third_place')[0] || null
 
     if (phases.length === 0 && !finalMatch) return null
-
     const firstPhase = phases[0] ?? null
     const baseSideCount = firstPhase ? getBracketSideCount(firstPhase) : 1
     const totalRows = Math.max(2, baseSideCount * 2)
@@ -1531,14 +1460,8 @@ export default function AdminKOPage() {
             </div>
 
             {/* FINALE & PLATZ 3 */}
-            <div
-              className="flex min-w-0 flex-[1.05] flex-col px-1 sm:px-2"
-              style={{ height: bracketHeight }}
-            >
-              <div
-                className="flex shrink-0 items-start justify-center"
-                style={{ height: BRACKET_HEADER_HEIGHT }}
-              >
+            <div className="flex min-w-0 flex-[1.05] flex-col px-1 sm:px-2" style={{ height: bracketHeight }}>
+              <div className="flex shrink-0 items-start justify-center" style={{ height: BRACKET_HEADER_HEIGHT }}>
                 <span className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
                   Finale / Platz 3
                 </span>
@@ -1556,7 +1479,7 @@ export default function AdminKOPage() {
                   </div>
                 ) : (
                   <div className="w-full rounded-2xl border border-dashed border-white/10 bg-black/20 px-1 py-3 text-center sm:px-2 sm:py-4">
-                    <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl bg-black/40 text-sm sm:h-9 sm:w-9 border border-white/10">
+                    <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-black/40 text-sm sm:h-9 sm:w-9">
                       🏆
                     </div>
                     <p className="mt-3 text-xs font-black text-slate-300">Finale</p>
@@ -1627,16 +1550,14 @@ export default function AdminKOPage() {
             className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-4 border-slate-800"
             style={{ borderTopColor: primaryColor }}
           />
-          <p className="text-xs font-black uppercase tracking-widest text-slate-400">
-            Lade K.-o.-Phase …
-          </p>
+          <p className="text-xs font-black uppercase tracking-widest text-slate-400">Lade K.-o.-Phase...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto w-full space-y-8 pb-16 text-slate-100 [color-scheme:dark]">
+    <div className="mx-auto w-full max-w-7xl space-y-8 px-2 sm:px-4 pb-16 text-slate-100 [color-scheme:dark]">
       {statusMessage && (
         <div
           className={`w-full rounded-2xl border p-4 text-xs font-extrabold backdrop-blur-md ${
@@ -1654,25 +1575,21 @@ export default function AdminKOPage() {
         <div className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
             <span>KO-Größe</span>
-            <span>👥</span>
+            <span>🎯</span>
           </div>
           <div className="mt-2 text-3xl font-black text-white">{getKOSize()} Teams</div>
-          <div className="mt-2 text-[11px] font-bold text-slate-400">
-            Qualifizierte K.-o.-Teilnehmer
-          </div>
+          <div className="mt-2 text-[11px] font-bold text-slate-400">Qualifizierte K.-o.-Teilnehmer</div>
         </div>
 
         <div className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 text-xs font-bold">
             <span>Spiele Beendet</span>
-            <span>🏆</span>
+            <span>⚽</span>
           </div>
           <div className="mt-2 text-3xl font-black text-white">
             {finishedKO} <span className="text-sm text-slate-400 font-normal">/ {totalKO}</span>
           </div>
-          <div className="mt-2 text-[11px] font-bold text-slate-400">
-            Absolvierte K.-o.-Matches
-          </div>
+          <div className="mt-2 text-[11px] font-bold text-slate-400">Absolvierte K.-o.-Matches</div>
         </div>
 
         <div className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
@@ -1726,6 +1643,7 @@ export default function AdminKOPage() {
                 <span className="pr-2 text-xs font-bold text-slate-400">Min.</span>
               </div>
             </div>
+
             <div className="rounded-2xl border border-white/10 bg-black/50 px-4 py-2.5">
               <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tische</p>
               <p className="text-xl font-black text-white">{availableTables}</p>
@@ -1754,7 +1672,6 @@ export default function AdminKOPage() {
               </div>
             </div>
           </div>
-
           <KnockoutBracket />
         </section>
       )}
@@ -1776,10 +1693,7 @@ export default function AdminKOPage() {
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {qualifiedTeams.map((team, index) => (
-            <div
-              key={team.teamId}
-              className="rounded-2xl border border-white/10 bg-black/40 p-4 shadow-lg backdrop-blur-md"
-            >
+            <div key={team.teamId} className="rounded-2xl border border-white/10 bg-black/40 p-4 shadow-lg backdrop-blur-md">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-xs font-black text-slate-500">#{index + 1}</span>
                 <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[9px] font-black text-emerald-400">
@@ -1788,7 +1702,7 @@ export default function AdminKOPage() {
               </div>
               <p className="mt-2 truncate text-sm font-black text-white">{team.teamName}</p>
               <p className="mt-0.5 text-[10px] text-slate-400">
-                {team.groupName} • {team.position}. Platz
+                {team.position}. Platz {team.groupName}
               </p>
             </div>
           ))}
@@ -1805,20 +1719,15 @@ export default function AdminKOPage() {
             <button
               type="button"
               onClick={createKnockout}
-              disabled={
-                creating ||
-                knockoutAlreadyCreated ||
-                !groupPhaseFinished ||
-                qualifiedTeams.length !== getKOSize()
-              }
+              disabled={creating || knockoutAlreadyCreated || !groupPhaseFinished || qualifiedTeams.length !== getKOSize()}
               className="rounded-2xl px-5 py-3 text-xs font-black text-slate-950 shadow-lg transition hover:opacity-90 disabled:opacity-40 shrink-0"
               style={{ backgroundColor: primaryColor }}
             >
               {creating
-                ? 'Verarbeitung …'
+                ? 'Verarbeitung ...'
                 : knockoutAlreadyCreated
                 ? 'K.-o. bereits erstellt'
-                : '🎲 K.-o. zufällig auslosen'}
+                : 'K.-o. zufällig auslosen'}
             </button>
           </div>
         </div>
@@ -1846,11 +1755,7 @@ export default function AdminKOPage() {
               return (
                 <div key={phase} className="py-5 space-y-4">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <button
-                      type="button"
-                      onClick={() => togglePhase(phase)}
-                      className="flex min-w-0 items-center gap-3 text-left"
-                    >
+                    <button type="button" onClick={() => togglePhase(phase)} className="flex min-w-0 items-center gap-3 text-left">
                       <div
                         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-black border ${
                           allFinished
@@ -1863,8 +1768,8 @@ export default function AdminKOPage() {
                       <div className="min-w-0">
                         <h3 className="truncate text-lg font-black text-white">{getPhaseName(phase)}</h3>
                         <p className="text-[10px] font-semibold text-slate-400">
-                          {phaseMatches.length} Spiele • {allFinished ? 'Alle beendet' : 'Spiele offen'}
-                          {currentTime && ` • ${currentTime} Uhr`}
+                          {phaseMatches.length} Spiele • {allFinished ? 'Alle beendet' : 'Spiele offen'}{' '}
+                          {currentTime && `• ${currentTime} Uhr`}
                         </p>
                       </div>
                     </button>
@@ -1890,7 +1795,7 @@ export default function AdminKOPage() {
                             className="h-10 rounded-2xl px-4 text-xs font-black text-slate-950 shadow-md transition hover:opacity-90 disabled:opacity-40"
                             style={{ backgroundColor: primaryColor }}
                           >
-                            {savingTime ? 'Speichern …' : 'Zeit speichern'}
+                            {savingTime ? 'Speichern...' : 'Zeit speichern'}
                           </button>
                           <button
                             type="button"
@@ -1913,9 +1818,8 @@ export default function AdminKOPage() {
                             }}
                             className="h-10 rounded-2xl border border-white/10 bg-black/40 px-4 text-xs font-bold text-slate-300 hover:text-white transition"
                           >
-                            ⏰ Zeit ändern
+                            Zeit ändern
                           </button>
-
                           {phase !== 'final' && phase !== 'third_place' && isCurrentRound && currentRoundFinished && (
                             <button
                               type="button"
@@ -1923,7 +1827,7 @@ export default function AdminKOPage() {
                               disabled={creating}
                               className="h-10 rounded-2xl bg-emerald-500 px-4 text-xs font-black text-slate-950 shadow-md transition hover:bg-emerald-400 disabled:opacity-40"
                             >
-                              {creating ? 'Erstelle …' : '▶ Nächste Runde freischalten'}
+                              {creating ? 'Erstelle ...' : 'Nächste Runde freischalten'}
                             </button>
                           )}
                         </>
@@ -1936,10 +1840,7 @@ export default function AdminKOPage() {
                       {phaseMatches.map((match) => {
                         const winner = getMatchWinner(match)
                         return (
-                          <div
-                            key={match.id}
-                            className="rounded-2xl border border-white/10 bg-black/40 p-4 space-y-2.5 shadow-lg backdrop-blur-md"
-                          >
+                          <div key={match.id} className="rounded-2xl border border-white/10 bg-black/40 p-4 space-y-2.5 shadow-lg backdrop-blur-md">
                             <div className="flex items-center justify-between text-[10px] font-black text-slate-400">
                               <span>
                                 {match.phase === 'third_place'
@@ -1968,7 +1869,6 @@ export default function AdminKOPage() {
                                 <span className="truncate">{getTeamName(match.team1_id)}</span>
                                 <span className="font-black">{match.team1_score ?? '-'}</span>
                               </div>
-
                               <div
                                 className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold ${
                                   winner === match.team2_id
@@ -1981,11 +1881,7 @@ export default function AdminKOPage() {
                               </div>
                             </div>
 
-                            <MatchScoreEditor
-                              match={match}
-                              primaryColor={primaryColor}
-                              onSave={saveMatchScore}
-                            />
+                            <MatchScoreEditor match={match} primaryColor={primaryColor} onSave={saveMatchScore} />
                           </div>
                         )
                       })}

@@ -17,6 +17,7 @@ type Group = {
 type GroupMember = {
   group_id: number
   team_id: number
+  manual_rank?: number | null
 }
 
 type Match = {
@@ -54,6 +55,7 @@ type TeamStanding = {
   goalsAgainst: number
   goalDiff: number
   points: number
+  manualRank: number | null
 }
 
 type GroupStanding = {
@@ -80,6 +82,7 @@ export default function AdminTabellePage() {
   const [qualifiersPerGroup, setQualifiersPerGroup] = useState<number>(2)
 
   const [loading, setLoading] = useState(true)
+  const [savingRank, setSavingRank] = useState(false)
   const [error, setError] = useState('')
 
   const primaryColor = tournament?.primary_color || '#22c55e'
@@ -119,7 +122,7 @@ export default function AdminTabellePage() {
 
         supabase
           .from('group_members')
-          .select('group_id, team_id')
+          .select('group_id, team_id, manual_rank')
           .eq('tournament_id', tourneyData.id),
 
         supabase
@@ -171,6 +174,11 @@ export default function AdminTabellePage() {
         { event: '*', schema: 'public', table: 'matches', filter: `tournament_id=eq.${tournament.id}` },
         () => void loadData()
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'group_members', filter: `tournament_id=eq.${tournament.id}` },
+        () => void loadData()
+      )
       .subscribe()
 
     return () => {
@@ -178,22 +186,19 @@ export default function AdminTabellePage() {
     }
   }, [tournament?.id, loadData])
 
-  // TABELLEN-BERECHNUNG ANHAND DER SPIELERGEBNISSE
+  // TABELLEN-BERECHNUNG ANHAND DER SPIELERGEBNISSE & TIE-BREAKER LOGIK
   const groupStandings = useMemo<GroupStanding[]>(() => {
     const teamMap = new Map<number, Team>(teams.map((t) => [t.id, t]))
 
     return groups.map((group) => {
-      const groupTeamIds = members
-        .filter((m) => m.group_id === group.id)
-        .map((m) => m.team_id)
-
+      const groupMembers = members.filter((m) => m.group_id === group.id)
       const standingsMap = new Map<number, TeamStanding>()
 
-      groupTeamIds.forEach((teamId) => {
-        const teamObj = teamMap.get(teamId)
-        standingsMap.set(teamId, {
-          teamId,
-          teamName: teamObj?.name || `Team #${teamId}`,
+      groupMembers.forEach((m) => {
+        const teamObj = teamMap.get(m.team_id)
+        standingsMap.set(m.team_id, {
+          teamId: m.team_id,
+          teamName: teamObj?.name || `Team #${m.team_id}`,
           played: 0,
           won: 0,
           drawn: 0,
@@ -202,6 +207,7 @@ export default function AdminTabellePage() {
           goalsAgainst: 0,
           goalDiff: 0,
           points: 0,
+          manualRank: m.manual_rank ?? null,
         })
       })
 
@@ -259,11 +265,47 @@ export default function AdminTabellePage() {
         goalDiff: s.goalsFor - s.goalsAgainst,
       }))
 
-      // Sortierung: 1. Punkte -> 2. Tordifferenz -> 3. Eigene Tore -> 4. Name
+      // Hilfsfunktion: Direkter Vergleich
+      const getHeadToHead = (aId: number, bId: number): number => {
+        const directMatches = groupMatches.filter(
+          (m) =>
+            (m.team1_id === aId && m.team2_id === bId) ||
+            (m.team1_id === bId && m.team2_id === aId)
+        )
+        if (directMatches.length === 0) return 0
+
+        let pointsA = 0
+        let pointsB = 0
+        directMatches.forEach((m) => {
+          const s1 = m.team1_score!
+          const s2 = m.team2_score!
+          if (m.team1_id === aId) {
+            if (s1 > s2) pointsA += 3
+            else if (s2 > s1) pointsB += 3
+            else { pointsA += 1; pointsB += 1 }
+          } else {
+            if (s2 > s1) pointsA += 3
+            else if (s1 > s2) pointsB += 3
+            else { pointsA += 1; pointsB += 1 }
+          }
+        })
+        return pointsB - pointsA // Negativ -> A besser, Positiv -> B besser
+      }
+
+      // Sortierung nach Hierarchie:
+      // 1. Punkte -> 2. Tordifferenz -> 3. Eigene Tore -> 4. Direkter Vergleich -> 5. Manuelle Admin-Wertung -> 6. Alphabetisch
       standingsList.sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points
         if (b.goalDiff !== a.goalDiff) return b.goalDiff - a.goalDiff
         if (b.goalsFor !== a.goalsFor) return b.goalsFor - a.goalsFor
+
+        const h2h = getHeadToHead(a.teamId, b.teamId)
+        if (h2h !== 0) return h2h
+
+        const rA = a.manualRank ?? 999
+        const rB = b.manualRank ?? 999
+        if (rA !== rB) return rA - rB
+
         return a.teamName.localeCompare(b.teamName)
       })
 
@@ -273,6 +315,48 @@ export default function AdminTabellePage() {
       }
     })
   }, [groups, teams, members, matches])
+
+  // Funktion zum Tauschen/Anpassen der manuellen Reihenfolge
+  const handleMoveTeam = async (groupId: number, currentList: TeamStanding[], index: number, direction: 'up' | 'down') => {
+    if (!tournament?.id) return
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= currentList.length) return
+
+    setSavingRank(true)
+    try {
+      // Erstelle eine Kopie der Liste und tausche die Positionen
+      const newList = [...currentList]
+      const temp = newList[index]
+      newList[index] = newList[targetIndex]
+      newList[targetIndex] = temp
+
+      // Vergib jedem Team einen eindeutigen manual_rank (1, 2, 3...)
+      const updates = newList.map((t, idx) => ({
+        tournament_id: tournament.id,
+        group_id: groupId,
+        team_id: t.teamId,
+        manual_rank: idx + 1,
+      }))
+
+      for (const update of updates) {
+        const { error: upErr } = await supabase
+          .from('group_members')
+          .update({ manual_rank: update.manual_rank })
+          .eq('tournament_id', update.tournament_id)
+          .eq('group_id', update.group_id)
+          .eq('team_id', update.team_id)
+
+        if (upErr) throw upErr
+      }
+
+      await loadData()
+    } catch (err: any) {
+      console.error('Fehler beim Verschieben:', err)
+      alert('Fehler beim Speichern der manuelle Reihenfolge: ' + err.message)
+    } finally {
+      setSavingRank(false)
+    }
+  }
 
   const totalFinishedGroupGames = matches.filter((m) => m.phase === 'group' && m.status === 'finished').length
   const totalGroupGames = matches.filter((m) => m.phase === 'group').length
@@ -301,7 +385,7 @@ export default function AdminTabellePage() {
         </div>
       )}
 
-      {/* FREIGELEGTE METRIK-KACHELN AUF VOLLER BREITE (TRANSPARENTES GLAS) */}
+      {/* METRIK-KACHELN */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6 lg:gap-8 w-full">
         <div className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl backdrop-blur-md flex flex-col justify-between transition hover:bg-white/10">
           <p className="text-xs font-black uppercase tracking-wider text-slate-200">Gruppen Gesamt</p>
@@ -342,7 +426,7 @@ export default function AdminTabellePage() {
 
               {/* HORIZONTALE SCROLLBAR FÜR MOBILE GERÄTE */}
               <div className="overflow-x-auto rounded-2xl border border-white/10 bg-black/40 shadow-inner">
-                <table className="w-full text-left text-xs min-w-[500px]">
+                <table className="w-full text-left text-xs min-w-[560px]">
                   <thead>
                     <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-wider text-slate-400 whitespace-nowrap bg-black/60">
                       <th className="py-3 px-2 text-center w-8">#</th>
@@ -354,12 +438,13 @@ export default function AdminTabellePage() {
                       <th className="py-3 px-2 text-center w-16" title="Tore / Becher">Tore</th>
                       <th className="py-3 px-2 text-center w-12" title="Differenz">Diff</th>
                       <th className="py-3 px-2 text-center w-12 font-black text-white">Pkt</th>
+                      <th className="py-3 px-2 text-center w-16">Eingriff</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 font-bold whitespace-nowrap">
                     {standings.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="py-6 text-center text-slate-400 font-medium">
+                        <td colSpan={10} className="py-6 text-center text-slate-400 font-medium">
                           Keine Teams in dieser Gruppe.
                         </td>
                       </tr>
@@ -389,7 +474,7 @@ export default function AdminTabellePage() {
                             </td>
 
                             <td className="py-3 px-3">
-                              <div className="font-black text-white truncate max-w-[150px]">
+                              <div className="font-black text-white truncate max-w-[140px]">
                                 {team.teamName}
                               </div>
                             </td>
@@ -431,6 +516,30 @@ export default function AdminTabellePage() {
                             <td className="py-3 px-2 text-center font-mono text-sm font-black text-white">
                               {team.points}
                             </td>
+
+                            {/* PFEILE FÜR MANUELLEN OVERRULE */}
+                            <td className="py-3 px-2 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  type="button"
+                                  disabled={idx === 0 || savingRank}
+                                  onClick={() => handleMoveTeam(group.id, standings, idx, 'up')}
+                                  className="h-6 w-6 rounded border border-white/10 bg-black/60 text-slate-200 hover:bg-white/20 disabled:opacity-20 flex items-center justify-center text-[10px]"
+                                  title="Nach oben verschieben"
+                                >
+                                  ▲
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={idx === standings.length - 1 || savingRank}
+                                  onClick={() => handleMoveTeam(group.id, standings, idx, 'down')}
+                                  className="h-6 w-6 rounded border border-white/10 bg-black/60 text-slate-200 hover:bg-white/20 disabled:opacity-20 flex items-center justify-center text-[10px]"
+                                  title="Nach unten verschieben"
+                                >
+                                  ▼
+                                </button>
+                              </div>
+                            </td>
                           </tr>
                         )
                       })
@@ -439,9 +548,12 @@ export default function AdminTabellePage() {
                 </table>
               </div>
 
-              <div className="pt-2 text-[10px] text-slate-300 font-bold flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0"></span>
-                <span>Grüne Ränge = Qualifikation für K.-o.-Phase</span>
+              <div className="pt-2 text-[10px] text-slate-300 font-bold flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0"></span>
+                  <span>Grüne Ränge = Qualifikation für K.-o.-Phase</span>
+                </div>
+                <span className="text-slate-400">▲▼ = Bei absolutem Patt manuell anpassen</span>
               </div>
             </div>
           ))}
