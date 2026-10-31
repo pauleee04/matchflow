@@ -189,29 +189,35 @@ export default function RulesPage() {
 
   return (
     <>
-      {/* EXAKTER DRUCK-STYLE: ISOLIERT NUR DIESES DOKUMENT */}
+      {/* DRUCK-STYS MIT TOP-POSITIONIERUNG UND ABSTANDS-RESET */}
       <style jsx global>{`
         @media print {
           @page {
             size: A4;
             margin: 12mm;
           }
-          /* Blendet alles auf der Seite inklusive Layout-Navigationen aus */
-          body * {
-            visibility: hidden !important;
-          }
-          /* Nur das offizielle Druck-Dokument & Kinder wieder einblenden */
-          #official-print-doc,
-          #official-print-doc * {
-            visibility: visible !important;
-          }
-          #official-print-doc {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
+          html, body {
             background-color: #ffffff !important;
             color: #0f172a !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          /* Entfernt Top-Paddings von Layout-Containern (App Router main wrapper) */
+          main, section, div {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+          }
+          /* Web-Elemente vollständig ausblenden */
+          .print\:hidden {
+            display: none !important;
+          }
+          /* Druck-Dokument exakt ganz oben ausrichten */
+          #official-print-doc {
+            display: block !important;
+            visibility: visible !important;
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            width: 100% !important;
           }
         }
       `}</style>
@@ -219,7 +225,7 @@ export default function RulesPage() {
       {/* ------------------------------------------------------------- */}
       {/* 1. REINES DOKUMENT FÜR DRUCK / PDF-SPEICHERUNG */}
       {/* ------------------------------------------------------------- */}
-      <div id="official-print-doc" className="hidden print:block text-slate-900 bg-white font-sans p-2">
+      <div id="official-print-doc" className="hidden print:block text-slate-900 bg-white font-sans">
         {/* DOKUMENTEN-KOPF */}
         <header className="border-b-2 border-slate-900 pb-4 mb-6 flex items-center justify-between">
           <div>
