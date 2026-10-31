@@ -189,14 +189,27 @@ export default function RulesPage() {
 
   return (
     <>
-      {/* GLOBAL PRINT STYLES FÜR EIN CLEANES DIN-A4 PDF */}
+      {/* EXAKTER DRUCK-STYLE: ISOLIERT NUR DIESES DOKUMENT */}
       <style jsx global>{`
         @media print {
           @page {
             size: A4;
-            margin: 15mm;
+            margin: 12mm;
           }
-          body {
+          /* Blendet alles auf der Seite inklusive Layout-Navigationen aus */
+          body * {
+            visibility: hidden !important;
+          }
+          /* Nur das offizielle Druck-Dokument & Kinder wieder einblenden */
+          #official-print-doc,
+          #official-print-doc * {
+            visibility: visible !important;
+          }
+          #official-print-doc {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
             background-color: #ffffff !important;
             color: #0f172a !important;
           }
@@ -204,9 +217,9 @@ export default function RulesPage() {
       `}</style>
 
       {/* ------------------------------------------------------------- */}
-      {/* 1. OFFICAL PRINT LAYOUT (WIRD NUR BEIM DRUCKEN / PDF SPEICHERN ANGEZEIGT) */}
+      {/* 1. REINES DOKUMENT FÜR DRUCK / PDF-SPEICHERUNG */}
       {/* ------------------------------------------------------------- */}
-      <div className="hidden print:block text-slate-900 bg-white font-sans p-2">
+      <div id="official-print-doc" className="hidden print:block text-slate-900 bg-white font-sans p-2">
         {/* DOKUMENTEN-KOPF */}
         <header className="border-b-2 border-slate-900 pb-4 mb-6 flex items-center justify-between">
           <div>
@@ -261,7 +274,7 @@ export default function RulesPage() {
       </div>
 
       {/* ------------------------------------------------------------- */}
-      {/* 2. REGULÄRE WEB-ANSICHT (BEIM DRUCKEN AUTOMATISCH VERSTECKT) */}
+      {/* 2. REGULÄRE WEB-ANSICHT */}
       {/* ------------------------------------------------------------- */}
       <div className="print:hidden mx-auto w-full max-w-5xl space-y-6 sm:space-y-8 pb-16 text-slate-100 [color-scheme:dark]">
         {/* SEITEN-KOPF */}
@@ -429,7 +442,7 @@ export default function RulesPage() {
           </div>
         )}
 
-        {/* REGELN LISTE (WEB-ANSICHT) */}
+        {/* REGELN LISTE */}
         {filteredRules.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:gap-5">
             {filteredRules.map((rule) => {
