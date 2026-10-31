@@ -189,7 +189,7 @@ export default function RulesPage() {
 
   return (
     <>
-      {/* DRUCK-STYS MIT TOP-POSITIONIERUNG UND ABSTANDS-RESET */}
+      {/* DRUCK-STYLES FÜR VOLLSTÄNDIGE ISOLIERUNG DES DOKUMENTS GANZ OBEN */}
       <style jsx global>{`
         @media print {
           @page {
@@ -202,22 +202,26 @@ export default function RulesPage() {
             margin: 0 !important;
             padding: 0 !important;
           }
-          /* Entfernt Top-Paddings von Layout-Containern (App Router main wrapper) */
-          main, section, div {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
+          /* Alle normalen Elemente ausblenden */
+          body * {
+            visibility: hidden !important;
           }
-          /* Web-Elemente vollständig ausblenden */
-          .print\:hidden {
-            display: none !important;
+          /* Nur das Druck-Dokument & dessen Inhalt anzeigen */
+          #official-print-doc,
+          #official-print-doc * {
+            visibility: visible !important;
           }
-          /* Druck-Dokument exakt ganz oben ausrichten */
+          /* Dokument erzwingen, ganz oben links zu beginnen und über Layouts zu liegen */
           #official-print-doc {
             display: block !important;
-            visibility: visible !important;
-            margin-top: 0 !important;
-            padding-top: 0 !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
             width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #ffffff !important;
+            z-index: 9999999 !important;
           }
         }
       `}</style>
