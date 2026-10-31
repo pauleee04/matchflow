@@ -78,9 +78,9 @@ const KO_PHASES_MAP: Record<string, string> = {
   final: 'Finale',
 }
 
-const KO_CARD_HEIGHT = 92
-const KO_ROW_HEIGHT = 52
-const KO_HEADER_HEIGHT = 32
+const KO_CARD_HEIGHT = 96
+const KO_ROW_HEIGHT = 56
+const KO_HEADER_HEIGHT = 36
 
 function hexToRgba(hex: string | null | undefined, alpha: number, fallback: string = '#22c55e'): string {
   let c = (hex || fallback).trim()
@@ -522,101 +522,105 @@ export default function PublicLivePage() {
     const matchNum = getGlobalMatchNumber(phase, position)
 
     return (
-      <div className="relative w-full min-w-[140px]" style={{ height: KO_CARD_HEIGHT }}>
+      <div className="relative w-full min-w-[155px] max-w-[210px]" style={{ height: KO_CARD_HEIGHT }}>
         <div
-          className={`h-full overflow-hidden rounded-xl border shadow-lg transition flex flex-col justify-between backdrop-blur-md ${
+          className={`h-full overflow-hidden rounded-xl border transition-all duration-200 flex flex-col justify-between backdrop-blur-md shadow-md ${
             isFinal
-              ? 'border-2 border-amber-400/90 bg-slate-900/90 shadow-amber-500/20'
+              ? 'border-amber-400/90 bg-gradient-to-b from-amber-950/40 to-slate-900/90 shadow-amber-500/10'
               : isThirdPlace
-              ? 'border border-amber-500/60 bg-slate-900/90'
+              ? 'border-amber-600/70 bg-gradient-to-b from-amber-950/30 to-slate-900/90'
               : finished
-              ? 'border border-white/20 bg-slate-900/70'
+              ? 'border-slate-700/80 bg-slate-900/85'
               : live
-              ? 'border-2 border-red-500/90 bg-red-950/60 animate-pulse'
+              ? 'border-red-500/90 bg-red-950/50 ring-2 ring-red-500/40 animate-pulse'
               : match
-              ? 'border border-white/15 bg-slate-900/60 text-slate-100'
-              : 'border-dashed border-white/15 bg-slate-900/30 text-slate-500'
+              ? 'border-slate-800 bg-slate-900/60 text-slate-100'
+              : 'border-dashed border-slate-800/80 bg-slate-950/40 text-slate-500'
           }`}
           style={{
-            borderColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.6) : undefined,
+            borderColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.5) : undefined,
           }}
         >
+          {/* HEADER DER KARTE */}
           <div
-            className={`flex h-5 items-center justify-between border-b px-2 text-[8.5px] font-black uppercase tracking-wider whitespace-nowrap ${
+            className={`flex h-6 items-center justify-between border-b px-2 text-[9px] font-black uppercase tracking-wider whitespace-nowrap ${
               isFinal
-                ? 'border-amber-500/30 bg-amber-500/30 text-amber-200'
+                ? 'border-amber-500/30 bg-amber-500/20 text-amber-300'
                 : isThirdPlace
-                ? 'border-amber-600/30 bg-amber-600/30 text-amber-200'
+                ? 'border-amber-600/30 bg-amber-600/20 text-amber-200'
                 : finished
-                ? 'border-white/15 text-white'
+                ? 'border-white/10 text-slate-200'
                 : live
-                ? 'border-red-500/30 bg-red-500/30 text-red-200'
-                : 'border-white/10 bg-slate-950/40 text-slate-400'
+                ? 'border-red-500/30 bg-red-500/20 text-red-200'
+                : 'border-white/5 bg-slate-950/60 text-slate-400'
             }`}
             style={{
-              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.3) : undefined,
-              color: finished && !isFinal && !isThirdPlace ? '#ffffff' : undefined,
+              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.2) : undefined,
             }}
           >
-            <span>{isThirdPlace ? '🥉 Platz 3' : `Spiel #${matchNum}`}</span>
+            <span className="flex items-center gap-1 truncate font-bold">
+              {isFinal ? '🏆 FINALE' : isThirdPlace ? '🥉 PLATZ 3' : `Spiel #${matchNum}`}
+            </span>
             {live ? (
-              <span className="text-red-300 font-black flex items-center gap-1">
+              <span className="text-red-400 font-black flex items-center gap-1">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" /> LIVE
               </span>
             ) : finished ? (
-              <span className="font-extrabold" style={{ color: primaryColor }}>✓ Fertig</span>
+              <span className="font-extrabold text-[9px]" style={{ color: primaryColor }}>✓ Ende</span>
             ) : (
-              <span className="text-slate-400 font-normal">{match && formatTime(match.scheduled_time)}</span>
+              <span className="text-slate-400 font-medium text-[8.5px]">{match && formatTime(match.scheduled_time)}</span>
             )}
           </div>
 
+          {/* TEAMS UND SCORES */}
           <div className="space-y-1 p-1.5">
             <div
-              className={`flex h-5 items-center justify-between gap-1 rounded-md px-2 text-[10px] ${
+              className={`flex h-5.5 items-center justify-between gap-1.5 rounded-md px-2 text-[10.5px] transition-colors ${
                 t1Winner
                   ? 'font-black ring-1'
                   : match
-                  ? 'bg-slate-950/50 text-slate-200 font-bold'
-                  : 'text-slate-400 font-medium'
+                  ? 'bg-slate-950/60 text-slate-200 font-semibold'
+                  : 'text-slate-400 font-normal'
               }`}
               style={
                 t1Winner
                   ? {
-                      backgroundColor: hexToRgba(primaryColor, 0.4),
+                      backgroundColor: hexToRgba(primaryColor, 0.35),
                       color: '#ffffff',
-                      borderColor: hexToRgba(primaryColor, 0.7),
+                      borderColor: hexToRgba(primaryColor, 0.6),
                     }
                   : undefined
               }
             >
               <span title={t1Name} className="truncate min-w-0 flex-1">{t1Name}</span>
-              <span className="shrink-0 font-mono font-black text-xs ml-1">{match ? match.team1_score ?? '-' : '-'}</span>
+              <span className="shrink-0 font-mono font-black text-xs">{match ? match.team1_score ?? '-' : '-'}</span>
             </div>
 
             <div
-              className={`flex h-5 items-center justify-between gap-1 rounded-md px-2 text-[10px] ${
+              className={`flex h-5.5 items-center justify-between gap-1.5 rounded-md px-2 text-[10.5px] transition-colors ${
                 t2Winner
                   ? 'font-black ring-1'
                   : match
-                  ? 'bg-slate-950/50 text-slate-200 font-bold'
-                  : 'text-slate-400 font-medium'
+                  ? 'bg-slate-950/60 text-slate-200 font-semibold'
+                  : 'text-slate-400 font-normal'
               }`}
               style={
                 t2Winner
                   ? {
-                      backgroundColor: hexToRgba(primaryColor, 0.4),
+                      backgroundColor: hexToRgba(primaryColor, 0.35),
                       color: '#ffffff',
-                      borderColor: hexToRgba(primaryColor, 0.7),
+                      borderColor: hexToRgba(primaryColor, 0.6),
                     }
                   : undefined
               }
             >
               <span title={t2Name} className="truncate min-w-0 flex-1">{t2Name}</span>
-              <span className="shrink-0 font-mono font-black text-xs ml-1">{match ? match.team2_score ?? '-' : '-'}</span>
+              <span className="shrink-0 font-mono font-black text-xs">{match ? match.team2_score ?? '-' : '-'}</span>
             </div>
           </div>
 
-          <div className="flex h-4 items-center justify-between border-t border-white/10 px-2 text-[7.5px] font-bold text-slate-400">
+          {/* FOOTER DER KARTE */}
+          <div className="flex h-4.5 items-center justify-between border-t border-white/5 px-2 text-[8px] font-semibold text-slate-400 bg-slate-950/30">
             <span>{match?.table_number ? `Tisch ${match.table_number}` : 'Tisch -'}</span>
             <span>{formatTime(match?.scheduled_time) ? `${formatTime(match?.scheduled_time)} Uhr` : ''}</span>
           </div>
@@ -651,27 +655,30 @@ export default function PublicLivePage() {
 
     if (isCenterConnector) {
       return (
-        <div className="relative w-3.5 shrink-0" style={{ height }} aria-hidden="true">
+        <div className="relative w-8 shrink-0" style={{ height }} aria-hidden="true">
           <svg
-            className="absolute inset-0 w-full text-slate-500"
+            className="absolute inset-0 w-full text-slate-600/70"
             style={{ top: KO_HEADER_HEIGHT, height: bodyHeight }}
-            viewBox={`0 0 28 ${bodyHeight}`}
+            viewBox={`0 0 32 ${bodyHeight}`}
             preserveAspectRatio="none"
           >
             {Array.from({ length: outerCount }).map((_, index) => {
               const outerCenter = ((index * outerSpan + outerSpan / 2) / totalRows) * bodyHeight
               const centerLine = bodyHeight / 2
-              const xOuter = direction === 'left' ? 0 : 28
-              const xMiddle = 14
-              const xInner = direction === 'left' ? 28 : 0
+              const xOuter = direction === 'left' ? 0 : 32
+              const xMiddle = 16
+              const xInner = direction === 'left' ? 32 : 0
 
               return (
                 <g key={index}>
-                  <line x1={xOuter} y1={outerCenter} x2={xMiddle} y2={outerCenter} stroke="currentColor" strokeWidth="1.6" />
-                  <line x1={xMiddle} y1={outerCenter} x2={xMiddle} y2={centerLine} stroke="currentColor" strokeWidth="1.6" />
-                  {index === 0 && (
-                    <line x1={xMiddle} y1={centerLine} x2={xInner} y2={centerLine} stroke="currentColor" strokeWidth="1.6" />
-                  )}
+                  <path
+                    d={`M ${xOuter} ${outerCenter} H ${xMiddle} V ${centerLine} H ${xInner}`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </g>
               )
             })}
@@ -681,11 +688,11 @@ export default function PublicLivePage() {
     }
 
     return (
-      <div className="relative w-3.5 shrink-0" style={{ height }} aria-hidden="true">
+      <div className="relative w-8 shrink-0" style={{ height }} aria-hidden="true">
         <svg
-          className="absolute inset-0 w-full text-slate-500"
+          className="absolute inset-0 w-full text-slate-600/70"
           style={{ top: KO_HEADER_HEIGHT, height: bodyHeight }}
-          viewBox={`0 0 28 ${bodyHeight}`}
+          viewBox={`0 0 32 ${bodyHeight}`}
           preserveAspectRatio="none"
         >
           {Array.from({ length: innerCount }).map((_, index) => {
@@ -696,16 +703,20 @@ export default function PublicLivePage() {
             const outerCenterB = ((outerB * outerSpan + outerSpan / 2) / totalRows) * bodyHeight
             const innerCenter = ((index * innerSpan + innerSpan / 2) / totalRows) * bodyHeight
 
-            const xOuter = direction === 'left' ? 0 : 28
-            const xMiddle = 14
-            const xInner = direction === 'left' ? 28 : 0
+            const xOuter = direction === 'left' ? 0 : 32
+            const xMiddle = 16
+            const xInner = direction === 'left' ? 32 : 0
 
             return (
               <g key={index}>
-                <line x1={xOuter} y1={outerCenterA} x2={xMiddle} y2={outerCenterA} stroke="currentColor" strokeWidth="1.6" />
-                <line x1={xOuter} y1={outerCenterB} x2={xMiddle} y2={outerCenterB} stroke="currentColor" strokeWidth="1.6" />
-                <line x1={xMiddle} y1={outerCenterA} x2={xMiddle} y2={outerCenterB} stroke="currentColor" strokeWidth="1.6" />
-                <line x1={xMiddle} y1={innerCenter} x2={xInner} y2={innerCenter} stroke="currentColor" strokeWidth="1.6" />
+                <path
+                  d={`M ${xOuter} ${outerCenterA} H ${xMiddle} V ${outerCenterB} H ${xOuter} M ${xMiddle} ${innerCenter} H ${xInner}`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </g>
             )
           })}
@@ -737,11 +748,11 @@ export default function PublicLivePage() {
 
     return (
       <div
-        className="flex min-w-[150px] max-w-[210px] flex-1 flex-col"
+        className="flex min-w-[155px] max-w-[210px] flex-1 flex-col"
         style={{ height: KO_HEADER_HEIGHT + totalRows * KO_ROW_HEIGHT }}
       >
         <div
-          className="flex shrink-0 items-center justify-center text-[10px] font-black uppercase tracking-wider text-slate-300 truncate px-1"
+          className="flex shrink-0 items-center justify-center text-[11px] font-black uppercase tracking-wider text-slate-300 px-1 whitespace-nowrap"
           style={{ height: KO_HEADER_HEIGHT }}
         >
           {getPhaseName(phase)}
@@ -755,7 +766,7 @@ export default function PublicLivePage() {
             return (
               <div
                 key={`${side}-${phase}-${pos}`}
-                className="flex items-center"
+                className="flex items-center justify-center"
                 style={{ gridRow: `${rowStart} / span ${rowSpan}` }}
               >
                 <BracketMatchCard phase={phase} position={pos} />
@@ -792,9 +803,9 @@ export default function PublicLivePage() {
     const bracketHeight = KO_HEADER_HEIGHT + totalRows * KO_ROW_HEIGHT
 
     return (
-      <div className="relative w-full overflow-x-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="min-w-[900px] max-w-[1400px] mx-auto w-full px-2">
-          <div className="flex items-start justify-center gap-1 w-full">
+      <div className="relative w-full overflow-x-auto py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="min-w-[980px] max-w-[1450px] mx-auto w-full px-2">
+          <div className="flex items-start justify-center gap-0 w-full">
             {/* LINKE HÄLFTE */}
             <div className="flex min-w-0 flex-1 items-start">
               {leftPhases.map((phase, index) => {
@@ -827,35 +838,25 @@ export default function PublicLivePage() {
 
             {/* FINALE & PLATZ 3 (MITTELSPALTE) */}
             <div
-              className="flex min-w-[170px] max-w-[240px] flex-1 flex-col px-1"
+              className="flex min-w-[170px] max-w-[220px] flex-1 flex-col px-1"
               style={{ height: bracketHeight }}
             >
               <div
-                className="flex shrink-0 items-center justify-center text-[10px] font-black uppercase tracking-wider text-slate-300 truncate"
+                className="flex shrink-0 items-center justify-center text-[11px] font-black uppercase tracking-wider text-slate-300 whitespace-nowrap"
                 style={{ height: KO_HEADER_HEIGHT }}
               >
                 ENTSCHEIDUNG
               </div>
 
-              <div className="relative flex flex-1 flex-col items-center justify-center gap-6 py-2">
+              <div className="relative flex flex-1 flex-col items-center justify-center gap-5 py-2">
                 {/* FINALE */}
-                <div className="w-full">
-                  <div className="mb-1.5 flex items-center justify-center gap-1.5">
-                    <span className="rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-amber-500/30 text-amber-300 border border-amber-500/40 shadow-sm">
-                      🏆 FINALE
-                    </span>
-                  </div>
+                <div className="w-full flex flex-col items-center">
                   <BracketMatchCard phase="final" position={1} />
                 </div>
 
                 {/* SPIEL UM PLATZ 3 */}
                 {showThirdPlace && (
-                  <div className="w-full">
-                    <div className="mb-1.5 flex items-center justify-center gap-1.5">
-                      <span className="rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-amber-600/30 text-amber-200 border border-amber-500/40 shadow-sm">
-                        🥉 SPIEL UM PLATZ 3
-                      </span>
-                    </div>
+                  <div className="w-full flex flex-col items-center">
                     <BracketMatchCard phase="third_place" position={1} />
                   </div>
                 )}
@@ -965,7 +966,7 @@ export default function PublicLivePage() {
         </p>
       </section>
 
-      {/* LAUFENDE SPIELE (WENN VORHANDEN) */}
+      {/* LAUFENDE SPIELE */}
       {liveMatches.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-2 px-1">
@@ -1035,7 +1036,7 @@ export default function PublicLivePage() {
         </section>
       )}
 
-      {/* GRUPPENTABELLEN (FREISTEHENDE KACHELN) */}
+      {/* GRUPPENTABELLEN */}
       {groupStandings.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-2.5 px-1">

@@ -47,8 +47,8 @@ type Standing = {
 }
 
 const KO_PHASES = ['round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
-const BRACKET_CARD_HEIGHT = 100
-const BRACKET_ROW_HEIGHT = 62
+const BRACKET_CARD_HEIGHT = 96
+const BRACKET_ROW_HEIGHT = 58
 const BRACKET_HEADER_HEIGHT = 36
 
 function hexToRgba(hex: string | null | undefined, alpha: number, fallback: string = '#22c55e'): string {
@@ -91,10 +91,10 @@ function isLive(match: Match) {
   return status === 'live' || status === 'playing' || status === 'in_progress'
 }
 
-function formatTime(value: string | null) {
-  if (!value) return 'Zeit offen'
+function formatTime(value: string | null | undefined): string | null {
+  if (!value) return null
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Zeit offen'
+  if (Number.isNaN(date.getTime())) return null
   return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 }
 
@@ -134,39 +134,39 @@ function getPreviousPhaseName(phase: string) {
 }
 
 function getMatchesLayoutConfig(matchCount: number, hasKOStarted: boolean) {
-  if (hasKOStarted || matchCount <= 2) {
+  if (matchCount <= 1) {
     return {
-      gridClass: 'grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-5xl mx-auto w-full',
+      gridClass: 'grid grid-cols-1 max-w-xl mx-auto w-full',
+      cardPadding: 'p-5 min-h-[140px]',
+      fontSize: 'text-base sm:text-lg',
+    }
+  }
+  if (matchCount <= 2) {
+    return {
+      gridClass: 'grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto w-full',
       cardPadding: 'p-4 sm:p-5 min-h-[130px]',
-      fontSize: 'text-sm',
+      fontSize: 'text-sm sm:text-base',
     }
   }
   if (matchCount <= 4) {
     return {
-      gridClass: 'grid grid-cols-2 gap-4 max-w-6xl mx-auto w-full',
+      gridClass: 'grid grid-cols-2 sm:grid-cols-2 gap-4 max-w-5xl mx-auto w-full',
       cardPadding: 'p-4 min-h-[120px]',
       fontSize: 'text-xs sm:text-sm',
     }
   }
   if (matchCount <= 6) {
     return {
-      gridClass: 'grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-7xl mx-auto w-full',
+      gridClass: 'grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-6xl mx-auto w-full',
       cardPadding: 'p-3.5 min-h-[110px]',
       fontSize: 'text-xs sm:text-sm',
     }
   }
   if (matchCount <= 8) {
     return {
-      gridClass: 'grid grid-cols-2 sm:grid-cols-4 gap-3 w-full',
+      gridClass: 'grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-7xl mx-auto w-full',
       cardPadding: 'p-3 min-h-[105px]',
       fontSize: 'text-xs',
-    }
-  }
-  if (matchCount <= 10) {
-    return {
-      gridClass: 'grid grid-cols-2 sm:grid-cols-5 gap-2.5 w-full',
-      cardPadding: 'p-2.5 min-h-[98px]',
-      fontSize: 'text-[11.5px]',
     }
   }
   if (matchCount <= 12) {
@@ -176,38 +176,10 @@ function getMatchesLayoutConfig(matchCount: number, hasKOStarted: boolean) {
       fontSize: 'text-[11px]',
     }
   }
-  if (matchCount <= 15) {
-    return {
-      gridClass: 'grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-5 gap-2.5 w-full',
-      cardPadding: 'p-2 min-h-[90px]',
-      fontSize: 'text-[11px]',
-    }
-  }
-  if (matchCount <= 18) {
-    return {
-      gridClass: 'grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-6 gap-2 w-full',
-      cardPadding: 'p-2 min-h-[86px]',
-      fontSize: 'text-[10.5px]',
-    }
-  }
-  if (matchCount <= 21) {
-    return {
-      gridClass: 'grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 w-full',
-      cardPadding: 'p-2 min-h-[82px]',
-      fontSize: 'text-[10px]',
-    }
-  }
-  if (matchCount <= 24) {
-    return {
-      gridClass: 'grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-1.5 w-full',
-      cardPadding: 'p-1.5 min-h-[78px]',
-      fontSize: 'text-[9.5px]',
-    }
-  }
   return {
-    gridClass: 'grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-1.5 w-full',
-    cardPadding: 'p-1.5 min-h-[72px]',
-    fontSize: 'text-[9px]',
+    gridClass: 'grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 w-full',
+    cardPadding: 'p-2 min-h-[80px]',
+    fontSize: 'text-[10px]',
   }
 }
 
@@ -427,7 +399,7 @@ export default function BeamerPage() {
 
     return sortedKeys.map((key) => ({
       timeKey: key,
-      timeFormatted: key !== 'unscheduled' ? formatTime(key) : 'Offene Ansetzungen',
+      timeFormatted: key !== 'unscheduled' ? (formatTime(key) || 'Offene Ansetzungen') : 'Offene Ansetzungen',
       matches: slotsMap.get(key)!.sort((a, b) => (a.table_number || 0) - (b.table_number || 0)),
     }))
   }, [matches])
@@ -590,7 +562,7 @@ export default function BeamerPage() {
   }
 
   function getGlobalMatchNumber(phase: string, position: number) {
-    const groupMatchCount = matches.filter((m) => m.phase === 'group').length
+    const groupMatchCount = matches.filter((m) => !m.phase || m.phase.toLowerCase() === 'group' || !KO_PHASES.includes(m.phase.toLowerCase())).length
     const phaseOrder = ['round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
     const phaseIndex = phaseOrder.indexOf(phase)
     if (phaseIndex < 0) return position
@@ -641,113 +613,110 @@ export default function BeamerPage() {
 
     const isFinal = phase === 'final'
     const isThirdPlace = phase === 'third_place'
+    const matchNum = getGlobalMatchNumber(phase, position)
 
     return (
-      <div className="relative w-full" style={{ height: BRACKET_CARD_HEIGHT }}>
+      <div className="relative w-full min-w-[155px] max-w-[210px]" style={{ height: BRACKET_CARD_HEIGHT }}>
         <div
-          className={[
-            'h-full overflow-hidden rounded-xl border shadow-lg backdrop-blur-md transition flex flex-col justify-between',
+          className={`h-full overflow-hidden rounded-xl border transition-all duration-200 flex flex-col justify-between backdrop-blur-md shadow-md ${
             isFinal
-              ? 'border-2 border-amber-400/90 bg-slate-900/80 shadow-amber-500/20'
+              ? 'border-amber-400/90 bg-gradient-to-b from-amber-950/40 to-slate-900/90 shadow-amber-500/10'
               : isThirdPlace
-              ? 'border border-amber-500/60 bg-slate-900/80'
+              ? 'border-amber-600/70 bg-gradient-to-b from-amber-950/30 to-slate-900/90'
               : finished
-              ? 'border-white/20 bg-slate-900/70'
+              ? 'border-slate-700/80 bg-slate-900/85'
               : live
-              ? 'border-2 border-red-500 bg-red-950/60 animate-pulse'
+              ? 'border-red-500/90 bg-red-950/50 ring-2 ring-red-500/40 animate-pulse'
               : match
-              ? 'border-white/15 bg-slate-900/60'
-              : 'border-dashed border-white/20 bg-slate-900/30',
-          ].join(' ')}
+              ? 'border-slate-800 bg-slate-900/60 text-slate-100'
+              : 'border-dashed border-slate-800/80 bg-slate-950/40 text-slate-500'
+          }`}
           style={{
-            borderColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.6) : undefined,
+            borderColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.5) : undefined,
           }}
         >
+          {/* KARTEN HEADER */}
           <div
-            className={[
-              'flex h-6 items-center justify-between border-b px-2.5 text-[9px] font-bold uppercase tracking-wider',
+            className={`flex h-6 items-center justify-between border-b px-2 text-[9px] font-black uppercase tracking-wider whitespace-nowrap ${
               isFinal
-                ? 'border-amber-500/30 bg-amber-500/30 text-amber-200'
+                ? 'border-amber-500/30 bg-amber-500/20 text-amber-300'
                 : isThirdPlace
-                ? 'border-amber-600/30 bg-amber-600/30 text-amber-200'
+                ? 'border-amber-600/30 bg-amber-600/20 text-amber-200'
                 : finished
-                ? 'border-white/20 text-white'
+                ? 'border-white/10 text-slate-200'
                 : live
-                ? 'border-red-500/30 bg-red-500/30 text-red-200'
-                : 'border-white/10 bg-slate-950/40 text-slate-300',
-            ].join(' ')}
+                ? 'border-red-500/30 bg-red-500/20 text-red-200'
+                : 'border-white/5 bg-slate-950/60 text-slate-400'
+            }`}
             style={{
-              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.35) : undefined,
-              color: finished && !isFinal && !isThirdPlace ? '#ffffff' : undefined,
+              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.2) : undefined,
             }}
           >
-            <span>{isThirdPlace ? '🥉 Platz 3' : `Spiel #${getGlobalMatchNumber(phase, position)}`}</span>
+            <span className="flex items-center gap-1 font-black">
+              {isFinal ? '🏆 FINALE' : isThirdPlace ? '🥉 PLATZ 3' : `Spiel #${matchNum}`}
+            </span>
             {live ? (
-              <span className="text-red-300 font-bold flex items-center gap-1">
+              <span className="text-red-300 font-black flex items-center gap-1">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" /> LIVE
               </span>
             ) : finished ? (
-              <span className="font-bold" style={{ color: primaryColor }}>✓ Fertig</span>
+              <span className="font-extrabold text-[9px]" style={{ color: primaryColor }}>✓ Ende</span>
             ) : (
-              <span>{getPhaseName(phase)}</span>
+              <span className="text-slate-400 font-medium text-[8.5px]">{formatTime(match?.scheduled_time)}</span>
             )}
           </div>
 
+          {/* TEAMS UND SCORES */}
           <div className="space-y-1 p-1.5">
             <div
-              className={[
-                'flex h-6 items-center justify-between gap-1.5 rounded-lg px-2 text-[11px]',
+              className={`flex h-5.5 items-center justify-between gap-1.5 rounded-md px-2 text-[10.5px] transition-colors ${
                 t1Winner
-                  ? 'font-bold ring-1'
+                  ? 'font-black ring-1'
                   : match
-                  ? 'bg-slate-950/50 text-slate-100 font-semibold'
-                  : 'bg-slate-950/30 text-slate-300 font-medium',
-              ].join(' ')}
+                  ? 'bg-slate-950/60 text-slate-200 font-semibold'
+                  : 'text-slate-400 font-normal'
+              }`}
               style={
                 t1Winner
                   ? {
-                      backgroundColor: hexToRgba(primaryColor, 0.4),
+                      backgroundColor: hexToRgba(primaryColor, 0.35),
                       color: '#ffffff',
-                      borderColor: hexToRgba(primaryColor, 0.7),
+                      borderColor: hexToRgba(primaryColor, 0.6),
                     }
                   : undefined
               }
             >
               <span title={t1Name} className="truncate min-w-0 flex-1">{t1Name}</span>
-              <span className="shrink-0 font-mono text-xs font-bold tabular-nums ml-1">
-                {match ? match.team1_score ?? '-' : '-'}
-              </span>
+              <span className="shrink-0 font-mono font-black text-xs">{match ? match.team1_score ?? '-' : '-'}</span>
             </div>
 
             <div
-              className={[
-                'flex h-6 items-center justify-between gap-1.5 rounded-lg px-2 text-[11px]',
+              className={`flex h-5.5 items-center justify-between gap-1.5 rounded-md px-2 text-[10.5px] transition-colors ${
                 t2Winner
-                  ? 'font-bold ring-1'
+                  ? 'font-black ring-1'
                   : match
-                  ? 'bg-slate-950/50 text-slate-100 font-semibold'
-                  : 'bg-slate-950/30 text-slate-300 font-medium',
-              ].join(' ')}
+                  ? 'bg-slate-950/60 text-slate-200 font-semibold'
+                  : 'text-slate-400 font-normal'
+              }`}
               style={
                 t2Winner
                   ? {
-                      backgroundColor: hexToRgba(primaryColor, 0.4),
+                      backgroundColor: hexToRgba(primaryColor, 0.35),
                       color: '#ffffff',
-                      borderColor: hexToRgba(primaryColor, 0.7),
+                      borderColor: hexToRgba(primaryColor, 0.6),
                     }
                   : undefined
               }
             >
               <span title={t2Name} className="truncate min-w-0 flex-1">{t2Name}</span>
-              <span className="shrink-0 font-mono text-xs font-bold tabular-nums ml-1">
-                {match ? match.team2_score ?? '-' : '-'}
-              </span>
+              <span className="shrink-0 font-mono font-black text-xs">{match ? match.team2_score ?? '-' : '-'}</span>
             </div>
           </div>
 
-          <div className="flex h-4 items-center justify-between border-t border-white/10 px-2.5 text-[8.5px] font-semibold text-slate-300">
+          {/* KARTEN FOOTER */}
+          <div className="flex h-4.5 items-center justify-between border-t border-white/5 px-2 text-[8px] font-semibold text-slate-400 bg-slate-950/30">
             <span>{match?.table_number ? `Tisch ${match.table_number}` : 'Tisch -'}</span>
-            <span>{match && formatTime(match.scheduled_time)}</span>
+            <span>{formatTime(match?.scheduled_time) ? `${formatTime(match?.scheduled_time)} Uhr` : ''}</span>
           </div>
         </div>
       </div>
@@ -780,27 +749,30 @@ export default function BeamerPage() {
 
     if (isCenterConnector) {
       return (
-        <div className="relative w-4 shrink-0" style={{ height }} aria-hidden="true">
+        <div className="relative w-8 shrink-0" style={{ height }} aria-hidden="true">
           <svg
-            className="absolute left-0 right-0 w-full text-slate-400"
+            className="absolute inset-0 w-full text-slate-600/70"
             style={{ top: BRACKET_HEADER_HEIGHT, height: bodyHeight }}
-            viewBox={`0 0 28 ${bodyHeight}`}
+            viewBox={`0 0 32 ${bodyHeight}`}
             preserveAspectRatio="none"
           >
             {Array.from({ length: outerCount }).map((_, index) => {
               const outerCenter = ((index * outerSpan + outerSpan / 2) / totalRows) * bodyHeight
               const centerLine = bodyHeight / 2
-              const xOuter = direction === 'left' ? 0 : 28
-              const xMiddle = 14
-              const xInner = direction === 'left' ? 28 : 0
+              const xOuter = direction === 'left' ? 0 : 32
+              const xMiddle = 16
+              const xInner = direction === 'left' ? 32 : 0
 
               return (
                 <g key={index}>
-                  <line x1={xOuter} y1={outerCenter} x2={xMiddle} y2={outerCenter} stroke="currentColor" strokeWidth="1.6" />
-                  <line x1={xMiddle} y1={outerCenter} x2={xMiddle} y2={centerLine} stroke="currentColor" strokeWidth="1.6" />
-                  {index === 0 && (
-                    <line x1={xMiddle} y1={centerLine} x2={xInner} y2={centerLine} stroke="currentColor" strokeWidth="1.6" />
-                  )}
+                  <path
+                    d={`M ${xOuter} ${outerCenter} H ${xMiddle} V ${centerLine} H ${xInner}`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </g>
               )
             })}
@@ -810,11 +782,11 @@ export default function BeamerPage() {
     }
 
     return (
-      <div className="relative w-4 shrink-0" style={{ height }} aria-hidden="true">
+      <div className="relative w-8 shrink-0" style={{ height }} aria-hidden="true">
         <svg
-          className="absolute inset-0 w-full text-slate-400"
+          className="absolute inset-0 w-full text-slate-600/70"
           style={{ top: BRACKET_HEADER_HEIGHT, height: bodyHeight }}
-          viewBox={`0 0 28 ${bodyHeight}`}
+          viewBox={`0 0 32 ${bodyHeight}`}
           preserveAspectRatio="none"
         >
           {Array.from({ length: innerCount }).map((_, index) => {
@@ -825,16 +797,20 @@ export default function BeamerPage() {
             const outerCenterB = ((outerB * outerSpan + outerSpan / 2) / totalRows) * bodyHeight
             const innerCenter = ((index * innerSpan + innerSpan / 2) / totalRows) * bodyHeight
 
-            const xOuter = direction === 'left' ? 0 : 28
-            const xMiddle = 14
-            const xInner = direction === 'left' ? 28 : 0
+            const xOuter = direction === 'left' ? 0 : 32
+            const xMiddle = 16
+            const xInner = direction === 'left' ? 32 : 0
 
             return (
               <g key={index}>
-                <line x1={xOuter} y1={outerCenterA} x2={xMiddle} y2={outerCenterA} stroke="currentColor" strokeWidth="1.6" />
-                <line x1={xOuter} y1={outerCenterB} x2={xMiddle} y2={outerCenterB} stroke="currentColor" strokeWidth="1.6" />
-                <line x1={xMiddle} y1={outerCenterA} x2={xMiddle} y2={outerCenterB} stroke="currentColor" strokeWidth="1.6" />
-                <line x1={xMiddle} y1={innerCenter} x2={xInner} y2={innerCenter} stroke="currentColor" strokeWidth="1.6" />
+                <path
+                  d={`M ${xOuter} ${outerCenterA} H ${xMiddle} V ${outerCenterB} H ${xOuter} M ${xMiddle} ${innerCenter} H ${xInner}`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </g>
             )
           })}
@@ -866,17 +842,17 @@ export default function BeamerPage() {
 
     return (
       <div
-        className="flex min-w-[170px] max-w-[230px] flex-1 flex-col"
+        className="flex min-w-[155px] max-w-[210px] flex-1 flex-col"
         style={{ height: BRACKET_HEADER_HEIGHT + totalRows * BRACKET_ROW_HEIGHT }}
       >
         <div
-          className="flex shrink-0 items-center justify-center text-[11px] font-bold uppercase tracking-widest text-slate-200"
+          className="flex shrink-0 items-center justify-center text-[11px] font-black uppercase tracking-wider text-slate-300 px-1 whitespace-nowrap"
           style={{ height: BRACKET_HEADER_HEIGHT }}
         >
           {getPhaseName(phase)}
         </div>
         <div
-          className="grid flex-1 px-0.5"
+          className="grid flex-1 px-1"
           style={{ gridTemplateRows: `repeat(${totalRows}, ${BRACKET_ROW_HEIGHT}px)` }}
         >
           {positions.map((pos, idx) => {
@@ -884,7 +860,7 @@ export default function BeamerPage() {
             return (
               <div
                 key={`${side}-${phase}-${pos}`}
-                className="flex items-center"
+                className="flex items-center justify-center"
                 style={{ gridRow: `${rowStart} / span ${rowSpan}` }}
               >
                 <BracketMatchCard phase={phase} position={pos} />
@@ -907,7 +883,7 @@ export default function BeamerPage() {
     const phases = getBracketLayoutPhases()
     const finalMatch = getPhaseMatches('final')[0] || null
     const thirdPlaceMatch = getPhaseMatches('third_place')[0] || null
-    const showThirdPlace = tournament?.has_third_place_match || thirdPlaceMatch !== null || matches.some((m) => m.phase === 'third_place')
+    const showThirdPlace = Boolean(tournament?.has_third_place_match || thirdPlaceMatch !== null || matches.some((m) => m.phase === 'third_place'))
 
     if (phases.length === 0 && !finalMatch) return null
 
@@ -924,8 +900,8 @@ export default function BeamerPage() {
 
     return (
       <div className="relative w-full h-full overflow-x-auto custom-scrollbar flex items-center justify-center py-2">
-        <div className="min-w-[900px] max-w-[1400px] w-full px-2">
-          <div className="flex items-start justify-center gap-1">
+        <div className="min-w-[980px] max-w-[1450px] w-full px-2">
+          <div className="flex items-start justify-center gap-0 w-full">
             {/* LINKE BRACKET-HÄLFTE */}
             <div className="flex min-w-0 flex-1 items-start">
               {leftPhases.map((phase, index) => {
@@ -958,52 +934,29 @@ export default function BeamerPage() {
 
             {/* MITTELSPALTE (FINALE & PLATZ 3) */}
             <div
-              className="relative min-w-[200px] max-w-[250px] flex-1"
+              className="flex min-w-[170px] max-w-[220px] flex-1 flex-col px-1"
               style={{ height: bracketHeight }}
             >
               <div
-                className="flex shrink-0 items-center justify-center text-[11px] font-bold uppercase tracking-widest text-slate-200"
+                className="flex shrink-0 items-center justify-center text-[11px] font-black uppercase tracking-wider text-slate-300 whitespace-nowrap"
                 style={{ height: BRACKET_HEADER_HEIGHT }}
               >
                 ENTSCHEIDUNG
               </div>
 
-              <div
-                className="absolute left-1 right-1"
-                style={{
-                  top: BRACKET_HEADER_HEIGHT + bracketBodyHeight / 2 - (showThirdPlace ? BRACKET_CARD_HEIGHT + 15 : BRACKET_CARD_HEIGHT / 2),
-                }}
-              >
-                <div className="relative w-full">
-                  <div className="absolute -top-6 left-0 right-0 flex justify-center">
-                    <span
-                      className="rounded-lg px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest shadow-md"
-                      style={{ backgroundColor: primaryColor, color: primaryContrastText }}
-                    >
-                      🏆 FINALE
-                    </span>
-                  </div>
+              <div className="relative flex flex-1 flex-col items-center justify-center gap-5 py-2">
+                {/* FINALE */}
+                <div className="w-full flex flex-col items-center">
                   <BracketMatchCard phase="final" position={1} />
                 </div>
-              </div>
 
-              {showThirdPlace && (
-                <div
-                  className="absolute left-1 right-1"
-                  style={{
-                    top: BRACKET_HEADER_HEIGHT + bracketBodyHeight / 2 + 25,
-                  }}
-                >
-                  <div className="relative w-full">
-                    <div className="absolute -top-6 left-0 right-0 flex justify-center">
-                      <span className="rounded-lg px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-amber-600/40 text-amber-200 border border-amber-500/50 shadow-sm">
-                        🥉 SPIEL UM PLATZ 3
-                      </span>
-                    </div>
+                {/* SPIEL UM PLATZ 3 */}
+                {showThirdPlace && (
+                  <div className="w-full flex flex-col items-center">
                     <BracketMatchCard phase="third_place" position={1} />
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* RECHTE BRACKET-HÄLFTE */}
