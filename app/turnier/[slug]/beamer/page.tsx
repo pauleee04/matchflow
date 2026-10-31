@@ -1075,17 +1075,14 @@ export default function BeamerPage() {
               </p>
             </div>
 
+            {/* KONTRASTREICHER & GUT SICHTBARER VOLLBILD-BUTTON */}
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/30 px-4 py-2 text-xs font-bold shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
-              style={{
-                backgroundColor: primaryColor,
-                color: primaryContrastText,
-                boxShadow: `0 0 18px ${hexToRgba(primaryColor, 0.35)}`,
-              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/40 bg-white/20 hover:bg-white/30 text-white px-4 py-2 text-xs font-bold shadow-lg backdrop-blur-md transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shrink-0"
             >
-              <span>{isFullscreen ? '📺 Fenster' : '📺 Vollbild'}</span>
+              <span className="text-sm">📺</span>
+              <span>{isFullscreen ? 'Fenster' : 'Vollbild'}</span>
             </button>
           </div>
         </header>
