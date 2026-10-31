@@ -133,7 +133,6 @@ function getPreviousPhaseName(phase: string) {
   }
 }
 
-// INTELLIGENTES RASTER-LAYOUT BASIEREND AUF SPIELANZAHL
 function getMatchesLayoutConfig(matchCount: number, hasKOStarted: boolean) {
   if (hasKOStarted || matchCount <= 2) {
     return {
@@ -191,7 +190,6 @@ function getMatchesLayoutConfig(matchCount: number, hasKOStarted: boolean) {
       fontSize: 'text-[10.5px]',
     }
   }
-  // 19 - 21 SPIELE: Exakte 3x7 Verteilung (3 Reihen mit je 7 Spielen)
   if (matchCount <= 21) {
     return {
       gridClass: 'grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 w-full',
@@ -591,6 +589,19 @@ export default function BeamerPage() {
     }
   }
 
+  function getGlobalMatchNumber(phase: string, position: number) {
+    const groupMatchCount = matches.filter((m) => m.phase === 'group').length
+    const phaseOrder = ['round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
+    const phaseIndex = phaseOrder.indexOf(phase)
+    if (phaseIndex < 0) return position
+
+    const previousKOMatches = phaseOrder
+      .slice(0, phaseIndex)
+      .reduce((total, previousPhase) => total + getExpectedMatchCount(previousPhase), 0)
+
+    return groupMatchCount + previousKOMatches + position
+  }
+
   function getBracketSideCount(phase: string) {
     return Math.max(1, Math.ceil(getExpectedMatchCount(phase) / 2))
   }
@@ -670,7 +681,7 @@ export default function BeamerPage() {
               color: finished && !isFinal && !isThirdPlace ? '#ffffff' : undefined,
             }}
           >
-            <span>{isThirdPlace ? 'Platz 3' : `Spiel #${position}`}</span>
+            <span>{isThirdPlace ? '🥉 Platz 3' : `Spiel #${getGlobalMatchNumber(phase, position)}`}</span>
             {live ? (
               <span className="text-red-300 font-bold flex items-center gap-1">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" /> LIVE
@@ -896,13 +907,13 @@ export default function BeamerPage() {
     const phases = getBracketLayoutPhases()
     const finalMatch = getPhaseMatches('final')[0] || null
     const thirdPlaceMatch = getPhaseMatches('third_place')[0] || null
-    const showThirdPlace = tournament?.has_third_place_match || thirdPlaceMatch || matches.some((m) => m.phase === 'third_place')
+    const showThirdPlace = tournament?.has_third_place_match || thirdPlaceMatch !== null || matches.some((m) => m.phase === 'third_place')
 
     if (phases.length === 0 && !finalMatch) return null
 
     const firstPhase = phases[0] ?? null
     const baseSideCount = firstPhase ? getBracketSideCount(firstPhase) : 1
-    const totalRows = Math.max(2, baseSideCount * 2)
+    const totalRows = Math.max(4, baseSideCount * 2)
 
     const bracketBodyHeight = totalRows * BRACKET_ROW_HEIGHT
     const bracketHeight = BRACKET_HEADER_HEIGHT + bracketBodyHeight

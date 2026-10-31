@@ -265,6 +265,28 @@ export default function AdminKOPage() {
     })
   }
 
+  async function toggleThirdPlaceMatch(enabled: boolean) {
+    if (!tournament?.id) return
+    setStatusMessage(null)
+    try {
+      const { error } = await publicSupabase
+        .from('tournaments')
+        .update({ has_third_place_match: enabled })
+        .eq('id', tournament.id)
+
+      if (error) throw error
+
+      setTournament((prev) => (prev ? { ...prev, has_third_place_match: enabled } : null))
+      await triggerBroadcast()
+      setStatusMessage({
+        type: 'success',
+        text: enabled ? 'Spiel um Platz 3 wurde aktiviert.' : 'Spiel um Platz 3 wurde deaktiviert.',
+      })
+    } catch (err: any) {
+      setStatusMessage({ type: 'error', text: `Fehler beim Speichern: ${err.message}` })
+    }
+  }
+
   function initializeRoundTimes(loadedMatches: Match[]) {
     const times: Record<string, string> = {}
     KO_PHASES.forEach((phase) => {
@@ -371,7 +393,6 @@ export default function AdminKOPage() {
 
     const standingsList = Array.from(standingsMap.values())
 
-    // Hilfsfunktion: Direkter Vergleich
     const getHeadToHead = (aId: number, bId: number): number => {
       const directMatches = groupMatches.filter(
         (m) =>
@@ -404,7 +425,6 @@ export default function AdminKOPage() {
       return pointsB - pointsA
     }
 
-    // VOLLSTÄNDIGER TIE-BREAKER MATCHING LOGIK
     standingsList.sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points
       if (b.scoreDifference !== a.scoreDifference) return b.scoreDifference - a.scoreDifference
@@ -1146,13 +1166,18 @@ export default function AdminKOPage() {
     const team2Winner = match ? winner === match.team2_id : false
     const team1Name = getBracketTeamLabel(match, 1, phase, position)
     const team2Name = getBracketTeamLabel(match, 2, phase, position)
+    const isThirdPlace = phase === 'third_place'
 
     return (
       <div className="relative w-full" style={{ height: BRACKET_CARD_HEIGHT }}>
         <div
           className={[
             'h-full overflow-hidden rounded-2xl border shadow-lg backdrop-blur-md transition',
-            finished
+            isThirdPlace
+              ? finished
+                ? 'border-amber-500/50 bg-amber-950/30'
+                : 'border-amber-500/30 bg-black/60'
+              : finished
               ? 'border-emerald-500/40 bg-black/60'
               : live
               ? 'border-red-500/50 bg-black/60'
@@ -1164,18 +1189,28 @@ export default function AdminKOPage() {
           <div
             className={[
               'flex h-5 items-center justify-between border-b px-1.5',
-              finished
+              isThirdPlace
+                ? 'border-amber-500/20 bg-amber-500/10'
+                : finished
                 ? 'border-emerald-500/20 bg-emerald-500/10'
                 : live
                 ? 'border-red-500/20 bg-red-500/10'
                 : 'border-white/10 bg-black/40',
             ].join(' ')}
           >
-            <span className="truncate text-[7px] font-black uppercase tracking-[0.1em] text-slate-400">
-              {phase === 'third_place' ? 'Platz 3' : `Spiel #${getGlobalMatchNumber(phase, position)}`}
+            <span
+              className={`truncate text-[7px] font-black uppercase tracking-[0.1em] ${
+                isThirdPlace ? 'text-amber-300' : 'text-slate-400'
+              }`}
+            >
+              {isThirdPlace ? '🥉 Platz 3' : `Spiel #${getGlobalMatchNumber(phase, position)}`}
             </span>
             {finished ? (
-              <span className="rounded-full bg-emerald-400/15 px-1 py-0.5 text-[6px] font-black uppercase text-emerald-300">
+              <span
+                className={`rounded-full px-1 py-0.5 text-[6px] font-black uppercase ${
+                  isThirdPlace ? 'bg-amber-400/20 text-amber-300' : 'bg-emerald-400/15 text-emerald-300'
+                }`}
+              >
                 ✓ Fertig
               </span>
             ) : live ? (
@@ -1459,48 +1494,53 @@ export default function AdminKOPage() {
               )}
             </div>
 
-            {/* FINALE & PLATZ 3 */}
+            {/* FINALE & PLATZ 3 (MITTELSPALTE) */}
             <div className="flex min-w-0 flex-[1.05] flex-col px-1 sm:px-2" style={{ height: bracketHeight }}>
               <div className="flex shrink-0 items-start justify-center" style={{ height: BRACKET_HEADER_HEIGHT }}>
                 <span className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
                   Finale / Platz 3
                 </span>
               </div>
-              <div className="relative flex flex-1 flex-col items-center justify-center gap-4">
-                {finalMatch ? (
-                  <div className="w-full">
-                    <div className="mb-2 flex items-center justify-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">
-                        Das große Finale
-                      </span>
-                    </div>
+              <div className="relative flex flex-1 flex-col items-center justify-center gap-6">
+                {/* DAS GROSSE FINALE */}
+                <div className="w-full">
+                  <div className="mb-2 flex items-center justify-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">
+                      🏆 Das große Finale
+                    </span>
+                  </div>
+                  {finalMatch ? (
                     <BracketMatchCard phase="final" position={1} side="center" />
-                  </div>
-                ) : (
-                  <div className="w-full rounded-2xl border border-dashed border-white/10 bg-black/20 px-1 py-3 text-center sm:px-2 sm:py-4">
-                    <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-black/40 text-sm sm:h-9 sm:w-9">
-                      🏆
+                  ) : (
+                    <div className="w-full rounded-2xl border border-dashed border-white/10 bg-black/20 px-1 py-3 text-center sm:px-2 sm:py-4">
+                      <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-black/40 text-sm sm:h-9 sm:w-9">
+                        🏆
+                      </div>
+                      <p className="mt-2 text-xs font-black text-slate-300">Finale</p>
+                      <p className="mt-0.5 text-[10px] text-slate-500">Noch nicht erstellt</p>
                     </div>
-                    <p className="mt-3 text-xs font-black text-slate-300">Finale</p>
-                    <p className="mt-1 text-[10px] text-slate-500">Noch nicht erstellt</p>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {/* SPIEL UM PLATZ 3 KARTE */}
+                {/* SPIEL UM PLATZ 3 */}
                 {(tournament?.has_third_place_match || thirdPlaceMatch) && (
-                  <div className="w-full">
+                  <div className="w-full pt-2 border-t border-white/10">
                     <div className="mb-2 flex items-center justify-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">
-                        Spiel um Platz 3
+                      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-300">
+                        🥉 Spiel um Platz 3
                       </span>
                     </div>
                     {thirdPlaceMatch ? (
                       <BracketMatchCard phase="third_place" position={1} side="center" />
                     ) : (
-                      <div className="w-full rounded-2xl border border-dashed border-white/10 bg-black/20 px-1 py-2 text-center">
-                        <p className="text-[10px] font-bold text-slate-500">Spiel um Platz 3 (folgt)</p>
+                      <div className="w-full rounded-2xl border border-dashed border-amber-500/20 bg-amber-500/5 px-1 py-3 text-center sm:px-2 sm:py-4">
+                        <div className="mx-auto flex h-7 w-7 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 text-xs">
+                          🥉
+                        </div>
+                        <p className="mt-1 text-xs font-black text-amber-300">Spiel um Platz 3</p>
+                        <p className="mt-0.5 text-[10px] text-amber-400/60">Wird nach Halbfinale angesetzt</p>
                       </div>
                     )}
                   </div>
@@ -1620,33 +1660,56 @@ export default function AdminKOPage() {
               </span>
               <span className="text-xs font-bold text-slate-400">Spielplanung</span>
             </div>
-            <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl">Rundenplanung</h2>
+            <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl">Rundenplanung &amp; Einstellungen</h2>
             <p className="mt-1 text-xs font-medium text-slate-300">
-              Alle Spiele einer Runde können parallel stattfinden. Uhrzeiten können flexibel angepasst werden.
+              Uhrzeiten, Rundenabstände und Einstellungen für die K.-o.-Phase anpassen.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end">
+          <div className="grid grid-cols-1 sm:flex sm:items-center gap-3">
+            {/* OPTION: SPIEL UM PLATZ 3 TOGGLE */}
+            <div className="rounded-2xl border border-white/10 bg-black/50 px-4 py-2 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Spiel um Platz 3</p>
+                <p className="text-xs font-bold text-white">
+                  {tournament?.has_third_place_match ? 'Aktiviert' : 'Deaktiviert'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleThirdPlaceMatch(!tournament?.has_third_place_match)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  tournament?.has_third_place_match ? 'bg-emerald-500' : 'bg-slate-700'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    tournament?.has_third_place_match ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
             <div>
-              <label className="mb-2 block text-[10px] font-black uppercase tracking-wider text-slate-400">
+              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-400">
                 Rundenabstand
               </label>
-              <div className="flex min-h-12 items-center rounded-2xl border border-white/10 bg-black/50 p-1.5">
+              <div className="flex min-h-11 items-center rounded-2xl border border-white/10 bg-black/50 p-1">
                 <input
                   type="number"
                   min="0"
                   max="180"
                   value={roundGapMinutes}
                   onChange={(e) => setRoundGapMinutes(Math.max(0, Number(e.target.value) || 0))}
-                  className="w-full min-w-0 bg-transparent px-2 py-1 text-center text-base font-black text-white outline-none sm:w-20"
+                  className="w-full min-w-0 bg-transparent px-2 py-1 text-center text-sm font-black text-white outline-none sm:w-16"
                 />
                 <span className="pr-2 text-xs font-bold text-slate-400">Min.</span>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/50 px-4 py-2.5">
+            <div className="rounded-2xl border border-white/10 bg-black/50 px-4 py-2">
               <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tische</p>
-              <p className="text-xl font-black text-white">{availableTables}</p>
+              <p className="text-lg font-black text-white">{availableTables}</p>
             </div>
           </div>
         </div>

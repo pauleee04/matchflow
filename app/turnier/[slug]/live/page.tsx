@@ -78,11 +78,10 @@ const KO_PHASES_MAP: Record<string, string> = {
   final: 'Finale',
 }
 
-const KO_CARD_HEIGHT = 88
-const KO_ROW_HEIGHT = 46
-const KO_HEADER_HEIGHT = 28
+const KO_CARD_HEIGHT = 92
+const KO_ROW_HEIGHT = 52
+const KO_HEADER_HEIGHT = 32
 
-// HELPER FÜR FARBUMWANDLUNGEN & KONSTRASTE
 function hexToRgba(hex: string | null | undefined, alpha: number, fallback: string = '#22c55e'): string {
   let c = (hex || fallback).trim()
   if (!c.startsWith('#')) return `rgba(34, 197, 94, ${alpha})`
@@ -440,12 +439,28 @@ export default function PublicLivePage() {
       case 'semi_final':
         return 2
       case 'third_place':
-        return tournament?.has_third_place_match || matches.some((m) => m.phase === 'third_place') ? 1 : 0
+        return tournament?.has_third_place_match || matches.some((m) => m.phase?.toLowerCase() === 'third_place') ? 1 : 0
       case 'final':
         return 1
       default:
         return 0
     }
+  }
+
+  function getGlobalMatchNumber(phase: string, position: number) {
+    const groupMatchCount = matches.filter(
+      (m) => !m.phase || m.phase.toLowerCase() === 'group' || !KO_PHASES_LIST.includes(m.phase.toLowerCase())
+    ).length
+
+    const phaseOrder = ['round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
+    const phaseIndex = phaseOrder.indexOf(phase)
+    if (phaseIndex < 0) return position
+
+    const previousKOMatches = phaseOrder
+      .slice(0, phaseIndex)
+      .reduce((total, previousPhase) => total + getExpectedMatchCount(previousPhase), 0)
+
+    return groupMatchCount + previousKOMatches + position
   }
 
   function getBracketSideCount(phase: string) {
@@ -504,48 +519,49 @@ export default function PublicLivePage() {
     const t2Name = getBracketTeamLabel(match, 2, phase, position)
     const isFinal = phase === 'final'
     const isThirdPlace = phase === 'third_place'
+    const matchNum = getGlobalMatchNumber(phase, position)
 
     return (
-      <div className="relative w-full min-w-[130px]" style={{ height: KO_CARD_HEIGHT }}>
+      <div className="relative w-full min-w-[140px]" style={{ height: KO_CARD_HEIGHT }}>
         <div
-          className={`h-full overflow-hidden rounded-2xl border shadow-lg transition flex flex-col justify-between backdrop-blur-md ${
+          className={`h-full overflow-hidden rounded-xl border shadow-lg transition flex flex-col justify-between backdrop-blur-md ${
             isFinal
-              ? 'border-2 border-amber-400/80 bg-black/60 shadow-amber-500/10'
+              ? 'border-2 border-amber-400/90 bg-slate-900/90 shadow-amber-500/20'
               : isThirdPlace
-              ? 'border border-amber-600/50 bg-black/60'
+              ? 'border border-amber-500/60 bg-slate-900/90'
               : finished
-              ? 'border border-white/20 bg-black/50'
+              ? 'border border-white/20 bg-slate-900/70'
               : live
-              ? 'border-2 border-red-500/80 bg-red-950/30 animate-pulse'
+              ? 'border-2 border-red-500/90 bg-red-950/60 animate-pulse'
               : match
-              ? 'border border-white/10 bg-black/40 text-slate-100'
-              : 'border-dashed border-white/10 bg-black/20 text-slate-500'
+              ? 'border border-white/15 bg-slate-900/60 text-slate-100'
+              : 'border-dashed border-white/15 bg-slate-900/30 text-slate-500'
           }`}
           style={{
-            borderColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.5) : undefined,
+            borderColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.6) : undefined,
           }}
         >
           <div
-            className={`flex h-5 items-center justify-between border-b px-2 text-[8px] font-black uppercase tracking-wider whitespace-nowrap ${
+            className={`flex h-5 items-center justify-between border-b px-2 text-[8.5px] font-black uppercase tracking-wider whitespace-nowrap ${
               isFinal
-                ? 'border-amber-500/30 bg-amber-500/20 text-amber-300'
+                ? 'border-amber-500/30 bg-amber-500/30 text-amber-200'
                 : isThirdPlace
-                ? 'border-amber-600/30 bg-amber-600/20 text-amber-300'
+                ? 'border-amber-600/30 bg-amber-600/30 text-amber-200'
                 : finished
-                ? 'border-white/10 text-white'
+                ? 'border-white/15 text-white'
                 : live
-                ? 'border-red-500/20 bg-red-500/20 text-red-300'
-                : 'border-white/10 bg-black/40 text-slate-400'
+                ? 'border-red-500/30 bg-red-500/30 text-red-200'
+                : 'border-white/10 bg-slate-950/40 text-slate-400'
             }`}
             style={{
-              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.15) : undefined,
-              color: finished && !isFinal && !isThirdPlace ? primaryColor : undefined,
+              backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.3) : undefined,
+              color: finished && !isFinal && !isThirdPlace ? '#ffffff' : undefined,
             }}
           >
-            <span>{isThirdPlace ? 'Platz 3' : `Spiel #${position}`}</span>
+            <span>{isThirdPlace ? '🥉 Platz 3' : `Spiel #${matchNum}`}</span>
             {live ? (
-              <span className="text-red-400 font-extrabold flex items-center gap-1">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> LIVE
+              <span className="text-red-300 font-black flex items-center gap-1">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" /> LIVE
               </span>
             ) : finished ? (
               <span className="font-extrabold" style={{ color: primaryColor }}>✓ Fertig</span>
@@ -556,51 +572,51 @@ export default function PublicLivePage() {
 
           <div className="space-y-1 p-1.5">
             <div
-              className={`flex h-5 items-center justify-between gap-1 rounded-md px-1.5 text-[10px] ${
+              className={`flex h-5 items-center justify-between gap-1 rounded-md px-2 text-[10px] ${
                 t1Winner
                   ? 'font-black ring-1'
                   : match
-                  ? 'bg-black/40 text-slate-200 font-bold'
-                  : 'text-slate-500 font-medium'
+                  ? 'bg-slate-950/50 text-slate-200 font-bold'
+                  : 'text-slate-400 font-medium'
               }`}
               style={
                 t1Winner
                   ? {
-                      backgroundColor: hexToRgba(primaryColor, 0.25),
+                      backgroundColor: hexToRgba(primaryColor, 0.4),
                       color: '#ffffff',
-                      borderColor: hexToRgba(primaryColor, 0.5),
+                      borderColor: hexToRgba(primaryColor, 0.7),
                     }
                   : undefined
               }
             >
-              <span title={t1Name} className="truncate min-w-0">{t1Name}</span>
-              <span className="shrink-0 font-mono font-black">{match ? match.team1_score ?? '-' : '-'}</span>
+              <span title={t1Name} className="truncate min-w-0 flex-1">{t1Name}</span>
+              <span className="shrink-0 font-mono font-black text-xs ml-1">{match ? match.team1_score ?? '-' : '-'}</span>
             </div>
 
             <div
-              className={`flex h-5 items-center justify-between gap-1 rounded-md px-1.5 text-[10px] ${
+              className={`flex h-5 items-center justify-between gap-1 rounded-md px-2 text-[10px] ${
                 t2Winner
                   ? 'font-black ring-1'
                   : match
-                  ? 'bg-black/40 text-slate-200 font-bold'
-                  : 'text-slate-500 font-medium'
+                  ? 'bg-slate-950/50 text-slate-200 font-bold'
+                  : 'text-slate-400 font-medium'
               }`}
               style={
                 t2Winner
                   ? {
-                      backgroundColor: hexToRgba(primaryColor, 0.25),
+                      backgroundColor: hexToRgba(primaryColor, 0.4),
                       color: '#ffffff',
-                      borderColor: hexToRgba(primaryColor, 0.5),
+                      borderColor: hexToRgba(primaryColor, 0.7),
                     }
                   : undefined
               }
             >
-              <span title={t2Name} className="truncate min-w-0">{t2Name}</span>
-              <span className="shrink-0 font-mono font-black">{match ? match.team2_score ?? '-' : '-'}</span>
+              <span title={t2Name} className="truncate min-w-0 flex-1">{t2Name}</span>
+              <span className="shrink-0 font-mono font-black text-xs ml-1">{match ? match.team2_score ?? '-' : '-'}</span>
             </div>
           </div>
 
-          <div className="flex h-4 items-center justify-between border-t border-white/10 px-2 text-[7px] font-bold text-slate-400">
+          <div className="flex h-4 items-center justify-between border-t border-white/10 px-2 text-[7.5px] font-bold text-slate-400">
             <span>{match?.table_number ? `Tisch ${match.table_number}` : 'Tisch -'}</span>
             <span>{formatTime(match?.scheduled_time) ? `${formatTime(match?.scheduled_time)} Uhr` : ''}</span>
           </div>
@@ -635,9 +651,9 @@ export default function PublicLivePage() {
 
     if (isCenterConnector) {
       return (
-        <div className="relative w-3 shrink-0" style={{ height }} aria-hidden="true">
+        <div className="relative w-3.5 shrink-0" style={{ height }} aria-hidden="true">
           <svg
-            className="absolute inset-0 w-full text-slate-600"
+            className="absolute inset-0 w-full text-slate-500"
             style={{ top: KO_HEADER_HEIGHT, height: bodyHeight }}
             viewBox={`0 0 28 ${bodyHeight}`}
             preserveAspectRatio="none"
@@ -651,10 +667,10 @@ export default function PublicLivePage() {
 
               return (
                 <g key={index}>
-                  <line x1={xOuter} y1={outerCenter} x2={xMiddle} y2={outerCenter} stroke="currentColor" strokeWidth="1.5" />
-                  <line x1={xMiddle} y1={outerCenter} x2={xMiddle} y2={centerLine} stroke="currentColor" strokeWidth="1.5" />
+                  <line x1={xOuter} y1={outerCenter} x2={xMiddle} y2={outerCenter} stroke="currentColor" strokeWidth="1.6" />
+                  <line x1={xMiddle} y1={outerCenter} x2={xMiddle} y2={centerLine} stroke="currentColor" strokeWidth="1.6" />
                   {index === 0 && (
-                    <line x1={xMiddle} y1={centerLine} x2={xInner} y2={centerLine} stroke="currentColor" strokeWidth="1.5" />
+                    <line x1={xMiddle} y1={centerLine} x2={xInner} y2={centerLine} stroke="currentColor" strokeWidth="1.6" />
                   )}
                 </g>
               )
@@ -665,9 +681,9 @@ export default function PublicLivePage() {
     }
 
     return (
-      <div className="relative w-3 shrink-0" style={{ height }} aria-hidden="true">
+      <div className="relative w-3.5 shrink-0" style={{ height }} aria-hidden="true">
         <svg
-          className="absolute inset-0 w-full text-slate-600"
+          className="absolute inset-0 w-full text-slate-500"
           style={{ top: KO_HEADER_HEIGHT, height: bodyHeight }}
           viewBox={`0 0 28 ${bodyHeight}`}
           preserveAspectRatio="none"
@@ -686,10 +702,10 @@ export default function PublicLivePage() {
 
             return (
               <g key={index}>
-                <line x1={xOuter} y1={outerCenterA} x2={xMiddle} y2={outerCenterA} stroke="currentColor" strokeWidth="1.5" />
-                <line x1={xOuter} y1={outerCenterB} x2={xMiddle} y2={outerCenterB} stroke="currentColor" strokeWidth="1.5" />
-                <line x1={xMiddle} y1={outerCenterA} x2={xMiddle} y2={outerCenterB} stroke="currentColor" strokeWidth="1.5" />
-                <line x1={xMiddle} y1={innerCenter} x2={xInner} y2={innerCenter} stroke="currentColor" strokeWidth="1.5" />
+                <line x1={xOuter} y1={outerCenterA} x2={xMiddle} y2={outerCenterA} stroke="currentColor" strokeWidth="1.6" />
+                <line x1={xOuter} y1={outerCenterB} x2={xMiddle} y2={outerCenterB} stroke="currentColor" strokeWidth="1.6" />
+                <line x1={xMiddle} y1={outerCenterA} x2={xMiddle} y2={outerCenterB} stroke="currentColor" strokeWidth="1.6" />
+                <line x1={xMiddle} y1={innerCenter} x2={xInner} y2={innerCenter} stroke="currentColor" strokeWidth="1.6" />
               </g>
             )
           })}
@@ -721,11 +737,11 @@ export default function PublicLivePage() {
 
     return (
       <div
-        className="flex min-w-[140px] flex-1 flex-col"
+        className="flex min-w-[150px] max-w-[210px] flex-1 flex-col"
         style={{ height: KO_HEADER_HEIGHT + totalRows * KO_ROW_HEIGHT }}
       >
         <div
-          className="flex shrink-0 items-center justify-center text-[9px] font-black uppercase tracking-wider text-slate-300 truncate px-1"
+          className="flex shrink-0 items-center justify-center text-[10px] font-black uppercase tracking-wider text-slate-300 truncate px-1"
           style={{ height: KO_HEADER_HEIGHT }}
         >
           {getPhaseName(phase)}
@@ -762,12 +778,13 @@ export default function PublicLivePage() {
     const phases = getBracketLayoutPhases()
     const finalMatch = knockoutMatches.find((m) => m.phase?.toLowerCase() === 'final') || null
     const thirdPlaceMatch = knockoutMatches.find((m) => m.phase?.toLowerCase() === 'third_place') || null
+    const showThirdPlace = Boolean(tournament?.has_third_place_match || thirdPlaceMatch !== null || matches.some((m) => m.phase?.toLowerCase() === 'third_place'))
 
     if (phases.length === 0 && !finalMatch) return null
 
     const firstPhase = phases[0] ?? null
     const baseSideCount = firstPhase ? getBracketSideCount(firstPhase) : 1
-    const totalRows = Math.max(2, baseSideCount * 2)
+    const totalRows = Math.max(4, baseSideCount * 2)
 
     const leftPhases = phases
     const rightPhases = [...phases].reverse()
@@ -776,13 +793,10 @@ export default function PublicLivePage() {
 
     return (
       <div className="relative w-full overflow-x-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="min-w-[850px] w-full px-2">
+        <div className="min-w-[900px] max-w-[1400px] mx-auto w-full px-2">
           <div className="flex items-start justify-center gap-1 w-full">
             {/* LINKE HÄLFTE */}
-            <div
-              className="flex min-w-0 items-start"
-              style={{ flex: leftPhases.length || 1 }}
-            >
+            <div className="flex min-w-0 flex-1 items-start">
               {leftPhases.map((phase, index) => {
                 const nextPhase = leftPhases[index + 1]
                 return (
@@ -813,59 +827,43 @@ export default function PublicLivePage() {
 
             {/* FINALE & PLATZ 3 (MITTELSPALTE) */}
             <div
-              className="flex min-w-[160px] flex-[1.1] flex-col px-1"
+              className="flex min-w-[170px] max-w-[240px] flex-1 flex-col px-1"
               style={{ height: bracketHeight }}
             >
               <div
-                className="flex shrink-0 items-center justify-center"
+                className="flex shrink-0 items-center justify-center text-[10px] font-black uppercase tracking-wider text-slate-300 truncate"
                 style={{ height: KO_HEADER_HEIGHT }}
               >
-                <span
-                  className="rounded-md px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest shadow-sm truncate"
-                  style={{ backgroundColor: primaryColor, color: primaryContrastText }}
-                >
-                  🏆 FINALE &amp; PLATZ 3
-                </span>
+                ENTSCHEIDUNG
               </div>
 
-              <div className="relative flex flex-1 flex-col items-center justify-center gap-4">
+              <div className="relative flex flex-1 flex-col items-center justify-center gap-6 py-2">
                 {/* FINALE */}
                 <div className="w-full">
-                  <div className="mb-1 flex items-center justify-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                    <span className="text-[8px] font-black uppercase tracking-wider text-slate-300">
-                      Das große Finale
+                  <div className="mb-1.5 flex items-center justify-center gap-1.5">
+                    <span className="rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-amber-500/30 text-amber-300 border border-amber-500/40 shadow-sm">
+                      🏆 FINALE
                     </span>
                   </div>
                   <BracketMatchCard phase="final" position={1} />
                 </div>
 
                 {/* SPIEL UM PLATZ 3 */}
-                {(tournament?.has_third_place_match || thirdPlaceMatch) && (
+                {showThirdPlace && (
                   <div className="w-full">
-                    <div className="mb-1 flex items-center justify-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-600" />
-                      <span className="text-[8px] font-black uppercase tracking-wider text-slate-300">
-                        Spiel um Platz 3
+                    <div className="mb-1.5 flex items-center justify-center gap-1.5">
+                      <span className="rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-widest bg-amber-600/30 text-amber-200 border border-amber-500/40 shadow-sm">
+                        🥉 SPIEL UM PLATZ 3
                       </span>
                     </div>
-                    {thirdPlaceMatch ? (
-                      <BracketMatchCard phase="third_place" position={1} />
-                    ) : (
-                      <div className="w-full rounded-2xl border border-dashed border-white/10 bg-black/30 p-2 text-center">
-                        <p className="text-[9px] font-bold text-slate-400">Spiel um Platz 3 (folgt)</p>
-                      </div>
-                    )}
+                    <BracketMatchCard phase="third_place" position={1} />
                   </div>
                 )}
               </div>
             </div>
 
             {/* RECHTE HÄLFTE */}
-            <div
-              className="flex min-w-0 items-start"
-              style={{ flex: rightPhases.length || 1 }}
-            >
+            <div className="flex min-w-0 flex-1 items-start">
               {rightPhases.map((phase, index) => {
                 const innerPhase = rightPhases[index - 1] ?? phase
                 return (
@@ -1144,7 +1142,7 @@ export default function PublicLivePage() {
         </section>
       )}
 
-      {/* SPIELPLAN UNTERGLIEDERT NACH GRUPPEN (FREISTEHENDE KACHELN) */}
+      {/* SPIELPLAN UNTERGLIEDERT NACH GRUPPEN */}
       <section className="space-y-4">
         <div className="flex items-center gap-2.5 px-1">
           <span className="text-xl">📅</span>
@@ -1289,7 +1287,7 @@ export default function PublicLivePage() {
         </div>
       </section>
 
-      {/* SPIELPLAN UNTERGLIEDERT NACH K.-O.-PHASEN (FREISTEHENDE KACHELN) */}
+      {/* SPIELPLAN UNTERGLIEDERT NACH K.-O.-PHASEN */}
       {matchesByKOPhase.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-2.5 px-1">
