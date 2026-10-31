@@ -189,7 +189,7 @@ export default function RulesPage() {
 
   return (
     <>
-      {/* DRUCK-STYLES FÜR VOLLSTÄNDIGE ISOLIERUNG DES DOKUMENTS GANZ OBEN */}
+      {/* DRUCK-CSS: NEUTRALISIERT VATER-CONTAINER UND PLATZIERT DOKUMENT GANZEN OBEN */}
       <style jsx global>{`
         @media print {
           @page {
@@ -201,17 +201,25 @@ export default function RulesPage() {
             color: #0f172a !important;
             margin: 0 !important;
             padding: 0 !important;
+            height: auto !important;
           }
-          /* Alle normalen Elemente ausblenden */
+          /* Setzt übergeordnete Layout-Abstände im Druck zurück */
+          html *, body * {
+            position: static !important;
+            transform: none !important;
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+          }
+          /* Blendet Web-Elemente aus */
           body * {
             visibility: hidden !important;
           }
-          /* Nur das Druck-Dokument & dessen Inhalt anzeigen */
+          /* Zeigt nur das Druck-Dokument */
           #official-print-doc,
           #official-print-doc * {
             visibility: visible !important;
           }
-          /* Dokument erzwingen, ganz oben links zu beginnen und über Layouts zu liegen */
+          /* Druck-Dokument ganz oben ausrichten */
           #official-print-doc {
             display: block !important;
             position: absolute !important;
