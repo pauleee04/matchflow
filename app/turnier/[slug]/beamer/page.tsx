@@ -133,6 +133,7 @@ function getPreviousPhaseName(phase: string) {
   }
 }
 
+// INTELLIGENTES RASTER-LAYOUT BASIEREND AUF SPIELANZAHL
 function getMatchesLayoutConfig(matchCount: number, hasKOStarted: boolean) {
   if (hasKOStarted || matchCount <= 2) {
     return {
@@ -162,24 +163,53 @@ function getMatchesLayoutConfig(matchCount: number, hasKOStarted: boolean) {
       fontSize: 'text-xs',
     }
   }
-  if (matchCount <= 12) {
+  if (matchCount <= 10) {
     return {
-      gridClass: 'grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 w-full',
+      gridClass: 'grid grid-cols-2 sm:grid-cols-5 gap-2.5 w-full',
       cardPadding: 'p-2.5 min-h-[98px]',
       fontSize: 'text-[11.5px]',
     }
   }
-  if (matchCount <= 16) {
+  if (matchCount <= 12) {
     return {
-      gridClass: 'grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2 w-full',
+      gridClass: 'grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 w-full',
+      cardPadding: 'p-2.5 min-h-[95px]',
+      fontSize: 'text-[11px]',
+    }
+  }
+  if (matchCount <= 15) {
+    return {
+      gridClass: 'grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-5 gap-2.5 w-full',
       cardPadding: 'p-2 min-h-[90px]',
       fontSize: 'text-[11px]',
     }
   }
+  if (matchCount <= 18) {
+    return {
+      gridClass: 'grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-6 gap-2 w-full',
+      cardPadding: 'p-2 min-h-[86px]',
+      fontSize: 'text-[10.5px]',
+    }
+  }
+  // 19 - 21 SPIELE: Exakte 3x7 Verteilung (3 Reihen mit je 7 Spielen)
+  if (matchCount <= 21) {
+    return {
+      gridClass: 'grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 w-full',
+      cardPadding: 'p-2 min-h-[82px]',
+      fontSize: 'text-[10px]',
+    }
+  }
+  if (matchCount <= 24) {
+    return {
+      gridClass: 'grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-1.5 w-full',
+      cardPadding: 'p-1.5 min-h-[78px]',
+      fontSize: 'text-[9.5px]',
+    }
+  }
   return {
-    gridClass: 'grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 w-full',
-    cardPadding: 'p-2 min-h-[82px]',
-    fontSize: 'text-[10px]',
+    gridClass: 'grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-1.5 w-full',
+    cardPadding: 'p-1.5 min-h-[72px]',
+    fontSize: 'text-[9px]',
   }
 }
 
@@ -1075,7 +1105,7 @@ export default function BeamerPage() {
               </p>
             </div>
 
-            {/* KONTRASTREICHER & GUT SICHTBARER VOLLBILD-BUTTON */}
+            {/* VOLLBILD-BUTTON */}
             <button
               type="button"
               onClick={toggleFullscreen}
