@@ -969,8 +969,8 @@ export default function PublicLivePage() {
 
       {/* LAUFENDE SPIELE (WENN VORHANDEN) */}
       {liveMatches.length > 0 && (
-        <section className="rounded-[32px] border border-red-500/40 bg-red-950/20 p-6 shadow-2xl backdrop-blur-xl space-y-4">
-          <div className="flex items-center gap-2">
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 px-1">
             <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping" />
             <h2 className="text-lg font-black text-red-400">
               Laufende Spiele ({liveMatches.length})
@@ -1037,7 +1037,7 @@ export default function PublicLivePage() {
         </section>
       )}
 
-      {/* GRUPPENTABELLEN */}
+      {/* GRUPPENTABELLEN (FREISTEHENDE KACHELN) */}
       {groupStandings.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-2.5 px-1">
@@ -1144,154 +1144,152 @@ export default function PublicLivePage() {
         </section>
       )}
 
-      {/* SPIELPLAN UNTERGLIEDERT NACH GRUPPEN */}
-<section className="space-y-4">
-  {/* Überschrift komplett FREIGESTELLT – KEIN Umschließendes Border-DIV! */}
-  <div className="flex items-center gap-2.5 px-1 py-2">
-    <span className="text-xl">📅</span>
-    <h2 className="text-xl font-black text-white">
-      Spielplan nach Gruppen
-    </h2>
-  </div>
-
-  {/* Erst hier drunter beginnen die abgerundeten Gruppen-Karten */}
-  <div className="space-y-4">
-    {matchesByGroup.map(({ group, matches: gMatches }) => {
-      const sectionKey = `group-${group.id}`
-      const isCollapsed = collapsedSections[sectionKey] ?? false
-
-      return (
-        <div 
-          key={group.id} 
-          className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl space-y-4"
-        >
-          <button
-            type="button"
-            onClick={() => toggleSection(sectionKey)}
-            className="flex w-full items-center justify-between text-left transition hover:opacity-80"
-          >
-            <div className="flex items-center gap-3">
-              <span
-                className="flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black shadow-md text-slate-950"
-                style={{ backgroundColor: primaryColor }}
-              >
-                {group.name.replace(/gruppe\s*/i, '').trim().charAt(0) || 'G'}
-              </span>
-              <h3 className="text-base font-black text-white">
-                {group.name}
-              </h3>
-              <span className="text-[10px] font-bold text-slate-300">
-                {gMatches.length} {gMatches.length === 1 ? 'Spiel' : 'Spiele'}
-              </span>
-            </div>
-            <span className="text-slate-400 font-bold text-xs">
-              {isCollapsed ? '▼ Ausklappen' : '▲ Einklappen'}
-            </span>
-          </button>
-
-          {!isCollapsed && (
-            <div className="pt-2 border-t border-white/10">
-              {gMatches.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {gMatches.map((match) => {
-                    const finished = isFinished(match)
-                    const live = isLive(match)
-                    const formattedMatchTime = formatTime(match.scheduled_time)
-                    const t1Win = finished && match.team1_score != null && match.team2_score != null && match.team1_score > match.team2_score
-                    const t2Win = finished && match.team1_score != null && match.team2_score != null && match.team2_score > match.team1_score
-
-                    return (
-                      <article
-                        key={match.id}
-                        className={`rounded-2xl border p-4 transition shadow-md backdrop-blur-md ${
-                          live
-                            ? 'border-2 border-red-500/80 bg-red-950/30 animate-pulse'
-                            : finished
-                            ? 'border-white/10 bg-black/40'
-                            : 'border-white/10 bg-black/30'
-                        }`}
-                        style={{
-                          borderColor: finished ? hexToRgba(primaryColor, 0.4) : undefined,
-                          backgroundColor: finished ? hexToRgba(primaryColor, 0.08) : undefined,
-                        }}
-                      >
-                        <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-300">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono text-slate-300 font-bold">
-                              ⏰ {formattedMatchTime ? `${formattedMatchTime} Uhr` : 'Zeit k.A.'}
-                            </span>
-                            {live && (
-                              <span className="text-red-400 font-black animate-pulse flex items-center gap-1">
-                                • LIVE
-                              </span>
-                            )}
-                            {finished && (
-                              <span style={{ color: primaryColor }} className="font-bold">
-                                • ✓ Beendet
-                              </span>
-                            )}
-                          </div>
-                          {match.table_number != null && (
-                            <span className="font-mono" style={{ color: primaryColor }}>Tisch {match.table_number}</span>
-                          )}
-                        </div>
-
-                        <div className="mt-3 space-y-1.5 text-xs font-extrabold text-white">
-                          <div
-                            className={`flex items-center justify-between rounded-lg px-2 py-1 ${
-                              t1Win ? 'font-black' : 'bg-black/40'
-                            }`}
-                            style={
-                              t1Win
-                                ? {
-                                    backgroundColor: hexToRgba(primaryColor, 0.25),
-                                    color: '#ffffff',
-                                  }
-                                : undefined
-                            }
-                          >
-                            <span className="truncate max-w-[150px]">{getTeamName(match.team1_id)}</span>
-                            <span className="font-mono font-black text-sm">
-                              {match.team1_score ?? '-'}
-                            </span>
-                          </div>
-                          <div
-                            className={`flex items-center justify-between rounded-lg px-2 py-1 ${
-                              t2Win ? 'font-black' : 'bg-black/40'
-                            }`}
-                            style={
-                              t2Win
-                                ? {
-                                    backgroundColor: hexToRgba(primaryColor, 0.25),
-                                    color: '#ffffff',
-                                  }
-                                : undefined
-                            }
-                          >
-                            <span className="truncate max-w-[150px]">{getTeamName(match.team2_id)}</span>
-                            <span className="font-mono font-black text-sm">
-                              {match.team2_score ?? '-'}
-                            </span>
-                          </div>
-                        </div>
-                      </article>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="text-center text-xs font-bold text-slate-400 py-4">
-                  Keine Spiele für diese Gruppe angesetzt.
-                </div>
-              )}
-            </div>
-          )}
+      {/* SPIELPLAN UNTERGLIEDERT NACH GRUPPEN (FREISTEHENDE KACHELN) */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2.5 px-1">
+          <span className="text-xl">📅</span>
+          <h2 className="text-xl font-black text-white">
+            Spielplan nach Gruppen
+          </h2>
         </div>
-      )
-    })}
-  </div>
-</section>
 
-      {/* SPIELPLAN UNTERGLIEDERT NACH K.-O.-PHASEN */}
+        <div className="space-y-4">
+          {matchesByGroup.map(({ group, matches: gMatches }) => {
+            const sectionKey = `group-${group.id}`
+            const isCollapsed = collapsedSections[sectionKey] ?? false
+
+            return (
+              <div 
+                key={group.id} 
+                className="rounded-[32px] border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl space-y-4"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleSection(sectionKey)}
+                  className="flex w-full items-center justify-between text-left transition hover:opacity-80"
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black shadow-md text-slate-950"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      {group.name.replace(/gruppe\s*/i, '').trim().charAt(0) || 'G'}
+                    </span>
+                    <h3 className="text-base font-black text-white">
+                      {group.name}
+                    </h3>
+                    <span className="text-[10px] font-bold text-slate-300">
+                      {gMatches.length} {gMatches.length === 1 ? 'Spiel' : 'Spiele'}
+                    </span>
+                  </div>
+                  <span className="text-slate-400 font-bold text-xs">
+                    {isCollapsed ? '▼ Ausklappen' : '▲ Einklappen'}
+                  </span>
+                </button>
+
+                {!isCollapsed && (
+                  <div className="pt-2 border-t border-white/10">
+                    {gMatches.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {gMatches.map((match) => {
+                          const finished = isFinished(match)
+                          const live = isLive(match)
+                          const formattedMatchTime = formatTime(match.scheduled_time)
+                          const t1Win = finished && match.team1_score != null && match.team2_score != null && match.team1_score > match.team2_score
+                          const t2Win = finished && match.team1_score != null && match.team2_score != null && match.team2_score > match.team1_score
+
+                          return (
+                            <article
+                              key={match.id}
+                              className={`rounded-2xl border p-4 transition shadow-md backdrop-blur-md ${
+                                live
+                                  ? 'border-2 border-red-500/80 bg-red-950/30 animate-pulse'
+                                  : finished
+                                  ? 'border-white/10 bg-black/40'
+                                  : 'border-white/10 bg-black/30'
+                              }`}
+                              style={{
+                                borderColor: finished ? hexToRgba(primaryColor, 0.4) : undefined,
+                                backgroundColor: finished ? hexToRgba(primaryColor, 0.08) : undefined,
+                              }}
+                            >
+                              <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-300">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-mono text-slate-300 font-bold">
+                                    ⏰ {formattedMatchTime ? `${formattedMatchTime} Uhr` : 'Zeit k.A.'}
+                                  </span>
+                                  {live && (
+                                    <span className="text-red-400 font-black animate-pulse flex items-center gap-1">
+                                      • LIVE
+                                    </span>
+                                  )}
+                                  {finished && (
+                                    <span style={{ color: primaryColor }} className="font-bold">
+                                      • ✓ Beendet
+                                    </span>
+                                  )}
+                                </div>
+                                {match.table_number != null && (
+                                  <span className="font-mono" style={{ color: primaryColor }}>Tisch {match.table_number}</span>
+                                )}
+                              </div>
+
+                              <div className="mt-3 space-y-1.5 text-xs font-extrabold text-white">
+                                <div
+                                  className={`flex items-center justify-between rounded-lg px-2 py-1 ${
+                                    t1Win ? 'font-black' : 'bg-black/40'
+                                  }`}
+                                  style={
+                                    t1Win
+                                      ? {
+                                          backgroundColor: hexToRgba(primaryColor, 0.25),
+                                          color: '#ffffff',
+                                        }
+                                      : undefined
+                                  }
+                                >
+                                  <span className="truncate max-w-[150px]">{getTeamName(match.team1_id)}</span>
+                                  <span className="font-mono font-black text-sm">
+                                    {match.team1_score ?? '-'}
+                                  </span>
+                                </div>
+                                <div
+                                  className={`flex items-center justify-between rounded-lg px-2 py-1 ${
+                                    t2Win ? 'font-black' : 'bg-black/40'
+                                  }`}
+                                  style={
+                                    t2Win
+                                      ? {
+                                          backgroundColor: hexToRgba(primaryColor, 0.25),
+                                          color: '#ffffff',
+                                        }
+                                      : undefined
+                                  }
+                                >
+                                  <span className="truncate max-w-[150px]">{getTeamName(match.team2_id)}</span>
+                                  <span className="font-mono font-black text-sm">
+                                    {match.team2_score ?? '-'}
+                                  </span>
+                                </div>
+                              </div>
+                            </article>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center text-xs font-bold text-slate-400 py-4">
+                        Keine Spiele für diese Gruppe angesetzt.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* SPIELPLAN UNTERGLIEDERT NACH K.-O.-PHASEN (FREISTEHENDE KACHELN) */}
       {matchesByKOPhase.length > 0 && (
         <section className="space-y-4">
           <div className="flex items-center gap-2.5 px-1">

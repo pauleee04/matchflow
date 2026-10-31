@@ -23,6 +23,7 @@ type TournamentInfo = {
   secondary_color?: string | null
   background_style?: string | null
   rules?: RuleItem[] | null
+  rules_pdf_url?: string | null
 }
 
 const CATEGORY_LABELS: Record<RuleCategory, { label: string; icon: string }> = {
@@ -58,7 +59,6 @@ function getContrastTextColor(hexColor: string | null | undefined): string {
   const g = parseInt(hex.substring(2, 4), 16)
   const b = parseInt(hex.substring(4, 6), 16)
   const yiq = (r * 299 + g * 587 + b * 114) / 1000
-  // Schwellenwert auf 170 angehoben, damit Grün- und Blautöne weiße Schrift erhalten
   return yiq >= 170 ? '#090d16' : '#ffffff'
 }
 
@@ -85,7 +85,7 @@ export default function RulesPage() {
     try {
       const { data: tourneyData, error: tourneyError } = await supabase
         .from('tournaments')
-        .select('id, name, slug, logo_url, primary_color, secondary_color, background_style, rules')
+        .select('id, name, slug, logo_url, primary_color, secondary_color, background_style, rules, rules_pdf_url')
         .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
         .maybeSingle()
 
@@ -167,7 +167,7 @@ export default function RulesPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 pb-16 text-slate-100 [color-scheme:dark]">
+    <div className="mx-auto w-full max-w-5xl space-y-6 sm:space-y-8 pb-16 text-slate-100 [color-scheme:dark]">
       {/* SEITEN-KOPF */}
       <section className="rounded-[32px] border border-white/10 bg-black/40 p-6 sm:p-8 shadow-2xl backdrop-blur-md">
         <div className="flex items-center gap-4">
@@ -202,7 +202,51 @@ export default function RulesPage() {
         </p>
       </section>
 
-      {/* KATEGORIE FILTER TABS (PERFEKTE LESBARKEIT FÜR AKTIVEN TAB) */}
+      {/* PDF DOWNLOAD BOX */}
+      <section className="rounded-[24px] border border-white/15 bg-black/40 p-5 sm:p-6 shadow-xl backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4 transition hover:border-white/25">
+        <div className="flex items-center gap-4 text-center sm:text-left">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 text-2xl text-red-400 shadow-md">
+            📄
+          </div>
+          <div>
+            <h3 className="text-sm sm:text-base font-black text-white">
+              Regelwerk als PDF herunterladen
+            </h3>
+            <p className="text-xs text-slate-300 font-medium mt-0.5">
+              Lade dir das komplette Regelwerk für unterwegs als PDF-Dokument herunter.
+            </p>
+          </div>
+        </div>
+
+        {tournament.rules_pdf_url ? (
+          <a
+            href={tournament.rules_pdf_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            download
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-3 text-xs sm:text-sm font-black transition-all duration-300 shadow-xl hover:scale-105 active:scale-95 shrink-0"
+            style={{
+              backgroundColor: primaryColor,
+              color: primaryContrastText,
+              boxShadow: `0 0 20px ${hexToRgba(primaryColor, 0.45)}`,
+            }}
+          >
+            <span>📥</span>
+            <span>PDF Herunterladen</span>
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-2xl border border-white/20 bg-white/10 px-6 py-3 text-xs sm:text-sm font-black text-white backdrop-blur-md transition-all duration-300 hover:bg-white/20 hover:scale-105 active:scale-95 shrink-0"
+          >
+            <span>🖨️</span>
+            <span>Als PDF drucken / speichern</span>
+          </button>
+        )}
+      </section>
+
+      {/* KATEGORIE FILTER TABS */}
       {activeRules.length > 0 && (
         <div className="flex flex-wrap gap-2.5 sm:gap-3">
           {/* TAB: ALLE */}
@@ -289,7 +333,7 @@ export default function RulesPage() {
         </div>
       )}
 
-      {/* REGELN LISTE (ANGEPASSTE GLASKACHELN IM EINHEITLICHEN TURNIER-DESIGN) */}
+      {/* REGELN LISTE */}
       {filteredRules.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:gap-5">
           {filteredRules.map((rule) => {
