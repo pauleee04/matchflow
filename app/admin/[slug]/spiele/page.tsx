@@ -122,7 +122,7 @@ export default function AdminSpielePage() {
   const [saving, setSaving] = useState(false)
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  // Spielplan-Generator Einstellungen
+  // Spielplan-Generator Einstellungen mit persistentem Speicher
   const [tableCount, setTableCount] = useState<number>(8)
   const [matchDurationMinutes, setMatchDurationMinutes] = useState<number>(10)
   const [startTime, setStartTime] = useState<string>('14:00')
@@ -146,20 +146,18 @@ export default function AdminSpielePage() {
     setStatusMessage(null)
 
     try {
-      // Versuche Turnierdaten inklusive gespeicherter Generator-Einstellungen zu laden
       let tourneyData: TournamentData | null = null
       const { data, error: tourneyError } = await supabase
         .from('tournaments')
         .select('id, name, slug, primary_color, table_count, match_duration_minutes, start_time')
-        .or(`slug.eq.${slug},slug.eq.${rawSlug}`)
+        .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
         .maybeSingle()
 
       if (tourneyError) {
-        // Fallback falls Spalten in DB noch fehlen
         const fallbackRes = await supabase
           .from('tournaments')
           .select('id, name, slug, primary_color')
-          .or(`slug.eq.${slug},slug.eq.${rawSlug}`)
+          .or(`slug.eq."${slug}",slug.eq."${rawSlug}"`)
           .maybeSingle()
         if (fallbackRes.error) throw fallbackRes.error
         tourneyData = fallbackRes.data as TournamentData | null
@@ -208,7 +206,6 @@ export default function AdminSpielePage() {
       setMembers(loadedMembers)
       setMatches((matchesRes.data || []) as Match[])
 
-      // Standard-Spielfrei-Auswahl für ungerade Gruppen initialisieren
       const initialByeMap: Record<number, number> = {}
       loadedGroups.forEach((g) => {
         const gTeamIds = loadedMembers.filter((m) => m.group_id === g.id).map((m) => m.team_id)
@@ -239,8 +236,8 @@ export default function AdminSpielePage() {
     })
   }
 
-  // SPEICHERT EINSTELLUNGEN IN DER DATENBANK
-  async function saveTournamentSettings(newTables: number, newDuration: number, newStart: string) {
+  // EINSTELLUNGEN IN DER SUPABASE DATENBANK SPEICHERN
+  async function persistSettings(newTables: number, newDuration: number, newStart: string) {
     if (!tournament?.id) return
     try {
       await supabase
@@ -252,21 +249,25 @@ export default function AdminSpielePage() {
         })
         .eq('id', tournament.id)
     } catch (e) {
-      console.warn('Turnier-Einstellungen konnten in DB nicht gespeichert werden:', e)
+      console.warn('Einstellungsdaten konnten in DB nicht hinterlegt werden:', e)
     }
   }
 
-  async function handleManualSaveSettings() {
-    if (!tournament?.id) return
-    setSaving(true)
-    try {
-      await saveTournamentSettings(tableCount, matchDurationMinutes, startTime)
-      setStatusMessage({ type: 'success', text: 'Einstellungen (Tische, Spieldauer, Startzeit) gespeichert!' })
-    } catch (err: any) {
-      setStatusMessage({ type: 'error', text: 'Fehler beim Speichern der Einstellungen.' })
-    } finally {
-      setSaving(false)
-    }
+  function handleTableCountChange(val: number) {
+    const clean = Math.max(1, val)
+    setTableCount(clean)
+    void persistSettings(clean, matchDurationMinutes, startTime)
+  }
+
+  function handleDurationChange(val: number) {
+    const clean = Math.max(1, val)
+    setMatchDurationMinutes(clean)
+    void persistSettings(tableCount, clean, startTime)
+  }
+
+  function handleStartTimeChange(val: string) {
+    setStartTime(val)
+    void persistSettings(tableCount, matchDurationMinutes, val)
   }
 
   function getTeamName(id: number) {
@@ -278,43 +279,58 @@ export default function AdminSpielePage() {
     return groups.find((g) => g.id === id)?.name || `Gruppe #${id}`
   }
 
-  // UHRZEITEN & TISCHE FÜR BESTEHENDE SPIELE NEU DURCHRECHNEN (OHNE ERGEBNISSE ZU LÖSCHEN)
-  async function handleRecalculateMatchTimes() {
-    if (!tournament?.id || matches.length === 0) return
+  // ERMITTELT ALLE VORHANDENEN ZEITSLOTS IM AKTUELLEN SPIELPLAN
+  const uniqueTimeSlots = useMemo(() => {
+    const slotsMap = new Map<string, Match[]>()
+    matches.forEach((m) => {
+      if (!m.scheduled_time) return
+      const timeKey = new Date(m.scheduled_time).toISOString()
+      if (!slotsMap.has(timeKey)) slotsMap.set(timeKey, [])
+      slotsMap.get(timeKey)!.push(m)
+    })
+
+    return Array.from(slotsMap.entries())
+      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+      .map(([timeIso, slotMatches], index) => ({
+        slotIndex: index,
+        timeIso,
+        displayTime: new Date(timeIso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+        matches: slotMatches,
+      }))
+  }, [matches])
+
+  // VERSCHIEBT EINEN ZEITSLOT UND ALLE NACHFOLGENDEN ZEITSLOTS KASKADIEREND
+  async function handleShiftSlotTime(slotIndexTarget: number, newTimeHHMM: string) {
+    if (!tournament?.id || uniqueTimeSlots.length === 0) return
     setSaving(true)
     setStatusMessage(null)
 
     try {
-      await saveTournamentSettings(tableCount, matchDurationMinutes, startTime)
+      const [h, m] = newTimeHHMM.split(':').map(Number)
+      const baseTargetDate = new Date(uniqueTimeSlots[slotIndexTarget].timeIso)
+      baseTargetDate.setHours(h || 0, m || 0, 0, 0)
 
-      const [startHours, startMinutes] = startTime.split(':').map(Number)
-      const baseDate = new Date()
-      baseDate.setHours(startHours || 14, startMinutes || 0, 0, 0)
+      const updates: Array<{ id: number; scheduled_time: string }> = []
 
-      // Gruppiere aktuelle Spiele nach Runden/Slots
-      const groupMatches = matches.filter((m) => m.phase === 'group')
-      const matchesPerSlot = tableCount
+      uniqueTimeSlots.forEach((slot, idx) => {
+        if (idx < slotIndexTarget) return // Frühere Slots unverändert lassen
 
-      const updates = groupMatches.map((match, idx) => {
-        const slotIndex = Math.floor(idx / matchesPerSlot)
-        const tableNumber = (idx % matchesPerSlot) + 1
-        const matchTime = new Date(baseDate.getTime() + slotIndex * matchDurationMinutes * 60 * 1000)
+        const offsetMultiplier = idx - slotIndexTarget
+        const slotTime = new Date(baseTargetDate.getTime() + offsetMultiplier * matchDurationMinutes * 60 * 1000)
 
-        return {
-          id: match.id,
-          scheduled_time: matchTime.toISOString(),
-          table_number: tableNumber,
-        }
+        slot.matches.forEach((match) => {
+          updates.push({
+            id: match.id,
+            scheduled_time: slotTime.toISOString(),
+          })
+        })
       })
 
       // In Supabase aktualisieren
       for (const update of updates) {
         await supabase
           .from('matches')
-          .update({
-            scheduled_time: update.scheduled_time,
-            table_number: update.table_number,
-          })
+          .update({ scheduled_time: update.scheduled_time })
           .eq('id', update.id)
       }
 
@@ -322,17 +338,17 @@ export default function AdminSpielePage() {
       await loadData()
       setStatusMessage({
         type: 'success',
-        text: 'Uhrzeiten und Tischverteilung aller Spiele wurden erfolgreich neu berechnet!',
+        text: `Zeitslot ${slotIndexTarget + 1} auf ${newTimeHHMM} Uhr geändert und alle nachfolgenden Spiele verschoben!`,
       })
     } catch (err: any) {
       console.error(err)
-      setStatusMessage({ type: 'error', text: 'Fehler beim Anpassen der Uhrzeiten.' })
+      setStatusMessage({ type: 'error', text: 'Fehler beim Verschieben der Uhrzeiten.' })
     } finally {
       setSaving(false)
     }
   }
 
-  // AUTOMATISCHER SPIELPLAN-GENERATOR MIT LÜCKENLOSER TISCHVERTEILUNG
+  // AUTOMATISCHER SPIELPLAN-GENERATOR
   async function handleGenerateGroupSchedule() {
     if (!tournament?.id || groups.length === 0) return
 
@@ -348,7 +364,7 @@ export default function AdminSpielePage() {
     setStatusMessage(null)
 
     try {
-      await saveTournamentSettings(tableCount, matchDurationMinutes, startTime)
+      await persistSettings(tableCount, matchDurationMinutes, startTime)
 
       // 1. Alle bisherigen Gruppen-Spiele löschen
       await supabase
@@ -380,7 +396,7 @@ export default function AdminSpielePage() {
         throw new Error('Es wurden keine gültigen Paarungen gefunden. Prüfe, ob den Gruppen ausreichend Teams zugewiesen sind.')
       }
 
-      // Speicherstrukturen für Zeitslots
+      // 3. Runden- und gruppenweise durchiterieren und Spiele in die Slots einsortieren
       const slotMatches: Map<number, Array<{ group_id: number; team1_id: number; team2_id: number }>> = new Map()
       const slotTeams: Map<number, Set<number>> = new Map()
 
@@ -389,7 +405,6 @@ export default function AdminSpielePage() {
         groupNextMinSlot[g.id] = 0
       })
 
-      // 3. Runden- und gruppenweise durchiterieren
       for (let r = 0; r < maxRounds; r++) {
         validGroups.forEach((g) => {
           const rounds = groupRoundsMap[g.id]
@@ -498,17 +513,15 @@ export default function AdminSpielePage() {
     }
   }
 
-  // SPIELE / SPIELPLAN MANUELL ZURÜCKSETZEN
+  // ZURÜCKSETZEN ALLER SPIELE
   async function handleResetMatches() {
     if (!tournament?.id) return
 
-    const confirmStep1 = confirm(
-      'Möchtest du wirklich alle erstellten Spiele und den gesamten Spielplan zurücksetzen?'
-    )
+    const confirmStep1 = confirm('Möchtest du wirklich alle erstellten Spiele und den gesamten Spielplan zurücksetzen?')
     if (!confirmStep1) return
 
     const confirmStep2 = confirm(
-      '⚠️ ACHTUNG / SYSTEM-ABFRAGE:\n\nAlle Ansetzungen und bereits eingetragenen Spielergebnisse für dieses Turnier werden unwiderruflich gelöscht!\n\nDie bestehenden Gruppen und zugewiesenen Teams BLEIBEN ERHALTEN.\n\nBist du dir ganz sicher, dass du den Spielplan zurücksetzen willst?'
+      '⚠️ ACHTUNG: Alle Ansetzungen und Ergebnisse für dieses Turnier werden unwiderruflich gelöscht!\n\nFortfahren?'
     )
     if (!confirmStep2) return
 
@@ -516,11 +529,7 @@ export default function AdminSpielePage() {
     setStatusMessage(null)
 
     try {
-      const { error } = await supabase
-        .from('matches')
-        .delete()
-        .eq('tournament_id', tournament.id)
-
+      const { error } = await supabase.from('matches').delete().eq('tournament_id', tournament.id)
       if (error) throw error
 
       await triggerBroadcast()
@@ -528,61 +537,76 @@ export default function AdminSpielePage() {
 
       setStatusMessage({
         type: 'success',
-        text: 'Der Spielplan und alle eingetragenen Spiele wurden erfolgreich gelöscht. Die Gruppen bleiben bestehen.',
+        text: 'Der Spielplan und alle eingetragenen Spiele wurden gelöscht.',
       })
     } catch (err: any) {
-      console.error('Reset matches error:', err)
-      setStatusMessage({
-        type: 'error',
-        text: `Fehler beim Zurücksetzen der Spiele: ${err.message || err}`,
-      })
+      console.error(err)
+      setStatusMessage({ type: 'error', text: `Fehler beim Zurücksetzen: ${err.message}` })
     } finally {
       setSaving(false)
     }
   }
 
-  // ERGEBNIS / UHRZEIT / TISCH UNABHÄNGIG UPDATE
+  // EINZELNES SPIEL UND OPTIONAL NACHFOLGENDE SPIELE UPDATE
   async function handleUpdateMatch(
     matchId: number,
     team1Score: number | null,
     team2Score: number | null,
     newStatus: 'scheduled' | 'live' | 'finished',
     newTableNumber: number | null,
-    newScheduledTime: string | null
+    newScheduledTime: string | null,
+    cascadeShift: boolean
   ) {
     if (!tournament?.id) return
 
     try {
-      const { error } = await supabase
-        .from('matches')
-        .update({
-          team1_score: team1Score,
-          team2_score: team2Score,
-          status: newStatus,
-          table_number: newTableNumber,
-          scheduled_time: newScheduledTime,
-        })
-        .eq('id', matchId)
-        .eq('tournament_id', tournament.id)
+      const currentMatch = matches.find((m) => m.id === matchId)
 
-      if (error) throw error
+      // Falls die Zeit geändert wurde und Kaskadierung gewünscht ist
+      if (cascadeShift && newScheduledTime && currentMatch?.scheduled_time && newScheduledTime !== currentMatch.scheduled_time) {
+        const oldTime = new Date(currentMatch.scheduled_time).getTime()
+        const newTime = new Date(newScheduledTime).getTime()
+        const diffMs = newTime - oldTime
 
-      setMatches((prev) =>
-        prev.map((m) =>
-          m.id === matchId
-            ? {
-                ...m,
-                team1_score: team1Score,
-                team2_score: team2Score,
-                status: newStatus,
-                table_number: newTableNumber,
-                scheduled_time: newScheduledTime,
-              }
-            : m
+        // Alle Spiele finden, die ursprünglich zeitgleich oder später angesetzt waren
+        const subsequentMatches = matches.filter(
+          (m) => m.scheduled_time && new Date(m.scheduled_time).getTime() >= oldTime
         )
-      )
+
+        for (const m of subsequentMatches) {
+          const updatedMs = new Date(m.scheduled_time!).getTime() + diffMs
+          const updatedIso = new Date(updatedMs).toISOString()
+
+          await supabase
+            .from('matches')
+            .update({
+              team1_score: m.id === matchId ? team1Score : m.team1_score,
+              team2_score: m.id === matchId ? team2Score : m.team2_score,
+              status: m.id === matchId ? newStatus : m.status,
+              table_number: m.id === matchId ? newTableNumber : m.table_number,
+              scheduled_time: updatedIso,
+            })
+            .eq('id', m.id)
+        }
+      } else {
+        // Normales Einzel-Update
+        const { error } = await supabase
+          .from('matches')
+          .update({
+            team1_score: team1Score,
+            team2_score: team2Score,
+            status: newStatus,
+            table_number: newTableNumber,
+            scheduled_time: newScheduledTime,
+          })
+          .eq('id', matchId)
+          .eq('tournament_id', tournament.id)
+
+        if (error) throw error
+      }
 
       await triggerBroadcast()
+      await loadData()
     } catch (err: any) {
       setStatusMessage({ type: 'error', text: `Fehler beim Speichern: ${err.message}` })
     }
@@ -591,12 +615,8 @@ export default function AdminSpielePage() {
   // Filter-Logik
   const filteredMatches = useMemo(() => {
     return matches.filter((m) => {
-      if (selectedGroupFilter !== 'all' && String(m.group_id) !== selectedGroupFilter) {
-        return false
-      }
-      if (selectedStatusFilter !== 'all' && m.status !== selectedStatusFilter) {
-        return false
-      }
+      if (selectedGroupFilter !== 'all' && String(m.group_id) !== selectedGroupFilter) return false
+      if (selectedStatusFilter !== 'all' && m.status !== selectedStatusFilter) return false
       if (searchQuery.trim() !== '') {
         const query = searchQuery.toLowerCase()
         const t1 = getTeamName(m.team1_id).toLowerCase()
@@ -613,9 +633,7 @@ export default function AdminSpielePage() {
 
     filteredMatches.forEach((match) => {
       const tableKey = match.table_number ?? 'unassigned'
-      if (!tableMap.has(tableKey)) {
-        tableMap.set(tableKey, [])
-      }
+      if (!tableMap.has(tableKey)) tableMap.set(tableKey, [])
       tableMap.get(tableKey)!.push(match)
     })
 
@@ -694,25 +712,15 @@ export default function AdminSpielePage() {
         </div>
       </div>
 
-      {/* AUTOMATISCHER SPIELPLAN GENERATOR & SEITENEINSTELLUNGEN */}
+      {/* PARAMETER-STEUERUNG UND SPIELPLAN GENERATOR */}
       <section className="rounded-3xl border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-4 gap-4">
-          <div>
-            <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
-              Gruppen-Spielplan &amp; Zeiten-Steuerung
-            </h2>
-            <p className="mt-1 text-xs font-medium text-slate-300">
-              Passe die Gesamtparameter (Tische, Spieldauer, Startzeit) an oder generiere den Spielplan neu.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleManualSaveSettings}
-            disabled={saving}
-            className="self-start sm:self-auto rounded-2xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-black text-white hover:bg-white/20 transition backdrop-blur-md"
-          >
-            💾 Einstellungen speichern
-          </button>
+        <div className="border-b border-white/10 pb-4">
+          <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
+            Gruppen-Spielplan &amp; Zeiten-Einstellungen
+          </h2>
+          <p className="mt-1 text-xs font-medium text-slate-300">
+            Eingestellte Parameter wie Tische, Spieldauer und Startzeit bleiben gespeichert.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3 items-end">
@@ -725,7 +733,7 @@ export default function AdminSpielePage() {
               min="1"
               max="64"
               value={tableCount}
-              onChange={(e) => setTableCount(Math.max(1, Number(e.target.value) || 1))}
+              onChange={(e) => handleTableCountChange(Number(e.target.value))}
               className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
             />
           </div>
@@ -739,19 +747,19 @@ export default function AdminSpielePage() {
               min="1"
               max="120"
               value={matchDurationMinutes}
-              onChange={(e) => setMatchDurationMinutes(Math.max(1, Number(e.target.value) || 1))}
+              onChange={(e) => handleDurationChange(Number(e.target.value))}
               className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
             />
           </div>
 
           <div>
             <label className="block text-[10px] font-black uppercase tracking-wider text-slate-300 mb-2">
-              Startzeit (Uhrzeit)
+              Turnier-Startzeit (Uhrzeit)
             </label>
             <input
               type="time"
               value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              onChange={(e) => handleStartTimeChange(e.target.value)}
               className="w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-bold text-white outline-none focus:border-white/30"
             />
           </div>
@@ -803,29 +811,16 @@ export default function AdminSpielePage() {
           </div>
         )}
 
-        {/* AKTIONEN: NEUBERECHNEN, GENERIEREN UND ZURÜCKSETZEN */}
+        {/* AKTIONEN BUTTONS */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/10">
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={handleResetMatches}
-              disabled={saving || matches.length === 0}
-              className="w-full sm:w-auto rounded-2xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-xs font-black text-red-300 hover:bg-red-900/40 transition disabled:opacity-40"
-            >
-              🗑️ Spielplan &amp; Spiele zurücksetzen
-            </button>
-
-            {matches.length > 0 && (
-              <button
-                type="button"
-                onClick={handleRecalculateMatchTimes}
-                disabled={saving}
-                className="w-full sm:w-auto rounded-2xl border border-amber-500/40 bg-amber-950/30 px-4 py-3 text-xs font-black text-amber-300 hover:bg-amber-900/40 transition disabled:opacity-40"
-              >
-                ⏰ Uhrzeiten &amp; Tische neu durchrechnen
-              </button>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={handleResetMatches}
+            disabled={saving || matches.length === 0}
+            className="w-full sm:w-auto rounded-2xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-xs font-black text-red-300 hover:bg-red-900/40 transition disabled:opacity-40"
+          >
+            🗑️ Spielplan &amp; Spiele zurücksetzen
+          </button>
 
           <button
             type="button"
@@ -838,6 +833,43 @@ export default function AdminSpielePage() {
           </button>
         </div>
       </section>
+
+      {/* RUNDEN- & ZEITSLOT SCHNELLSTEUERUNG */}
+      {uniqueTimeSlots.length > 0 && (
+        <section className="rounded-3xl border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
+          <div>
+            <h2 className="text-lg sm:text-xl font-black text-white">
+              ⏰ Runden- &amp; Zeitslots (Kaskadierende Verschiebung)
+            </h2>
+            <p className="text-xs text-slate-300 mt-1">
+              Ändere die Startzeit eines Zeitslots (z.B. Runde 2 auf 19:00 Uhr). Alle nachfolgenden Slots verschieben sich automatisch entsprechend der Spieldauer ({matchDurationMinutes} Min).
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pt-2">
+            {uniqueTimeSlots.map((slot) => (
+              <div
+                key={slot.slotIndex}
+                className="rounded-2xl border border-white/10 bg-black/50 p-3 space-y-2 text-center"
+              >
+                <div className="text-[10px] font-black uppercase text-slate-400">
+                  Slot {slot.slotIndex + 1} ({slot.matches.length} Sp.)
+                </div>
+                <input
+                  type="time"
+                  defaultValue={slot.displayTime}
+                  onBlur={(e) => {
+                    if (e.target.value && e.target.value !== slot.displayTime) {
+                      void handleShiftSlotTime(slot.slotIndex, e.target.value)
+                    }
+                  }}
+                  className="w-full rounded-xl border border-white/10 bg-black/70 px-2 py-1.5 text-center text-xs font-black text-emerald-400 outline-none focus:border-emerald-400"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* FILTER & SEARCH BAR */}
       <section className="rounded-3xl border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4 w-full">
@@ -962,7 +994,7 @@ export default function AdminSpielePage() {
   )
 }
 
-// EINZELNE SPIEL-KARTE MIT FREIER ERGEBNIS-, TISCH- & UHRZEIT-EINGABE
+// EINZELNE SPIEL-KARTE MIT OPTIONALER VERSCHIEBUNG DES FOLGEPLANES
 function MatchCard({
   match,
   team1Name,
@@ -982,12 +1014,14 @@ function MatchCard({
     s2: number | null,
     status: 'scheduled' | 'live' | 'finished',
     tableNumber: number | null,
-    scheduledTime: string | null
+    scheduledTime: string | null,
+    cascadeShift: boolean
   ) => void
 }) {
   const [score1, setScore1] = useState<string>(match.team1_score !== null ? String(match.team1_score) : '')
   const [score2, setScore2] = useState<string>(match.team2_score !== null ? String(match.team2_score) : '')
   const [tableNum, setTableNum] = useState<string>(match.table_number !== null ? String(match.table_number) : '')
+  const [cascade, setCascade] = useState<boolean>(false)
 
   const initialTime = match.scheduled_time
     ? new Date(match.scheduled_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
@@ -1021,7 +1055,7 @@ function MatchCard({
       isoTime = dateObj.toISOString()
     }
 
-    onUpdate(match.id, s1, s2, newStatus, tbl, isoTime)
+    onUpdate(match.id, s1, s2, newStatus, tbl, isoTime, cascade)
   }
 
   return (
@@ -1058,6 +1092,19 @@ function MatchCard({
               className="rounded bg-black/60 text-center text-[10px] font-mono font-bold text-white outline-none border border-white/10 focus:border-white/40 px-1 py-0.5"
             />
           </div>
+        </div>
+
+        {/* CHECKBOX FÜR KASKADIERENDE VERTSCHIEBUNG */}
+        <div className="flex items-center justify-end gap-1.5 text-[9px] text-slate-400 font-bold">
+          <label className="cursor-pointer flex items-center gap-1 select-none">
+            <input
+              type="checkbox"
+              checked={cascade}
+              onChange={(e) => setCascade(e.target.checked)}
+              className="rounded bg-black border-white/20 accent-emerald-500"
+            />
+            <span>Nachfolgende anpassen</span>
+          </label>
         </div>
 
         {/* TEAMS & PUNKTE */}
