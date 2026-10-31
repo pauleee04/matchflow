@@ -38,6 +38,9 @@ type TournamentData = {
   name: string
   slug: string
   primary_color: string | null
+  table_count?: number | null
+  match_duration_minutes?: number | null
+  start_time?: string | null
 }
 
 // ROUND-ROBIN / BERGER-SYSTEM ALGORITHMUS MIT BYE (SPIELFREI) HANDHABUNG
@@ -143,16 +146,33 @@ export default function AdminSpielePage() {
     setStatusMessage(null)
 
     try {
-      const { data: tourneyData, error: tourneyError } = await supabase
+      // Versuche Turnierdaten inklusive gespeicherter Generator-Einstellungen zu laden
+      let tourneyData: TournamentData | null = null
+      const { data, error: tourneyError } = await supabase
         .from('tournaments')
-        .select('id, name, slug, primary_color')
+        .select('id, name, slug, primary_color, table_count, match_duration_minutes, start_time')
         .or(`slug.eq.${slug},slug.eq.${rawSlug}`)
         .maybeSingle()
 
-      if (tourneyError) throw tourneyError
+      if (tourneyError) {
+        // Fallback falls Spalten in DB noch fehlen
+        const fallbackRes = await supabase
+          .from('tournaments')
+          .select('id, name, slug, primary_color')
+          .or(`slug.eq.${slug},slug.eq.${rawSlug}`)
+          .maybeSingle()
+        if (fallbackRes.error) throw fallbackRes.error
+        tourneyData = fallbackRes.data as TournamentData | null
+      } else {
+        tourneyData = data as TournamentData | null
+      }
+
       if (!tourneyData) return
 
-      setTournament(tourneyData as TournamentData)
+      setTournament(tourneyData)
+      if (tourneyData.table_count) setTableCount(tourneyData.table_count)
+      if (tourneyData.match_duration_minutes) setMatchDurationMinutes(tourneyData.match_duration_minutes)
+      if (tourneyData.start_time) setStartTime(tourneyData.start_time)
 
       const [teamsRes, groupsRes, membersRes, matchesRes] = await Promise.all([
         supabase
@@ -219,6 +239,36 @@ export default function AdminSpielePage() {
     })
   }
 
+  // SPEICHERT EINSTELLUNGEN IN DER DATENBANK
+  async function saveTournamentSettings(newTables: number, newDuration: number, newStart: string) {
+    if (!tournament?.id) return
+    try {
+      await supabase
+        .from('tournaments')
+        .update({
+          table_count: newTables,
+          match_duration_minutes: newDuration,
+          start_time: newStart,
+        })
+        .eq('id', tournament.id)
+    } catch (e) {
+      console.warn('Turnier-Einstellungen konnten in DB nicht gespeichert werden:', e)
+    }
+  }
+
+  async function handleManualSaveSettings() {
+    if (!tournament?.id) return
+    setSaving(true)
+    try {
+      await saveTournamentSettings(tableCount, matchDurationMinutes, startTime)
+      setStatusMessage({ type: 'success', text: 'Einstellungen (Tische, Spieldauer, Startzeit) gespeichert!' })
+    } catch (err: any) {
+      setStatusMessage({ type: 'error', text: 'Fehler beim Speichern der Einstellungen.' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   function getTeamName(id: number) {
     return teams.find((t) => t.id === id)?.name || `Team #${id}`
   }
@@ -228,7 +278,61 @@ export default function AdminSpielePage() {
     return groups.find((g) => g.id === id)?.name || `Gruppe #${id}`
   }
 
-  // AUTOMATISCHER SPIELPLAN-GENERATOR MIT LÜCKENLOSER TISCHVERTEILUNG (GRUPPE FÜR GRUPPE)
+  // UHRZEITEN & TISCHE FÜR BESTEHENDE SPIELE NEU DURCHRECHNEN (OHNE ERGEBNISSE ZU LÖSCHEN)
+  async function handleRecalculateMatchTimes() {
+    if (!tournament?.id || matches.length === 0) return
+    setSaving(true)
+    setStatusMessage(null)
+
+    try {
+      await saveTournamentSettings(tableCount, matchDurationMinutes, startTime)
+
+      const [startHours, startMinutes] = startTime.split(':').map(Number)
+      const baseDate = new Date()
+      baseDate.setHours(startHours || 14, startMinutes || 0, 0, 0)
+
+      // Gruppiere aktuelle Spiele nach Runden/Slots
+      const groupMatches = matches.filter((m) => m.phase === 'group')
+      const matchesPerSlot = tableCount
+
+      const updates = groupMatches.map((match, idx) => {
+        const slotIndex = Math.floor(idx / matchesPerSlot)
+        const tableNumber = (idx % matchesPerSlot) + 1
+        const matchTime = new Date(baseDate.getTime() + slotIndex * matchDurationMinutes * 60 * 1000)
+
+        return {
+          id: match.id,
+          scheduled_time: matchTime.toISOString(),
+          table_number: tableNumber,
+        }
+      })
+
+      // In Supabase aktualisieren
+      for (const update of updates) {
+        await supabase
+          .from('matches')
+          .update({
+            scheduled_time: update.scheduled_time,
+            table_number: update.table_number,
+          })
+          .eq('id', update.id)
+      }
+
+      await triggerBroadcast()
+      await loadData()
+      setStatusMessage({
+        type: 'success',
+        text: 'Uhrzeiten und Tischverteilung aller Spiele wurden erfolgreich neu berechnet!',
+      })
+    } catch (err: any) {
+      console.error(err)
+      setStatusMessage({ type: 'error', text: 'Fehler beim Anpassen der Uhrzeiten.' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // AUTOMATISCHER SPIELPLAN-GENERATOR MIT LÜCKENLOSER TISCHVERTEILUNG
   async function handleGenerateGroupSchedule() {
     if (!tournament?.id || groups.length === 0) return
 
@@ -244,6 +348,8 @@ export default function AdminSpielePage() {
     setStatusMessage(null)
 
     try {
+      await saveTournamentSettings(tableCount, matchDurationMinutes, startTime)
+
       // 1. Alle bisherigen Gruppen-Spiele löschen
       await supabase
         .from('matches')
@@ -274,7 +380,7 @@ export default function AdminSpielePage() {
         throw new Error('Es wurden keine gültigen Paarungen gefunden. Prüfe, ob den Gruppen ausreichend Teams zugewiesen sind.')
       }
 
-      // Speicherstrukturen für Zeitslots: Spiele & Teams pro Slot
+      // Speicherstrukturen für Zeitslots
       const slotMatches: Map<number, Array<{ group_id: number; team1_id: number; team2_id: number }>> = new Map()
       const slotTeams: Map<number, Set<number>> = new Map()
 
@@ -283,7 +389,7 @@ export default function AdminSpielePage() {
         groupNextMinSlot[g.id] = 0
       })
 
-      // 3. Runden- und gruppenweise durchiterieren und Spiele in die Slots einsortieren
+      // 3. Runden- und gruppenweise durchiterieren
       for (let r = 0; r < maxRounds; r++) {
         validGroups.forEach((g) => {
           const rounds = groupRoundsMap[g.id]
@@ -304,8 +410,6 @@ export default function AdminSpielePage() {
               const teamsInSlot = slotTeams.get(slot)!
               const matchesInSlot = slotMatches.get(slot)!
 
-              // REGEL 1: Kein Team darf im selben Zeitslot doppelt spielen
-              // REGEL 2: Maximale Tischanzahl pro Slot darf nicht überschritten werden
               if (!teamsInSlot.has(t1) && !teamsInSlot.has(t2) && matchesInSlot.length < tableCount) {
                 teamsInSlot.add(t1)
                 teamsInSlot.add(t2)
@@ -325,12 +429,11 @@ export default function AdminSpielePage() {
             }
           })
 
-          // Nächste Runde dieser Gruppe darf erst nach der aktuellen Runde starten
           groupNextMinSlot[g.id] = roundMaxSlotUsed + 1
         })
       }
 
-      // 4. Spiele flach klopfen und Tische sequenziell zuweisen (Tisch 1, 2, 3... ohne Lücken)
+      // 4. Spiele flach klopfen und Tische sequenziell zuweisen
       const scheduledMatches: Array<{
         group_id: number
         team1_id: number
@@ -347,7 +450,7 @@ export default function AdminSpielePage() {
           scheduledMatches.push({
             ...m,
             slotIndex,
-            tableNumber: idx + 1, // Lückenlose Belegung ab Tisch 1
+            tableNumber: idx + 1,
           })
         })
       })
@@ -356,7 +459,7 @@ export default function AdminSpielePage() {
         throw new Error('Es wurden keine Spiele generiert.')
       }
 
-      // 5. Uhrzeiten berechnen & in Supabase eintragen
+      // 5. Uhrzeiten berechnen & eintragen
       const [startHours, startMinutes] = startTime.split(':').map(Number)
       const baseDate = new Date()
       baseDate.setHours(startHours || 14, startMinutes || 0, 0, 0)
@@ -438,12 +541,14 @@ export default function AdminSpielePage() {
     }
   }
 
-  // ERGEBNIS SPEICHERN / STATUS ÄNDERN
+  // ERGEBNIS / UHRZEIT / TISCH UNABHÄNGIG UPDATE
   async function handleUpdateMatch(
     matchId: number,
     team1Score: number | null,
     team2Score: number | null,
-    newStatus: 'scheduled' | 'live' | 'finished'
+    newStatus: 'scheduled' | 'live' | 'finished',
+    newTableNumber: number | null,
+    newScheduledTime: string | null
   ) {
     if (!tournament?.id) return
 
@@ -454,6 +559,8 @@ export default function AdminSpielePage() {
           team1_score: team1Score,
           team2_score: team2Score,
           status: newStatus,
+          table_number: newTableNumber,
+          scheduled_time: newScheduledTime,
         })
         .eq('id', matchId)
         .eq('tournament_id', tournament.id)
@@ -463,7 +570,14 @@ export default function AdminSpielePage() {
       setMatches((prev) =>
         prev.map((m) =>
           m.id === matchId
-            ? { ...m, team1_score: team1Score, team2_score: team2Score, status: newStatus }
+            ? {
+                ...m,
+                team1_score: team1Score,
+                team2_score: team2Score,
+                status: newStatus,
+                table_number: newTableNumber,
+                scheduled_time: newScheduledTime,
+              }
             : m
         )
       )
@@ -560,7 +674,7 @@ export default function AdminSpielePage() {
         </div>
       )}
 
-      {/* METRIK-KACHELN: FREISTEHEND OHNE ÄUSSEREN RAHMEN */}
+      {/* METRIK-KACHELN */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
         <div className="rounded-3xl border border-white/10 bg-black/30 p-6 shadow-2xl backdrop-blur-xl flex flex-col justify-between">
           <p className="text-xs font-black uppercase tracking-wider text-slate-300">Spiele Gesamt</p>
@@ -580,15 +694,25 @@ export default function AdminSpielePage() {
         </div>
       </div>
 
-      {/* AUTOMATISCHER SPIELPLAN GENERATOR */}
+      {/* AUTOMATISCHER SPIELPLAN GENERATOR & SEITENEINSTELLUNGEN */}
       <section className="rounded-3xl border border-white/10 bg-black/30 p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6 w-full">
-        <div className="border-b border-white/10 pb-4">
-          <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
-            Gruppen-Spielplan generieren
-          </h2>
-          <p className="mt-1 text-xs font-medium text-slate-300">
-            Erstelle automatisch alle Gruppen-Paarungen (Round-Robin / Berger-System) ohne zeitliche Team-Überschneidungen und mit lückenloser Tischbelegung.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-4 gap-4">
+          <div>
+            <h2 className="text-xl font-black text-white tracking-tight sm:text-2xl">
+              Gruppen-Spielplan &amp; Zeiten-Steuerung
+            </h2>
+            <p className="mt-1 text-xs font-medium text-slate-300">
+              Passe die Gesamtparameter (Tische, Spieldauer, Startzeit) an oder generiere den Spielplan neu.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleManualSaveSettings}
+            disabled={saving}
+            className="self-start sm:self-auto rounded-2xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-black text-white hover:bg-white/20 transition backdrop-blur-md"
+          >
+            💾 Einstellungen speichern
+          </button>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3 items-end">
@@ -679,16 +803,29 @@ export default function AdminSpielePage() {
           </div>
         )}
 
-        {/* AKTIONEN: GENERIEREN UND ZURÜCKSETZEN */}
+        {/* AKTIONEN: NEUBERECHNEN, GENERIEREN UND ZURÜCKSETZEN */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/10">
-          <button
-            type="button"
-            onClick={handleResetMatches}
-            disabled={saving || matches.length === 0}
-            className="w-full sm:w-auto rounded-2xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-xs font-black text-red-300 hover:bg-red-900/40 transition disabled:opacity-40"
-          >
-            🗑️ Spielplan &amp; Spiele zurücksetzen
-          </button>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleResetMatches}
+              disabled={saving || matches.length === 0}
+              className="w-full sm:w-auto rounded-2xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-xs font-black text-red-300 hover:bg-red-900/40 transition disabled:opacity-40"
+            >
+              🗑️ Spielplan &amp; Spiele zurücksetzen
+            </button>
+
+            {matches.length > 0 && (
+              <button
+                type="button"
+                onClick={handleRecalculateMatchTimes}
+                disabled={saving}
+                className="w-full sm:w-auto rounded-2xl border border-amber-500/40 bg-amber-950/30 px-4 py-3 text-xs font-black text-amber-300 hover:bg-amber-900/40 transition disabled:opacity-40"
+              >
+                ⏰ Uhrzeiten &amp; Tische neu durchrechnen
+              </button>
+            )}
+          </div>
 
           <button
             type="button"
@@ -697,7 +834,7 @@ export default function AdminSpielePage() {
             className="w-full sm:w-auto rounded-2xl border border-white/20 px-5 py-3 text-xs font-black text-white shadow-lg transition hover:opacity-90 disabled:opacity-40"
             style={{ backgroundColor: primaryColor }}
           >
-            {saving ? 'Generiere Spielplan …' : '⚡ Gruppen-Spielplan automatisch erstellen'}
+            {saving ? 'Generiere Spielplan …' : '⚡ Gruppen-Spielplan neu erstellen'}
           </button>
         </div>
       </section>
@@ -825,7 +962,7 @@ export default function AdminSpielePage() {
   )
 }
 
-// EINZELNE SPIEL-KARTE MIT SCHNELLERGEBNIS-EINGABE
+// EINZELNE SPIEL-KARTE MIT FREIER ERGEBNIS-, TISCH- & UHRZEIT-EINGABE
 function MatchCard({
   match,
   team1Name,
@@ -843,28 +980,48 @@ function MatchCard({
     matchId: number,
     s1: number | null,
     s2: number | null,
-    status: 'scheduled' | 'live' | 'finished'
+    status: 'scheduled' | 'live' | 'finished',
+    tableNumber: number | null,
+    scheduledTime: string | null
   ) => void
 }) {
   const [score1, setScore1] = useState<string>(match.team1_score !== null ? String(match.team1_score) : '')
   const [score2, setScore2] = useState<string>(match.team2_score !== null ? String(match.team2_score) : '')
+  const [tableNum, setTableNum] = useState<string>(match.table_number !== null ? String(match.table_number) : '')
+
+  const initialTime = match.scheduled_time
+    ? new Date(match.scheduled_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+    : ''
+  const [timeStr, setTimeStr] = useState<string>(initialTime)
 
   useEffect(() => {
     setScore1(match.team1_score !== null ? String(match.team1_score) : '')
     setScore2(match.team2_score !== null ? String(match.team2_score) : '')
-  }, [match.team1_score, match.team2_score])
+    setTableNum(match.table_number !== null ? String(match.table_number) : '')
+    if (match.scheduled_time) {
+      setTimeStr(new Date(match.scheduled_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }))
+    } else {
+      setTimeStr('')
+    }
+  }, [match.team1_score, match.team2_score, match.table_number, match.scheduled_time])
 
   const isFinished = match.status === 'finished'
   const isLive = match.status === 'live'
 
-  const formattedTime = match.scheduled_time
-    ? new Date(match.scheduled_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-    : null
-
   function save(newStatus: 'scheduled' | 'live' | 'finished') {
     const s1 = score1 !== '' ? Number(score1) : null
     const s2 = score2 !== '' ? Number(score2) : null
-    onUpdate(match.id, s1, s2, newStatus)
+    const tbl = tableNum !== '' ? Number(tableNum) : null
+
+    let isoTime: string | null = match.scheduled_time
+    if (timeStr.trim() !== '') {
+      const [h, m] = timeStr.split(':').map(Number)
+      const dateObj = match.scheduled_time ? new Date(match.scheduled_time) : new Date()
+      dateObj.setHours(h || 0, m || 0, 0, 0)
+      isoTime = dateObj.toISOString()
+    }
+
+    onUpdate(match.id, s1, s2, newStatus, tbl, isoTime)
   }
 
   return (
@@ -878,12 +1035,28 @@ function MatchCard({
       }`}
     >
       <div className="space-y-3">
-        {/* HEADER INFOS */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-2 text-[10px] font-black text-slate-300">
+        {/* HEADER INFOS MIT BEARBEITBARER UHRZEIT & TISCH */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-2 text-[10px] font-black text-slate-300 gap-2">
           <span className="truncate">{groupName}</span>
-          <div className="flex items-center gap-2">
-            {match.table_number && <span>Tisch {match.table_number}</span>}
-            {formattedTime && <span>{formattedTime} Uhr</span>}
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-0.5">
+              <span className="text-[9px] text-slate-400">T:</span>
+              <input
+                type="number"
+                min="1"
+                max="99"
+                value={tableNum}
+                placeholder="-"
+                onChange={(e) => setTableNum(e.target.value)}
+                className="w-7 rounded bg-black/60 text-center text-[10px] font-mono font-bold text-white outline-none border border-white/10 focus:border-white/40"
+              />
+            </div>
+            <input
+              type="time"
+              value={timeStr}
+              onChange={(e) => setTimeStr(e.target.value)}
+              className="rounded bg-black/60 text-center text-[10px] font-mono font-bold text-white outline-none border border-white/10 focus:border-white/40 px-1 py-0.5"
+            />
           </div>
         </div>
 
