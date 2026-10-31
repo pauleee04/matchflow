@@ -48,7 +48,7 @@ type Standing = {
 
 const KO_PHASES = ['round_of_32', 'round_of_16', 'quarter_final', 'semi_final', 'third_place', 'final']
 const BRACKET_CARD_HEIGHT = 96
-const BRACKET_ROW_HEIGHT = 58
+const BRACKET_ROW_HEIGHT = 64
 const BRACKET_HEADER_HEIGHT = 36
 
 function hexToRgba(hex: string | null | undefined, alpha: number, fallback: string = '#22c55e'): string {
@@ -367,8 +367,14 @@ export default function BeamerPage() {
 
   const teamsById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
   const groupsById = useMemo(() => new Map(groups.map((g) => [g.id, g])), [groups])
+  
   const knockoutMatches = useMemo(() => matches.filter((m) => KO_PHASES.includes(m.phase)), [matches])
   const hasKOStarted = knockoutMatches.length > 0
+
+  // Sobald KO-Spiele existieren, werden auf der Spielplan-Slide NUR noch KO-Spiele angezeigt
+  const displayMatches = useMemo(() => {
+    return hasKOStarted ? knockoutMatches : matches
+  }, [hasKOStarted, knockoutMatches, matches])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -385,7 +391,7 @@ export default function BeamerPage() {
 
   const timeSlots = useMemo(() => {
     const slotsMap = new Map<string, Match[]>()
-    matches.forEach((m) => {
+    displayMatches.forEach((m) => {
       const timeKey = m.scheduled_time ? m.scheduled_time : 'unscheduled'
       if (!slotsMap.has(timeKey)) slotsMap.set(timeKey, [])
       slotsMap.get(timeKey)!.push(m)
@@ -402,7 +408,7 @@ export default function BeamerPage() {
       timeFormatted: key !== 'unscheduled' ? (formatTime(key) || 'Offene Ansetzungen') : 'Offene Ansetzungen',
       matches: slotsMap.get(key)!.sort((a, b) => (a.table_number || 0) - (b.table_number || 0)),
     }))
-  }, [matches])
+  }, [displayMatches])
 
   const activeSlotIndex = useMemo(() => {
     if (timeSlots.length === 0) return 0
@@ -652,17 +658,17 @@ export default function BeamerPage() {
               backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.2) : undefined,
             }}
           >
-            <span className="flex items-center gap-1 font-black">
+            <span className="flex items-center gap-1 font-black truncate min-w-0">
               {isFinal ? '🏆 FINALE' : isThirdPlace ? '🥉 PLATZ 3' : `Spiel #${matchNum}`}
             </span>
             {live ? (
-              <span className="text-red-300 font-black flex items-center gap-1">
+              <span className="text-red-300 font-black flex items-center gap-1 shrink-0">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" /> LIVE
               </span>
             ) : finished ? (
-              <span className="font-extrabold text-[9px]" style={{ color: primaryColor }}>✓ Ende</span>
+              <span className="font-extrabold text-[9px] shrink-0" style={{ color: primaryColor }}>✓ Ende</span>
             ) : (
-              <span className="text-slate-400 font-medium text-[8.5px]">{formatTime(match?.scheduled_time)}</span>
+              <span className="text-slate-400 font-medium text-[8.5px] shrink-0">{formatTime(match?.scheduled_time)}</span>
             )}
           </div>
 
@@ -715,8 +721,8 @@ export default function BeamerPage() {
 
           {/* KARTEN FOOTER */}
           <div className="flex h-4.5 items-center justify-between border-t border-white/5 px-2 text-[8px] font-semibold text-slate-400 bg-slate-950/30">
-            <span>{match?.table_number ? `Tisch ${match.table_number}` : 'Tisch -'}</span>
-            <span>{formatTime(match?.scheduled_time) ? `${formatTime(match?.scheduled_time)} Uhr` : ''}</span>
+            <span className="truncate">{match?.table_number ? `Tisch ${match.table_number}` : 'Tisch -'}</span>
+            <span className="shrink-0">{formatTime(match?.scheduled_time) ? `${formatTime(match?.scheduled_time)} Uhr` : ''}</span>
           </div>
         </div>
       </div>
@@ -944,7 +950,7 @@ export default function BeamerPage() {
                 ENTSCHEIDUNG
               </div>
 
-              <div className="relative flex flex-1 flex-col items-center justify-center gap-5 py-2">
+              <div className="relative flex flex-1 flex-col items-center justify-center gap-4 py-2">
                 {/* FINALE */}
                 <div className="w-full flex flex-col items-center">
                   <BracketMatchCard phase="final" position={1} />
@@ -1087,7 +1093,7 @@ export default function BeamerPage() {
             <div className="flex items-center justify-between border-b border-white/10 pb-2 shrink-0 px-2">
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-2">
-                  <span>Spielrunde: {activeRound?.timeFormatted || 'Aktuelle Runde'}</span>
+                  <span>{hasKOStarted ? 'K.-o.-Runde' : 'Spielrunde'}: {activeRound?.timeFormatted || 'Aktuelle Runde'}</span>
                   {activeRound && (
                     <span
                       className="text-xs font-semibold px-2.5 py-0.5 rounded-full border backdrop-blur-sm"
@@ -1144,16 +1150,16 @@ export default function BeamerPage() {
                           backgroundColor: finished ? hexToRgba(primaryColor, 0.18) : undefined,
                         }}
                       >
-                        <div className="flex items-center justify-between border-b border-white/10 pb-1.5 text-[10px] font-bold uppercase">
-                          <span className="font-mono text-xs font-semibold" style={{ color: primaryColor }}>
+                        <div className="flex items-center justify-between border-b border-white/10 pb-1.5 text-[10px] font-bold uppercase gap-1">
+                          <span className="font-mono text-xs font-semibold shrink-0" style={{ color: primaryColor }}>
                             {m.table_number ? `Tisch ${m.table_number}` : 'Tisch —'}
                           </span>
                           {live ? (
-                            <span className="text-red-300 font-bold animate-pulse flex items-center gap-1">
+                            <span className="text-red-300 font-bold animate-pulse flex items-center gap-1 shrink-0">
                               <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-ping" /> LIVE
                             </span>
                           ) : finished ? (
-                            <span className="font-bold" style={{ color: primaryColor }}>✓ Fertig</span>
+                            <span className="font-bold shrink-0" style={{ color: primaryColor }}>✓ Fertig</span>
                           ) : (
                             <span className="text-slate-300 truncate max-w-[120px]">{matchLabel}</span>
                           )}
@@ -1359,7 +1365,7 @@ export default function BeamerPage() {
           <span>{tournament?.name || 'Bierpong Tournament'} Beamer Live Screen</span>
           <span className="flex items-center gap-2">
             <span>
-              Ansicht: {activeSlide === 'matches' ? 'Spiele & Ergebnisse' : activeSlide === 'standings' ? 'Gruppentabellen' : 'K.-o.-Baum'} (Auto-Wechsel)
+              Ansicht: {activeSlide === 'matches' ? (hasKOStarted ? 'K.-o.-Spiele & Ergebnisse' : 'Spiele & Ergebnisse') : activeSlide === 'standings' ? 'Gruppentabellen' : 'K.-o.-Baum'} (Auto-Wechsel)
             </span>
             <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
           </span>

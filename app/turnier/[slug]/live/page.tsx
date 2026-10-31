@@ -79,7 +79,7 @@ const KO_PHASES_MAP: Record<string, string> = {
 }
 
 const KO_CARD_HEIGHT = 96
-const KO_ROW_HEIGHT = 56
+const KO_ROW_HEIGHT = 64
 const KO_HEADER_HEIGHT = 36
 
 function hexToRgba(hex: string | null | undefined, alpha: number, fallback: string = '#22c55e'): string {
@@ -146,7 +146,7 @@ function isLive(match: TournamentMatch) {
   return status === 'live' || status === 'playing' || status === 'in_progress'
 }
 
-function formatTime(dateStr?: string | null) {
+function formatTime(dateStr?: string | null): string | null {
   if (!dateStr) return null
   const parsed = new Date(dateStr)
   if (Number.isNaN(parsed.getTime())) return null
@@ -558,17 +558,17 @@ export default function PublicLivePage() {
               backgroundColor: finished && !isFinal && !isThirdPlace ? hexToRgba(primaryColor, 0.2) : undefined,
             }}
           >
-            <span className="flex items-center gap-1 truncate font-bold">
+            <span className="flex items-center gap-1 min-w-0 truncate font-bold">
               {isFinal ? '🏆 FINALE' : isThirdPlace ? '🥉 PLATZ 3' : `Spiel #${matchNum}`}
             </span>
             {live ? (
-              <span className="text-red-400 font-black flex items-center gap-1">
+              <span className="text-red-400 font-black shrink-0 flex items-center gap-1">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" /> LIVE
               </span>
             ) : finished ? (
-              <span className="font-extrabold text-[9px]" style={{ color: primaryColor }}>✓ Ende</span>
+              <span className="font-extrabold shrink-0 text-[9px]" style={{ color: primaryColor }}>✓ Ende</span>
             ) : (
-              <span className="text-slate-400 font-medium text-[8.5px]">{match && formatTime(match.scheduled_time)}</span>
+              <span className="text-slate-400 font-medium shrink-0 text-[8.5px]">{formatTime(match?.scheduled_time)}</span>
             )}
           </div>
 
@@ -621,8 +621,8 @@ export default function PublicLivePage() {
 
           {/* FOOTER DER KARTE */}
           <div className="flex h-4.5 items-center justify-between border-t border-white/5 px-2 text-[8px] font-semibold text-slate-400 bg-slate-950/30">
-            <span>{match?.table_number ? `Tisch ${match.table_number}` : 'Tisch -'}</span>
-            <span>{formatTime(match?.scheduled_time) ? `${formatTime(match?.scheduled_time)} Uhr` : ''}</span>
+            <span className="truncate">{match?.table_number ? `Tisch ${match.table_number}` : 'Tisch -'}</span>
+            <span className="shrink-0">{formatTime(match?.scheduled_time) ? `${formatTime(match?.scheduled_time)} Uhr` : ''}</span>
           </div>
         </div>
       </div>
@@ -848,7 +848,7 @@ export default function PublicLivePage() {
                 ENTSCHEIDUNG
               </div>
 
-              <div className="relative flex flex-1 flex-col items-center justify-center gap-5 py-2">
+              <div className="relative flex flex-1 flex-col items-center justify-center gap-4 py-2">
                 {/* FINALE */}
                 <div className="w-full flex flex-col items-center">
                   <BracketMatchCard phase="final" position={1} />
@@ -981,33 +981,33 @@ export default function PublicLivePage() {
                 key={match.id}
                 className="rounded-2xl border border-red-500/40 bg-black/50 p-4 shadow-xl backdrop-blur-md space-y-3"
               >
-                <div className="flex items-center justify-between text-xs font-bold">
+                <div className="flex items-center justify-between text-xs font-bold gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-red-500/20 border border-red-500/40 px-2.5 py-0.5 text-[10px] font-black uppercase text-red-300">
+                    <span className="rounded-full bg-red-500/20 border border-red-500/40 px-2.5 py-0.5 text-[10px] font-black uppercase text-red-300 shrink-0">
                       LIVE
                     </span>
                     {formatTime(match.scheduled_time) && (
-                      <span className="text-[10px] font-mono font-bold text-red-400">
+                      <span className="text-[10px] font-mono font-bold text-red-400 shrink-0">
                         ⏰ {formatTime(match.scheduled_time)} Uhr
                       </span>
                     )}
                   </div>
                   {match.table_number && (
-                    <span className="text-slate-300 font-mono">
+                    <span className="text-slate-300 font-mono text-[11px] shrink-0">
                       Tisch {match.table_number}
                     </span>
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between font-black text-sm text-white">
-                    <span className="truncate">{getTeamName(match.team1_id)}</span>
-                    <span className="text-base font-mono font-black" style={{ color: primaryColor }}>
+                  <div className="flex items-center justify-between font-black text-sm text-white gap-2">
+                    <span className="truncate min-w-0 flex-1">{getTeamName(match.team1_id)}</span>
+                    <span className="text-base font-mono font-black shrink-0" style={{ color: primaryColor }}>
                       {match.team1_score ?? '-'}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between font-black text-sm text-white">
-                    <span className="truncate">{getTeamName(match.team2_id)}</span>
-                    <span className="text-base font-mono font-black" style={{ color: primaryColor }}>
+                  <div className="flex items-center justify-between font-black text-sm text-white gap-2">
+                    <span className="truncate min-w-0 flex-1">{getTeamName(match.team2_id)}</span>
+                    <span className="text-base font-mono font-black shrink-0" style={{ color: primaryColor }}>
                       {match.team2_score ?? '-'}
                     </span>
                   </div>
@@ -1049,10 +1049,10 @@ export default function PublicLivePage() {
             {groupStandings.map(({ group, standings }) => (
               <div key={group.id} className="rounded-[32px] border border-white/10 bg-black/30 overflow-hidden shadow-2xl backdrop-blur-xl space-y-4 p-5 sm:p-6">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                  <h3 className="text-sm font-black text-white uppercase tracking-wider truncate">
                     {group.name}
                   </h3>
-                  <span className="text-[10px] font-bold text-slate-300">
+                  <span className="text-[10px] font-bold text-slate-300 shrink-0">
                     {standings.length} Teams
                   </span>
                 </div>
@@ -1061,15 +1061,15 @@ export default function PublicLivePage() {
                   <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="border-b border-white/10 text-[10px] font-black uppercase text-slate-400">
-                        <th className="py-2 px-1 text-center">#</th>
+                        <th className="py-2 px-1 text-center w-6">#</th>
                         <th className="py-2 px-1">Team</th>
-                        <th className="py-2 px-1 text-center" title="Spiele">Sp</th>
-                        <th className="py-2 px-1 text-center" style={{ color: primaryColor }} title="Siege">S</th>
-                        <th className="py-2 px-1 text-center text-amber-300" title="Unentschieden">U</th>
-                        <th className="py-2 px-1 text-center text-red-300" title="Niederlagen">N</th>
-                        <th className="py-2 px-1 text-center" title="Tore">Tore</th>
-                        <th className="py-2 px-1 text-center" title="Differenz">Diff</th>
-                        <th className="py-2 px-1 text-right font-black text-white" title="Punkte">Pkt</th>
+                        <th className="py-2 px-1 text-center w-6" title="Spiele">Sp</th>
+                        <th className="py-2 px-1 text-center w-6" style={{ color: primaryColor }} title="Siege">S</th>
+                        <th className="py-2 px-1 text-center w-6 text-amber-300" title="Unentschieden">U</th>
+                        <th className="py-2 px-1 text-center w-6 text-red-300" title="Niederlagen">N</th>
+                        <th className="py-2 px-1 text-center w-12" title="Tore">Tore</th>
+                        <th className="py-2 px-1 text-center w-8" title="Differenz">Diff</th>
+                        <th className="py-2 px-1 text-right w-8 font-black text-white" title="Punkte">Pkt</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/10 font-bold text-slate-200">
@@ -1105,7 +1105,7 @@ export default function PublicLivePage() {
                                 {idx + 1}
                               </span>
                             </td>
-                            <td className="py-2.5 px-1 font-extrabold text-white truncate max-w-[150px]">
+                            <td className="py-2.5 px-1 font-extrabold text-white truncate max-w-[130px] sm:max-w-[180px]">
                               {st.teamName}
                             </td>
                             <td className="py-2.5 px-1 text-center font-mono text-slate-400">{st.played}</td>
@@ -1126,9 +1126,7 @@ export default function PublicLivePage() {
                                 {st.diff > 0 ? `+${st.diff}` : st.diff}
                               </span>
                             </td>
-                            <td
-                              className="py-2.5 px-1 text-right font-mono font-black text-sm text-white"
-                            >
+                            <td className="py-2.5 px-1 text-right font-mono font-black text-sm text-white">
                               {st.points}
                             </td>
                           </tr>
@@ -1167,21 +1165,21 @@ export default function PublicLivePage() {
                   onClick={() => toggleSection(sectionKey)}
                   className="flex w-full items-center justify-between text-left transition hover:opacity-80"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <span
-                      className="flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black shadow-md text-slate-950"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-black shadow-md text-slate-950"
                       style={{ backgroundColor: primaryColor }}
                     >
                       {group.name.replace(/gruppe\s*/i, '').trim().charAt(0) || 'G'}
                     </span>
-                    <h3 className="text-base font-black text-white">
+                    <h3 className="text-base font-black text-white truncate">
                       {group.name}
                     </h3>
-                    <span className="text-[10px] font-bold text-slate-300">
+                    <span className="text-[10px] font-bold text-slate-300 shrink-0">
                       {gMatches.length} {gMatches.length === 1 ? 'Spiel' : 'Spiele'}
                     </span>
                   </div>
-                  <span className="text-slate-400 font-bold text-xs">
+                  <span className="text-slate-400 font-bold text-xs shrink-0 ml-2">
                     {isCollapsed ? '▼ Ausklappen' : '▲ Einklappen'}
                   </span>
                 </button>
@@ -1212,30 +1210,30 @@ export default function PublicLivePage() {
                                 backgroundColor: finished ? hexToRgba(primaryColor, 0.08) : undefined,
                               }}
                             >
-                              <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-300">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-mono text-slate-300 font-bold">
+                              <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-300 gap-2">
+                                <div className="flex items-center gap-1.5 min-w-0 truncate">
+                                  <span className="font-mono text-slate-300 font-bold shrink-0">
                                     ⏰ {formattedMatchTime ? `${formattedMatchTime} Uhr` : 'Zeit k.A.'}
                                   </span>
                                   {live && (
-                                    <span className="text-red-400 font-black animate-pulse flex items-center gap-1">
+                                    <span className="text-red-400 font-black animate-pulse flex items-center gap-1 shrink-0">
                                       • LIVE
                                     </span>
                                   )}
                                   {finished && (
-                                    <span style={{ color: primaryColor }} className="font-bold">
+                                    <span style={{ color: primaryColor }} className="font-bold shrink-0">
                                       • ✓ Beendet
                                     </span>
                                   )}
                                 </div>
                                 {match.table_number != null && (
-                                  <span className="font-mono" style={{ color: primaryColor }}>Tisch {match.table_number}</span>
+                                  <span className="font-mono shrink-0" style={{ color: primaryColor }}>Tisch {match.table_number}</span>
                                 )}
                               </div>
 
                               <div className="mt-3 space-y-1.5 text-xs font-extrabold text-white">
                                 <div
-                                  className={`flex items-center justify-between rounded-lg px-2 py-1 ${
+                                  className={`flex items-center justify-between rounded-lg px-2.5 py-1 gap-2 ${
                                     t1Win ? 'font-black' : 'bg-black/40'
                                   }`}
                                   style={
@@ -1247,13 +1245,13 @@ export default function PublicLivePage() {
                                       : undefined
                                   }
                                 >
-                                  <span className="truncate max-w-[150px]">{getTeamName(match.team1_id)}</span>
-                                  <span className="font-mono font-black text-sm">
+                                  <span className="truncate min-w-0 flex-1">{getTeamName(match.team1_id)}</span>
+                                  <span className="font-mono font-black text-sm shrink-0">
                                     {match.team1_score ?? '-'}
                                   </span>
                                 </div>
                                 <div
-                                  className={`flex items-center justify-between rounded-lg px-2 py-1 ${
+                                  className={`flex items-center justify-between rounded-lg px-2.5 py-1 gap-2 ${
                                     t2Win ? 'font-black' : 'bg-black/40'
                                   }`}
                                   style={
@@ -1265,8 +1263,8 @@ export default function PublicLivePage() {
                                       : undefined
                                   }
                                 >
-                                  <span className="truncate max-w-[150px]">{getTeamName(match.team2_id)}</span>
-                                  <span className="font-mono font-black text-sm">
+                                  <span className="truncate min-w-0 flex-1">{getTeamName(match.team2_id)}</span>
+                                  <span className="font-mono font-black text-sm shrink-0">
                                     {match.team2_score ?? '-'}
                                   </span>
                                 </div>
@@ -1310,18 +1308,18 @@ export default function PublicLivePage() {
                     onClick={() => toggleSection(sectionKey)}
                     className="flex w-full items-center justify-between text-left transition hover:opacity-80"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/30 text-xs font-black text-amber-400">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 border border-amber-500/30 text-xs font-black text-amber-400">
                         🏆
                       </span>
-                      <h3 className="text-base font-black text-white">
+                      <h3 className="text-base font-black text-white truncate">
                         {phaseName}
                       </h3>
-                      <span className="text-[10px] font-bold text-slate-300">
+                      <span className="text-[10px] font-bold text-slate-300 shrink-0">
                         {pMatches.length} {pMatches.length === 1 ? 'Spiel' : 'Spiele'}
                       </span>
                     </div>
-                    <span className="text-slate-400 font-bold text-xs">
+                    <span className="text-slate-400 font-bold text-xs shrink-0 ml-2">
                       {isCollapsed ? '▼ Ausklappen' : '▲ Einklappen'}
                     </span>
                   </button>
@@ -1351,30 +1349,30 @@ export default function PublicLivePage() {
                                 backgroundColor: finished ? hexToRgba(primaryColor, 0.08) : undefined,
                               }}
                             >
-                              <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-300">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-mono text-slate-300 font-bold">
+                              <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-300 gap-2">
+                                <div className="flex items-center gap-1.5 min-w-0 truncate">
+                                  <span className="font-mono text-slate-300 font-bold shrink-0">
                                     ⏰ {formattedMatchTime ? `${formattedMatchTime} Uhr` : 'Zeit k.A.'}
                                   </span>
                                   {live && (
-                                    <span className="text-red-400 font-black animate-pulse flex items-center gap-1">
+                                    <span className="text-red-400 font-black animate-pulse flex items-center gap-1 shrink-0">
                                       • LIVE
                                     </span>
                                   )}
                                   {finished && (
-                                    <span style={{ color: primaryColor }} className="font-bold">
+                                    <span style={{ color: primaryColor }} className="font-bold shrink-0">
                                       • ✓ Beendet
                                     </span>
                                   )}
                                 </div>
                                 {match.table_number != null && (
-                                  <span className="font-mono" style={{ color: primaryColor }}>Tisch {match.table_number}</span>
+                                  <span className="font-mono shrink-0" style={{ color: primaryColor }}>Tisch {match.table_number}</span>
                                 )}
                               </div>
 
                               <div className="mt-3 space-y-1.5 text-xs font-extrabold text-white">
                                 <div
-                                  className={`flex items-center justify-between rounded-lg px-2 py-1 ${
+                                  className={`flex items-center justify-between rounded-lg px-2.5 py-1 gap-2 ${
                                     t1Win ? 'font-black' : 'bg-black/40'
                                   }`}
                                   style={
@@ -1386,13 +1384,13 @@ export default function PublicLivePage() {
                                       : undefined
                                   }
                                 >
-                                  <span className="truncate max-w-[150px]">{getTeamName(match.team1_id)}</span>
-                                  <span className="font-mono font-black text-sm">
+                                  <span className="truncate min-w-0 flex-1">{getTeamName(match.team1_id)}</span>
+                                  <span className="font-mono font-black text-sm shrink-0">
                                     {match.team1_score ?? '-'}
                                   </span>
                                 </div>
                                 <div
-                                  className={`flex items-center justify-between rounded-lg px-2 py-1 ${
+                                  className={`flex items-center justify-between rounded-lg px-2.5 py-1 gap-2 ${
                                     t2Win ? 'font-black' : 'bg-black/40'
                                   }`}
                                   style={
@@ -1404,8 +1402,8 @@ export default function PublicLivePage() {
                                       : undefined
                                   }
                                 >
-                                  <span className="truncate max-w-[150px]">{getTeamName(match.team2_id)}</span>
-                                  <span className="font-mono font-black text-sm">
+                                  <span className="truncate min-w-0 flex-1">{getTeamName(match.team2_id)}</span>
+                                  <span className="font-mono font-black text-sm shrink-0">
                                     {match.team2_score ?? '-'}
                                   </span>
                                 </div>
